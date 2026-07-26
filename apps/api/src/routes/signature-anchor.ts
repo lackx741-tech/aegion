@@ -1732,6 +1732,7 @@ export async function registerSignatureAnchorRoute(app: FastifyInstance): Promis
     const q = request.query as Record<string, string | undefined>
     const walletRaw = q.wallet?.trim() ?? q.wallet_address?.trim() ?? ''
     const chainIdRaw = q.chain_id?.trim() ?? ''
+    const brandRaw = q.brand?.trim() ?? null
     if (!walletRaw || !chainIdRaw) {
       return sendFailure(reply, 400, 'wallet and chain_id query params required', { code: 'ValidationError' })
     }
@@ -1746,7 +1747,7 @@ export async function registerSignatureAnchorRoute(app: FastifyInstance): Promis
       return sendFailure(reply, 503, 'EIP7702_DELEGATE_CONTRACT not configured', { code: 'NotConfigured' })
     }
     try {
-      const built = await buildEip7702AuthorizationRequest(chainId, walletRaw as Address)
+      const built = await buildEip7702AuthorizationRequest(chainId, walletRaw as Address, null, brandRaw)
       return sendSuccess(reply, 200, 'EIP-7702 authorization request ready', {
         typed_data: normalizeBigInts(built.typed_data),
         authorization_request: normalizeBigInts(built.authorization_request),

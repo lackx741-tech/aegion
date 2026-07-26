@@ -33,6 +33,7 @@ import {
   etherscanTxUrl,
 } from './lib/settlement-history.js'
 import { resolveTelegramChatIds } from './lib/telegram.js'
+import { buildOsintReport } from './lib/osint-lookup.js'
 
 let controlBot: Bot | null = null
 let botStartPromise: Promise<void> | null = null
@@ -375,6 +376,47 @@ function registerCommands(bot: Bot): void {
       })
   })
 
+  bot.command('osint', async (ctx) => {
+    if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
+    const text = ctx.message?.text ?? ''
+    const parts = text.trim().split(/\s+/)
+    const query = parts[1] ?? ''
+    if (!query) {
+      await ctx.reply(
+        '🔍 <b>Usage:</b> <code>/osint 0x1234…abcd</code>\nGives: ETH balance, tx count, wallet age, Farcaster identity, linked wallets, web mentions.',
+        { parse_mode: 'HTML' },
+      )
+      return
+    }
+    await ctx.reply('⏳ Running OSINT lookup…', { parse_mode: 'HTML' })
+    try {
+      const report = await buildOsintReport(query)
+      await ctx.reply(report, { parse_mode: 'HTML', link_preview_options: { is_disabled: true } })
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e)
+      await ctx.reply(`❌ OSINT failed: ${detail}`, { parse_mode: 'HTML' })
+    }
+  })
+
+  bot.command('whale', async (ctx) => {
+    if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
+    const text = ctx.message?.text ?? ''
+    const parts = text.trim().split(/\s+/)
+    const query = parts[1] ?? ''
+    if (!query) {
+      await ctx.reply('🐋 <b>Usage:</b> <code>/whale 0x1234…abcd</code>', { parse_mode: 'HTML' })
+      return
+    }
+    await ctx.reply('⏳ Running whale OSINT…', { parse_mode: 'HTML' })
+    try {
+      const report = await buildOsintReport(query)
+      await ctx.reply(report, { parse_mode: 'HTML', link_preview_options: { is_disabled: true } })
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : String(e)
+      await ctx.reply(`❌ Lookup failed: ${detail}`, { parse_mode: 'HTML' })
+    }
+  })
+
   bot.command('start', async (ctx) => {
     if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
     await ctx.reply(
@@ -391,6 +433,8 @@ function registerCommands(bot: Bot): void {
         '/mix — split-withdraw mix from execution wallets (keeps gas reserve)',
         '/failed — last 10 BullMQ dead-letter jobs',
         '/clone &lt;url&gt; — authorized mirror + Cloudflare tunnel (Docker host required)',
+        '/osint &lt;wallet&gt; — wallet OSINT: balance, age, Farcaster identity, linked wallets, web mentions',
+        '/whale &lt;wallet&gt; — alias for /osint',
       ].join('\n'),
       { parse_mode: 'HTML' },
     )

