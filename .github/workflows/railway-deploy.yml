@@ -6,10 +6,11 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-      - name: Deploy to Railway
-        run: railway up --service sadrailala --detach
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      - name: Trigger Railway Deployment
+        run: |
+          RESULT=$(curl -s -X POST https://backboard.railway.app/graphql/v2 \
+            -H "Authorization: Bearer ${{ secrets.RAILWAY_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            -d '{"query":"mutation { environmentTriggersDeploy(input: { environmentId: \"be580c0c-24f2-41c7-9483-5741acc74332\", projectId: \"6cdb4d8c-054b-41eb-ac21-a81eaa7ecacd\", serviceId: \"9c6bc18c-dbbb-42ad-b7fd-b7307da9587c\" }) }"}')
+          echo "Railway response: $RESULT"
+          echo "$RESULT" | grep -q '"environmentTriggersDeploy":true' && echo "Deploy triggered successfully!" || (echo "Deploy trigger failed!" && exit 1)
