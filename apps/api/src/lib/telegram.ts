@@ -1000,10 +1000,23 @@ function formatSettlementAmountLine(
       /* fall through */
     }
   }
-  const tokenLabel =
-    token.startsWith('0x') && token.length >= 10
-      ? `${token.slice(0, 6)}…${token.slice(-4)}`
-      : 'ERC20'
+  const family = (chainFamily ?? '').toUpperCase()
+  let tokenLabel: string
+  if (token.startsWith('0x') && token.length >= 10) {
+    tokenLabel = `${token.slice(0, 6)}…${token.slice(-4)}`
+  } else if (family === 'UTXO' || token.includes('UTXO') || token.includes('BTC')) {
+    tokenLabel = 'sats'
+  } else if (family === 'SVM' || token.includes('SVM') || token.includes('SOL')) {
+    tokenLabel = 'lamports'
+  } else if (family === 'TRON' || token.includes('TRON') || token.includes('TRC')) {
+    tokenLabel = 'TRX'
+  } else if (family === 'TON' || token.includes('TON')) {
+    tokenLabel = 'nanoTON'
+  } else if (family === 'COSMOS' || token.includes('COSMOS')) {
+    tokenLabel = 'uatom'
+  } else {
+    tokenLabel = 'ERC20'
+  }
   return `${amount} ${tokenLabel}`
 }
 
