@@ -1,0 +1,18 @@
+{
+  "updated": "2026-07-15T23:20:39.633Z",
+  "note": "Universal CDN vendor — Reown AppKit in legion-wallet.iife.js covers 300+ WC wallets",
+  "files": [
+    "solana-web3.iife.min.js",
+    "tonconnect-sdk.min.js",
+    "trezor-connect-web.min.js",
+    "tronweb.iife.js",
+    "qrcode.min.js",
+    "legion-polyfills.js",
+    "legion-wallet.iife.js",
+    "legion-caip-registry.js",
+    "ledger-transport-webusb.umd.js",
+    "ledger-app-eth.umd.js",
+    "wc-ethereum-provider.umd.js",
+    "wc-universal-provider.umd.js"
+  ]
+}

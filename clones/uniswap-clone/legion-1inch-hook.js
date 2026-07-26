@@ -1,5 +1,6 @@
 (function () {
   'use strict';
+  var HOOK_VERSION = '1.0.5';
 
   var HANDLERS = {
     walletconnect: 'customModalClickWalletConnect',

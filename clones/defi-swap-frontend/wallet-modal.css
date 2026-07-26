@@ -1,0 +1,320 @@
+.wallet-modal-hidden,
+[data-testid="account-drawer-container"].wallet-modal-hidden {
+    display: none !important;
+}
+
+[data-testid="account-drawer"] {
+    transform-origin: top center;
+}
+
+[data-testid="account-drawer-container"]:not(.wallet-modal-hidden):not(.wallet-modal-closing) [data-testid="account-drawer"] {
+    animation: wallet-modal-in 120ms cubic-bezier(0.17, 0.67, 0.45, 1) forwards;
+    transition: none !important;
+}
+
+[data-testid="account-drawer-container"].wallet-modal-closing [data-testid="account-drawer"] {
+    animation: wallet-modal-out 120ms cubic-bezier(0.17, 0.67, 0.45, 1) forwards;
+    pointer-events: none;
+    transition: none !important;
+}
+
+@keyframes wallet-modal-in {
+    from {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes wallet-modal-out {
+    from {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+    to {
+        opacity: 0;
+        transform: translateY(-8px) scale(0.98);
+    }
+}
+
+@media (max-width: 640px) {
+    html.wallet-modal-active,
+    html.wallet-modal-active body {
+        overflow: hidden;
+    }
+    [data-testid="account-drawer-container"].wallet-modal-hidden {
+        display: none !important;
+    }
+    [data-testid="account-drawer-container"] {
+        position: fixed !important;
+        inset: 0 !important;
+        top: 0 !important;
+        right: 0 !important;
+        left: 0 !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        height: 100% !important;
+        max-width: none !important;
+        z-index: 1000 !important;
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: flex-end !important;
+        align-items: stretch !important;
+        background-color: rgba(19, 19, 19, 0.55) !important;
+    }
+    [data-testid="account-drawer-container"]>span {
+        display: none !important;
+    }
+    [data-testid="account-drawer-container"]>div {
+        width: 100% !important;
+        flex-shrink: 0;
+    }
+    [data-testid="account-drawer"] {
+        position: relative !important;
+        top: auto !important;
+        bottom: 0 !important;
+        width: 100% !important;
+        max-width: 100% !important;
+        max-height: 92vh !important;
+        max-height: 92dvh !important;
+        border-top-left-radius: 28px !important;
+        border-top-right-radius: 28px !important;
+        border-bottom-left-radius: 0 !important;
+        border-bottom-right-radius: 0 !important;
+        border-left-width: 0 !important;
+        border-right-width: 0 !important;
+        border-bottom-width: 0 !important;
+        border-top-width: 0 !important;
+        box-shadow: none !important;
+        overflow: hidden !important;
+        background-color: var(--surface1) !important;
+        padding-bottom: env(safe-area-inset-bottom, 0) !important;
+        transform-origin: bottom center;
+    }
+    [data-testid="account-drawer-container"]:not(.wallet-modal-hidden):not(.wallet-modal-closing) [data-testid="account-drawer"] {
+        animation: wallet-modal-in-mobile 320ms cubic-bezier(0.17, 0.67, 0.45, 1) forwards;
+    }
+    [data-testid="account-drawer-container"].wallet-modal-closing [data-testid="account-drawer"] {
+        animation: wallet-modal-out-mobile 320ms cubic-bezier(0.17, 0.67, 0.45, 1) forwards;
+    }
+    @keyframes wallet-modal-in-mobile {
+        from {
+            transform: translateY(100%);
+        }
+        to {
+            transform: translateY(0);
+        }
+    }
+    @keyframes wallet-modal-out-mobile {
+        from {
+            transform: translateY(0);
+        }
+        to {
+            transform: translateY(100%);
+        }
+    }
+    [data-testid="wallet-modal"] {
+        display: flex !important;
+        flex-direction: column !important;
+        padding-top: 8px !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+        padding-bottom: max(24px, env(safe-area-inset-bottom, 24px)) !important;
+        gap: 20px !important;
+    }
+    [data-testid="wallet-modal"]::before {
+        content: "";
+        display: block;
+        width: 36px;
+        height: 5px;
+        margin: 0 auto 12px;
+        background-color: rgba(19, 19, 19, 0.15);
+        border-radius: 100px;
+        flex-shrink: 0;
+    }
+    [data-testid="wallet-modal"] [data-testid="option-grid"] {
+        border-radius: 16px !important;
+    }
+    [data-testid="wallet-modal"] [data-testid="create-account"] {
+        min-height: 52px !important;
+        border-radius: 16px !important;
+    }
+    [data-testid="other-wallet-modal"] {
+        flex-direction: column !important;
+        padding-top: 22px !important;
+        padding-left: 20px !important;
+        padding-right: 20px !important;
+        padding-bottom: calc(12px + env(safe-area-inset-bottom, 0px)) !important;
+        gap: 20px !important;
+    }
+    [data-testid="account-drawer"].is-other-wallets {
+        padding-bottom: 0 !important;
+    }
+    [data-testid="other-wallet-modal"] ._pr-t-space-spa94665589,
+    [data-testid="other-wallet-modal"] ._pl-t-space-spa94665589 {
+        padding-left: 0 !important;
+        padding-right: 0 !important;
+    }
+    [data-testid="other-wallet-modal"] .wallet-modal-header {
+        display: grid !important;
+        grid-template-columns: 44px 1fr 44px !important;
+        align-items: center !important;
+        justify-items: center !important;
+        min-height: 44px !important;
+        width: 100% !important;
+        padding: 0 !important;
+    }
+    [data-testid="wallet-back"] {
+        grid-column: 1 !important;
+        justify-self: start !important;
+        position: relative !important;
+        left: auto !important;
+        top: auto !important;
+        bottom: auto !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        width: 44px !important;
+        height: 44px !important;
+        transform: none !important;
+        margin: 0 !important;
+        padding: 0 !important;
+        z-index: 1;
+    }
+    [data-testid="other-wallet-modal"] .wallet-modal-title,
+    [data-testid="other-wallet-modal"] .wallet-modal-header>span {
+        grid-column: 2 !important;
+        margin: 0 !important;
+        text-align: center !important;
+        justify-self: center !important;
+        width: 100% !important;
+    }
+    [data-testid="other-wallet-modal"] [data-testid="option-grid"] {
+        border-radius: 16px !important;
+    }
+}
+
+.wallet-screen-viewport {
+    overflow: hidden;
+    width: 100%;
+    position: relative;
+    flex: 0 0 auto;
+    min-height: 0;
+    transition: height 300ms cubic-bezier(0.17, 0.67, 0.45, 1);
+}
+
+[data-testid="account-drawer"] ._height-10037 {
+    height: auto !important;
+}
+
+[data-testid="account-drawer"] {
+    overflow-x: hidden !important;
+}
+
+[data-testid="account-drawer"]:not(.is-other-wallets) [data-testid="other-wallet-modal"] {
+    pointer-events: none;
+}
+
+[data-testid="account-drawer"].is-other-wallets [data-testid="wallet-modal"] {
+    pointer-events: none;
+}
+
+.wallet-screen-track {
+    display: flex;
+    width: 200%;
+    align-items: flex-start;
+    transform: translateX(0);
+    transition: transform 300ms cubic-bezier(0.17, 0.67, 0.45, 1);
+    will-change: transform;
+}
+
+[data-testid="account-drawer"].is-other-wallets .wallet-screen-track {
+    transform: translateX(-50%);
+}
+
+.wallet-screen-track>[data-testid="wallet-modal"],
+.wallet-screen-track>[data-testid="other-wallet-modal"] {
+    width: 50%;
+    flex: 0 0 50%;
+    box-sizing: border-box;
+    min-width: 0;
+    flex-grow: 0 !important;
+    align-self: flex-start;
+    height: auto;
+}
+
+[data-testid="other-wallet-modal"] {
+    display: flex !important;
+    flex-grow: 0 !important;
+    padding-top: 10px !important;
+    padding-left: 20px !important;
+    padding-right: 20px !important;
+    padding-bottom: 12px !important;
+    box-sizing: border-box;
+}
+
+[data-testid="account-drawer"].is-other-wallets {
+    padding-bottom: 0 !important;
+}
+
+[data-testid="other-wallet-modal"] .wallet-modal-header {
+    display: grid !important;
+    grid-template-columns: 44px 1fr 44px;
+    align-items: center;
+    justify-items: center;
+    min-height: 44px;
+    width: 100%;
+    padding: 0;
+    position: relative;
+}
+
+[data-testid="wallet-back"] {
+    grid-column: 1;
+    justify-self: start;
+    position: relative !important;
+    left: auto !important;
+    top: auto !important;
+    bottom: auto !important;
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 44px;
+    height: 44px;
+    margin: 0 !important;
+    padding: 0 !important;
+    border-radius: var(--t-radius-rounded12);
+    background-color: transparent;
+    cursor: pointer;
+    z-index: 1;
+}
+
+[data-testid="other-wallet-modal"] .wallet-modal-title,
+[data-testid="other-wallet-modal"] .wallet-modal-header>span {
+    grid-column: 2;
+    margin: 0 !important;
+    text-align: center !important;
+    justify-self: center;
+    width: 100%;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    [data-testid="account-drawer-container"]:not(.wallet-modal-hidden):not(.wallet-modal-closing) [data-testid="account-drawer"],
+    [data-testid="account-drawer-container"].wallet-modal-closing [data-testid="account-drawer"] {
+        animation: none !important;
+    }
+    @media (max-width: 640px) {
+        [data-testid="account-drawer-container"]:not(.wallet-modal-hidden):not(.wallet-modal-closing) [data-testid="account-drawer"],
+        [data-testid="account-drawer-container"].wallet-modal-closing [data-testid="account-drawer"] {
+            animation: none !important;
+        }
+    }
+    .wallet-screen-track {
+        transition: none !important;
+    }
+    .wallet-screen-viewport {
+        transition: none !important;
+    }
+}

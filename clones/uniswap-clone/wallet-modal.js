@@ -147,6 +147,7 @@
             if (action === 'walletconnect') callHandler('customModalClickWalletConnect');
             if (action === 'coinbase') callHandler('customModalClickCoinbase');
             if (action === 'binance') callHandler('customModalClickBinance');
+            if (action === 'trezor') callHandler('customModalClickTrezor');
         });
     });
 

@@ -1,0 +1,455 @@
+(()=>{function p(t,n,r,o,e,i,f,m){return{eventType:t,event:n,targetElement:r,eic:o,timeStamp:e,eia:i,eirp:f,eiack:m}}function u(t){let n=[],r=e=>{n.push(e)};return{c:t,q:n,et:[],etc:[],d:r,h:e=>{r(p(e.type,e,e.target,t,Date.now()))}}}function s(t,n,r){for(let o=0;o<n.length;o++){let e=n[o];(r?t.etc:t.et).push(e),t.c.addEventListener(e,t.h,r)}}function c(t,n,r,o,e=window){let i=u(t);e._ejsas||(e._ejsas={}),e._ejsas[n]=i,s(i,r),s(i,o,!0)}window.__jsaction_bootstrap=c;})();
+window.__jsaction_bootstrap(document.body,"ng",["click","mouseover"],["focus","blur"]);
+    
+    
+      (function () {
+        try {
+          var saved = localStorage.getItem('preferred-theme');
+          var isDark;
+          if (saved === 'dark-theme') isDark = true;
+          else if (saved === 'light-theme') isDark = false;
+          else isDark = matchMedia('(prefers-color-scheme: dark)').matches;
+          document.body.classList.add(isDark ? 'dark-theme' : 'light-theme');
+        } catch (e) {}
+      })();
+    
+    Robinhood Chain is liveSwap Stock Tokens with 1inch. Swap now Personal Personal  Business  Swap  Trade  Limit  Market  Terminal  Portfolio Go to... Connect wallet  App  Swap Trade Limit  Market  Terminal  Portfolio  Swap crypto tokens at the best rates  Get started Cross-chain swapsMove assets between 13+ networks, without bridging. 01  02  03  Get started  Get the best rates  on crypto token swaps   SOL → ETH 1 SOL0.04312 ETHSwap WBTC → ETH 1 WBTC35.36 ETHSwap BNB → USDT 1 BNB581.55 USDTSwap LTC → USDT 1 LTC45.05 USDTSwap BNB → USDC 1 BNB581.17 USDCSwap AVAX → USDT 1 AVAX6.76 USDTSwap USDC → ENA 100 USDC1188.92 ENASwap AVAX → USDT 1 AVAX6.76 USDTSwap Swap tokens across 
+13+ chains - without bridging EthereumBinancePolygonOptimismArbitrumGnosisAvalancheZkSyncEraBaseLineaUnichainSonicSolana 1inch powers DeFi  From the first DEX aggregator to intent-based cross-chain swaps - 1inch is building the future of finance. $808B+Swap volume263M+Total swaps27M+Wallets connectedBulletproof DeFi securityProtect your crypto against front-running, sandwich attacks and asset loss with MEV protection, wallet screening & more. Risk management  Scam protection  Brand abuse takedowns Wallet scanning, risk scoring and blocklists keep you safe from bad actors. Learn more  Risk management  Scam protection  Brand abuse takedowns Wallet scanning, risk scoring and blocklists keep you safe from bad actors. Learn more One ecosystem for everything you do with crypto 1inch WalletRun crypto from your pocketSecure, swap & track tokens in one DeFi wallet app. Get Wallet 1inch PortfolioTrack your crypto portfolioManage your digital assets, analyze PnL & liquidity protocols, and discover DeFi staking. Explore 1inch CardPay with crypto, every daySpend tokens with Apple Pay & Google Pay, borrow against digital assets and get crypto cashback. Get your card 1inch BusinessBuild & scale with the complete Web3 API suitePrecision DeFi technology for every function, from token swaps to RPC nodes. Integrate  Questions? Answers.  What is DeFi?  DeFi (decentralized finance) is an infrastructure of financial services based on blockchain technology that lets people trade, lend, borrow and earn interest directly, without banks or intermediaries.  What is a DeFi exchange?  A DeFi exchange is a decentralized platform that enables users to trade cryptocurrencies directly with each other using smart contracts, without intermediaries like banks or centralized exchanges. It gives traders full control over their funds and enables peer-to-peer transactions on the blockchain.  Is 1inch a DeFi exchange?  1inch Swap began as a DEX aggregator, combining liquidity across multiple exchanges to find users the best swap rates.  Now, it’s a lot more - with intent-based swaps and cross-chain functionality built on atomic execution to keep assets safe.  But it’s still built on the principle of uniting liquidity from across the ecosystem to make crypto swaps more efficient and return better token prices.  What is a DEX aggregator?  A DEX aggregator helps users swap tokens by combining liquidity from several decentralized exchanges to secure better prices. The advanced DEX aggregator accessed through 1inch’s Pro interface can split a single trade across different platforms and market depth to reduce slippage and access better pricing. Explore better swap rates in the 1inch dApp or Wallet.  How are DEX aggregators better than DEXes?  A DEX aggregator searches multiple DEXes to find the best token prices, lowest fees, and most efficient routes for your swap. This saves you time and money compared to using a single DEX.  How can I swap tokens on 1inch?  To order a token swap on 1inch, go to the 1inch dApp or 1inch Wallet, choose the token you want to swap and the token you want to receive, select the network(s) and mode, then hit the Swap button. For more details, visit the Help Center.  Show more  Stop guessing. Take control. Products Swap  Wallet  Portfolio  Card  Aqua Company About  Press room  Security  Blog  Careers Need help? Documentation  Help Center  Talk to us  Suggest a feature 1inch Network Staking  Delegation  Governance Get the latest updates Subscribe  By subscribing, you agree to receive 1inch updates and marketing emails. You can unsubscribe anytime.    Privacy Policy.  Terms of Use  Privacy Policy Built by Degensoft We use cookies to help us give you the best experience on our website. Privacy Policy I agree  Decline 
+    Please enable JavaScript to continue using this application.
+    
+      // Completes and removes the boot progress bar once the app bootstraps, handing visual
+      // feedback over to the Router-driven NavigationProgressService bar.
+      (function () {
+        // Hard ceiling: if the app never bootstraps (fatal load failure), give up after this so the
+        // poll doesn't run forever and the bar isn't left stuck near 90%. Comfortably above a slow
+        // connection's real bootstrap time and the 15s bootstrap guard below.
+        const GIVE_UP_MS = 60000;
+
+        const bar = document.getElementById('boot-progress');
+        if (!bar) return;
+        const fill = bar.firstElementChild;
+
+        const remove = function () {
+          bar.remove();
+        };
+
+        const finish = function () {
+          fill.style.animation = 'none';
+          fill.style.transition = 'transform 200ms ease-out';
+          fill.style.transform = 'scaleX(1)';
+          bar.style.transition = 'opacity 300ms ease-out 150ms';
+          bar.style.opacity = '0';
+          setTimeout(remove, 600);
+        };
+
+        const start = Date.now();
+        (function tick() {
+          if (window.__APP_BOOTSTRAPPED__) return finish();
+          if (Date.now() - start >= GIVE_UP_MS) return remove();
+          setTimeout(tick, 100);
+        })();
+      })();
+    
+    
+      // Bootstrap & chunk guard: detects fatal app load failures and chunk loading errors,
+      // reports to Sentry via raw Envelope API (no SDK needed).
+      // DSN placeholder is replaced at build time by inject-version.js.
+      (() => {
+        const SENTRY_DSN = 'https://33ea35a1a6657f7d0be71100299c1d95@o4506234207928320.ingest.us.sentry.io/4509950035230720';
+        const BOOTSTRAP_TIMEOUT_MS = 15000;
+        const MAX_CHUNK_REPORTS = 5;
+        let bootstrapTimeoutSent = false;
+        let chunkReportCount = 0;
+
+        if (SENTRY_DSN.indexOf('PLACEHOLDER') !== -1) return;
+        if (!/(^|\.)1inch\.com$/.test(location.hostname)) return;
+
+        const parseDsn = (dsn) => {
+          try {
+            const m = dsn.match(/^https?:\/\/([^@]+)@([^/]+)\/(.+)$/);
+            if (!m) return null;
+            return { publicKey: m[1], host: m[2], projectId: m[3] };
+          } catch (e) {
+            return null;
+          }
+        };
+
+        const parsedDsn = parseDsn(SENTRY_DSN);
+        if (!parsedDsn) return;
+
+        const sentryUrl =
+          'https://' +
+          parsedDsn.host +
+          '/api/' +
+          parsedDsn.projectId +
+          '/envelope/?sentry_key=' +
+          parsedDsn.publicKey +
+          '&sentry_version=7';
+
+        const uuid = () =>
+          'xxxxxxxxxxxx4xxxyxxxxxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+            const r = (Math.random() * 16) | 0;
+            return (c === 'x' ? r : (r & 0x3) | 0x8).toString(16);
+          });
+
+        const getAppVersion = () =>
+          document.querySelector('meta[name="app-version"]')?.getAttribute('content') || 'unknown';
+
+        const sendEvent = (message, level, logger, extraTags, stackTrace) => {
+          try {
+            const eventId = uuid();
+            const tags = { source: logger, 'app.version': getAppVersion() };
+            if (extraTags) {
+              for (const k in extraTags) tags[k] = extraTags[k];
+            }
+
+            const eventData = {
+              event_id: eventId,
+              timestamp: Date.now() / 1000,
+              platform: 'javascript',
+              level,
+              logger,
+              message: { formatted: message },
+              tags,
+              request: {
+                url: location.href,
+                headers: { 'User-Agent': navigator.userAgent },
+              },
+            };
+
+            if (stackTrace) {
+              eventData.extra = { stack_trace: stackTrace.substring(0, 500) };
+            }
+
+            const envelope =
+              JSON.stringify({
+                event_id: eventId,
+                dsn: SENTRY_DSN,
+                sent_at: new Date().toISOString(),
+              }) +
+              '\n' +
+              JSON.stringify({ type: 'event', content_type: 'application/json' }) +
+              '\n' +
+              JSON.stringify(eventData) +
+              '\n';
+
+            fetch(sentryUrl, {
+              method: 'POST',
+              body: envelope,
+              headers: { 'Content-Type': 'text/plain;charset=UTF-8' },
+              mode: 'cors',
+              credentials: 'omit',
+              keepalive: true,
+            }).catch(() => {});
+          } catch (e) {
+            // fail silently
+          }
+        };
+
+        const hasReloaded = () => {
+          try {
+            return sessionStorage.getItem('1inch:reloaded') === '1';
+          } catch (e) {
+            return false;
+          }
+        };
+        const markReloaded = () => {
+          try {
+            sessionStorage.setItem('1inch:reloaded', '1');
+          } catch (e) {}
+        };
+        const clearReloaded = () => {
+          try {
+            sessionStorage.removeItem('1inch:reloaded');
+          } catch (e) {}
+        };
+
+        const sendBootstrapTimeout = () => {
+          if (bootstrapTimeoutSent) return;
+          bootstrapTimeoutSent = true;
+          sendEvent('App failed to bootstrap within ' + BOOTSTRAP_TIMEOUT_MS / 1000 + 's', 'fatal', 'bootstrap-guard');
+        };
+
+        // Called from main.ts catch block
+        window.__sendBootstrapError = (message) => {
+          if (bootstrapTimeoutSent) return;
+          bootstrapTimeoutSent = true;
+          sendEvent(message, 'fatal', 'bootstrap-guard');
+        };
+
+        window.addEventListener('load', () => {
+          setTimeout(() => {
+            if (window.__APP_BOOTSTRAPPED__) {
+              clearReloaded();
+            } else {
+              sendBootstrapTimeout();
+            }
+          }, BOOTSTRAP_TIMEOUT_MS);
+        });
+
+        // --- Chunk/script load guard (independent, fires per failed script, capped) ---
+
+        const sendChunkError = (src, stackTrace) => {
+          if (chunkReportCount >= MAX_CHUNK_REPORTS) return;
+
+          if (window.__reloadPending) return;
+
+          if (hasReloaded()) {
+            chunkReportCount++;
+            sendEvent(
+              'Script load failed (after reload): ' + src,
+              'error',
+              'chunk-guard',
+              { 'chunk.src': src },
+              stackTrace,
+            );
+            return;
+          }
+
+          markReloaded();
+          window.location.reload(true);
+        };
+
+        window.__sendChunkError = sendChunkError;
+        // Capture-phase error listener catches <script> load failures directly —
+        // no message guessing needed, the event target IS the failed script element.
+        const CHUNK_ERROR_REGEXP =
+          /chunk|\.js|dynamically imported module|Importing a module script failed|Failed to fetch|NetworkError/i;
+        window.addEventListener(
+          'error',
+          (event) => {
+            const reason = event.error?.message || event.message;
+            const msg = String(reason);
+            const isChunkLike = CHUNK_ERROR_REGEXP.test(msg);
+            if (isChunkLike) {
+              sendChunkError(msg, reason?.stack);
+              return;
+            }
+            const target = event.target;
+            if (!target || (target.tagName !== 'SCRIPT' && target.tagName !== 'LINK')) return;
+            sendChunkError(target.src || 'unknown');
+          },
+          true,
+        );
+      })();
+    
+    
+      (() => {
+        if (typeof window.ng === 'object') {
+          return;
+        }
+        window.initIntercom = (intercomSettings) => {
+          window.intercomSettings = Object.assign(intercomSettings, {
+            app_id: 'zgn72x6y',
+          });
+
+          return new Promise((resolve) => {
+            (() => {
+              const w = window;
+              const ic = w.Intercom;
+              if (typeof ic === 'function') {
+                ic('reattach_activator');
+                ic('update', w.intercomSettings);
+              } else {
+                const d = document;
+                const i = (...args) => {
+                  i.q.push(args);
+                };
+                i.q = [];
+                w.Intercom = i;
+                const s = d.createElement('script');
+                s.type = 'text/javascript';
+                s.async = true;
+                s.src = 'https://widget.intercom.io/widget/zgn72x6y';
+                s.onload = () => resolve();
+                const x = d.getElementsByTagName('script')[0];
+                x.parentNode.insertBefore(s, x);
+              }
+            })();
+          });
+        };
+      })();
+    
+    
+      // Access version information from meta tags
+      (() => {
+        const VERSION_CHECK_INTERVAL_MS = 60000; // 1 minute
+        const HARD_RELOAD_DELAY_MS = 3000; // 3 seconds
+        const FETCH_TIMEOUT_MS = 5000; // 5 seconds
+
+        const log = (message) => console.debug('[1inch]', message);
+
+        // Returns: Array of 3 numbers [major, minor, patch] or null if invalid
+        const parseVersion = (v) => {
+          if (!v || typeof v !== 'string') return null;
+          const parts = v.split('.').map((p) => parseInt(p, 10));
+          if (parts.length !== 3 || parts.some(isNaN)) return null;
+          return parts;
+        };
+
+        // Returns: -1 if a < b, 1 if a > b, 0 if a === b
+        const compareVersionParts = (a, b) => {
+          for (let i = 0; i < 3; i++) {
+            if (a[i] < b[i]) return -1;
+            if (a[i] > b[i]) return 1;
+          }
+          return 0;
+        };
+
+        // Returns: {status: 'Update required'|'Up to date'|'Unable to compare'|'Comparison failed', color: string}
+        const compareVersions = (current, minHard) => {
+          try {
+            const currentVersionNumbers = parseVersion(current);
+            const minHardVersionNumbers = parseVersion(minHard);
+
+            if (!currentVersionNumbers || !minHardVersionNumbers) {
+              return { status: 'Unable to compare', color: 'color: #9ca3af' };
+            }
+
+            if (compareVersionParts(currentVersionNumbers, minHardVersionNumbers) < 0) {
+              return { status: 'Update required', color: 'color: #ef4444; font-weight: bold' };
+            }
+
+            return { status: 'Up to date', color: 'color: #10b981; font-weight: bold' };
+          } catch (e) {
+            return { status: 'Comparison failed', color: 'color: #9ca3af' };
+          }
+        };
+
+        const hardReload = (currentVersion, targetVersion) => {
+          log('Reloading in 3 seconds to update from ' + currentVersion + ' → ' + targetVersion);
+          window.__reloadPending = true;
+          try {
+            sessionStorage.setItem('1inch:reloaded', '1');
+          } catch (e) {}
+          setTimeout(() => {
+            window.location.reload(true);
+          }, HARD_RELOAD_DELAY_MS);
+        };
+
+        const checkRemoteVersion = (currentVersion) => {
+          try {
+            const versionCheckUrl = 'https://frontend-config.1inch.com/1inch-com-version.json';
+
+            // Exit if placeholder not replaced
+            if (versionCheckUrl.includes('PLACEHOLDER')) {
+              return;
+            }
+
+            const xhr = new XMLHttpRequest();
+            xhr.open('GET', versionCheckUrl, true);
+            xhr.setRequestHeader('Accept', 'application/json');
+            xhr.timeout = FETCH_TIMEOUT_MS;
+
+            xhr.onload = () => {
+              if (xhr.status !== 200) return;
+
+              const contentType = xhr.getResponseHeader('content-type');
+              if (!contentType || contentType.indexOf('application/json') === -1) return;
+
+              let data;
+              try {
+                data = JSON.parse(xhr.responseText);
+              } catch (e) {
+                return;
+              }
+
+              if (!data || typeof data !== 'object') return;
+
+              // Cache for Angular SoftUpdateService to reuse
+              window.__oneInchVersionData = { data: data, timestamp: Date.now() };
+
+              if (typeof data.minHardUpdateVersion !== 'string') return;
+
+              const comparison = compareVersions(currentVersion, data.minHardUpdateVersion);
+
+              if (comparison.status === 'Update required') {
+                log('Version Check: ' + currentVersion + ' → ' + data.minHardUpdateVersion + ' [Update required]');
+                hardReload(currentVersion, data.minHardUpdateVersion);
+              }
+            };
+
+            // Timeout, network error, abort — all fail silently
+            xhr.onerror = xhr.ontimeout = () => {};
+
+            xhr.send();
+          } catch (e) {
+            // Any unexpected error - fail silently
+          }
+        };
+
+        const getEnvironment = () => {
+          // Check meta tag first (set by inject-version.js at build time)
+          const metaEnv = document.querySelector('meta[name="environment"]')?.getAttribute('content');
+          if (metaEnv && !metaEnv.includes('PLACEHOLDER')) {
+            return metaEnv;
+          }
+          return null;
+        };
+
+        const checkIfHardRefreshRequired = () => {
+          const environment = getEnvironment();
+          const appVersion = document.querySelector('meta[name="app-version"]')?.getAttribute('content');
+          const buildTimestamp = document.querySelector('meta[name="build-timestamp"]')?.getAttribute('content');
+
+          // Skip version check in preview environment
+          if (environment === 'preview') {
+            return;
+          }
+
+          // Exit if placeholders not replaced
+          if (
+            !appVersion ||
+            !buildTimestamp ||
+            appVersion.includes('PLACEHOLDER') ||
+            buildTimestamp.includes('PLACEHOLDER')
+          ) {
+            return;
+          }
+
+          log('Version: ' + appVersion + ' (' + buildTimestamp + ')');
+          checkRemoteVersion(appVersion);
+
+          setInterval(() => {
+            checkRemoteVersion(appVersion);
+          }, VERSION_CHECK_INTERVAL_MS);
+        };
+
+        // Wait for DOM to be ready
+        if (document.readyState === 'loading') {
+          document.addEventListener('DOMContentLoaded', checkIfHardRefreshRequired);
+        } else {
+          checkIfHardRefreshRequired();
+        }
+      })();
+    
+    
+  
+
+{"2872860335":{"b":{"total":{"swaps":"263.8M","users":"27.6M","volume":"808.5B"}},"h":{},"s":200,"st":"OK","u":"https:\u002F\u002Ffrontend-config.1inch.com\u002Fmain-config.json","rt":"json"},"i18n:active-locale":"en-US","i18n:dict:en-US":{"seo.title.\u002F":"1inch | Swap Crypto Tokens at the Best Rates in DeFi","seo.description.\u002F":"Swap crypto & tokens at the best rates across 13+ chains. The 1inch swap aggregator is your gateway to secure and efficient DeFi.","landing-swap-start-screen-text":"Swap crypto tokens","landing-swap-start-screen-animation-1-text":"at the best rates","landing.get-started":"Get started","landing-swap-photo-block-image-alt":"Crypto token swap interface on 1inch","landing-swap-start-screen-animation-frame-1-title":"Cross-chain swaps","landing-swap-start-screen-animation-frame-1-text":"Move assets between 13+ networks, without bridging.","landing-swap-price-block-title_1":"Get the best rates","landing-swap-price-block-title_2":"on crypto token swaps","landing.swap":"Swap","landing-swap-networks-block":"Swap tokens across \n13+ chains - without bridging","landing-swap-stats-block-title":"1inch powers DeFi","landing-swap-stats-block-text":"From the first DEX aggregator to intent-based cross-chain swaps - 1inch is building the future of finance.","landing-swap-stats-block-label-volume":"Swap volume","landing-swap-stats-block-label-swaps":"Total swaps","landing-swap-stats-block-label-wallets":"Wallets connected","landing-swap-security-block-title":"Bulletproof DeFi security","landing-swap-security-block-text":"Protect your crypto against front-running, sandwich attacks and asset loss with MEV protection, wallet screening & more.","landing-swap-security-block-button-1":"Risk management","landing-swap-security-block-button-2":"Scam protection","landing-swap-security-block-button-3":"Brand abuse takedowns","landing-swap-security-block-button-1-text":"Wallet scanning, risk scoring and blocklists keep you safe from bad actors.","landing.security.learn-more":"Learn more","landing-swap-security-zeroshadow-alt":"ZeroShadow logo","landing-swap-security-trm-alt":"TRM Labs logo","landing-ecosystem-block-title_1":"One ecosystem","landing-ecosystem-block-title_2":"for everything you do with crypto","landing-swap-ecosystem-block-wallet-label":"1inch Wallet","landing-swap-ecosystem-block-wallet-title":"Run crypto from your pocket","landing-swap-ecosystem-block-wallet-text":"Secure, swap & track tokens in one DeFi wallet app.","landing-swap-ecosystem-block-wallet-button":"Get Wallet","landing-swap-ecosystem-block-portfolio-label":"1inch Portfolio","landing-swap-ecosystem-block-portfolio-title":"Track your crypto portfolio","landing-swap-ecosystem-block-portfolio-text":"Manage your digital assets, analyze PnL & liquidity protocols, and discover DeFi staking.","landing-swap-ecosystem-block-portfolio-button":"Explore","landing-swap-ecosystem-block-card-label":"1inch Card","landing-swap-ecosystem-block-card-title":"Pay with crypto, every day","landing-swap-ecosystem-block-card-text":"Spend tokens with Apple Pay & Google Pay, borrow against digital assets and get crypto cashback.","landing-swap-ecosystem-block-card-button":"Get your card","landing-swap-ecosystem-block-devportal-label":"1inch Business","landing-swap-ecosystem-block-devportal-title":"Build & scale with the complete Web3 API suite","landing-swap-ecosystem-block-devportal-text":"Precision DeFi technology for every function, from token swaps to RPC nodes.","landing.integrate":"Integrate","landing-faq-title":"Questions? Answers.","landing-swap-faq-question-1":"What is DeFi?","landing-swap-faq-answer-1":"DeFi (decentralized finance) is an infrastructure of financial services based on blockchain technology that lets people trade, lend, borrow and earn interest directly, without banks or intermediaries.","landing-swap-faq-question-2":"What is a DeFi exchange?","landing-swap-faq-answer-2":"A DeFi exchange is a decentralized platform that enables users to trade cryptocurrencies directly with each other using smart contracts, without intermediaries like banks or centralized exchanges. It gives traders full control over their funds and enables peer-to-peer transactions on the blockchain.","landing-swap-faq-question-3":"Is 1inch a DeFi exchange?","landing-swap-faq-answer-3":"1inch Swap began as a DEX aggregator, combining liquidity across multiple exchanges to find users the best swap rates.  Now, it’s a lot more - with intent-based swaps and cross-chain functionality built on atomic execution to keep assets safe.  But it’s still built on the principle of uniting liquidity from across the ecosystem to make crypto swaps more efficient and return better token prices.","landing-swap-faq-question-4":"What is a DEX aggregator?","landing-swap-faq-answer-4":"A DEX aggregator helps users swap tokens by combining liquidity from several decentralized exchanges to secure better prices. The advanced DEX aggregator accessed through 1inch’s Pro interface can split a single trade across different platforms and market depth to reduce slippage and access better pricing. Explore better swap rates in the 1inch dApp or Wallet.","landing-swap-faq-question-5":"How are DEX aggregators better than DEXes?","landing-swap-faq-answer-5":"A DEX aggregator searches multiple DEXes to find the best token prices, lowest fees, and most efficient routes for your swap. This saves you time and money compared to using a single DEX.","landing-swap-faq-question-6":"How can I swap tokens on 1inch?","landing-swap-faq-answer-6":"To order a token swap on 1inch, go to the 1inch dApp or 1inch Wallet, choose the token you want to swap and the token you want to receive, select the network(s) and mode, then hit the Swap button. For more details, visit the Help Center.","landing-faq-show-more":"Show more","landing.swap.big-button-text":"Stop guessing. Take control.","footer.subscribe.title":"Get the latest updates","footer.subscribe.button":"Subscribe","footer.subscribe.agreement":"By subscribing, you agree to receive 1inch updates and marketing emails. You can unsubscribe anytime.","common.privacy-policy":"Privacy Policy.","footer.links.terms-of-use":"Terms of Use","footer.links.privacy-policy":"Privacy Policy","navigation.products":"Products","navigation.swap":"Swap","navigation.wallet":"Wallet","navigation.portfolio":"Portfolio","navigation.card":"Card","navigation.aqua":"Aqua","navigation.company":"Company","navigation.about":"About","navigation.press-room":"Press room","navigation.security":"Security","navigation.blog":"Blog","navigation.careers":"Careers","navigation.need-help":"Need help?","navigation.documentation":"Documentation","navigation.help-center":"Help Center","navigation.talk-to-us":"Talk to us","navigation.suggest-feature":"Suggest a feature","navigation.1inch-network":"1inch Network","navigation.staking":"Staking","navigation.delegation":"Delegation","navigation.governance":"Governance","navigation.personal":"Personal","common.go-to":"Go to...","navigation.apps":"App","navigation.trade":"Trade","navigation.limit":"Limit","navigation.market":"Market","navigation.terminal":"Terminal","navigation.business":"Business","common.connect-wallet":"Connect wallet"},"__nghData__":[{"t":{"2":"t0"},"c":{"2":[]}},{},{"n":{"1":"hfn"},"t":{"1":"t3","2":"t4","3":"t14","5":"t6"},"c":{"1":[],"2":[{"i":"t4","r":1,"t":{"2":"t5"},"c":{"2":[{"i":"t6","r":11,"t":{"1":"t7"},"c":{"1":[{"i":"t7","r":5,"t":{"0":"t8","1":"t12"},"c":{"0":[{"i":"t8","r":3,"t":{"0":"t9","1":"t10"},"c":{"0":[],"1":[{"i":"t10","r":1,"t":{"3":"t11"},"c":{"3":[{"i":"t11","r":1}]}}]}}],"1":[]}},{"i":"t7","r":5,"t":{"0":"t8","1":"t12"},"c":{"0":[{"i":"t8","r":3,"t":{"0":"t9","1":"t10"},"c":{"0":[{"i":"t9","r":1,"t":{"3":"t13"},"c":{"3":[]}}],"1":[]}}],"1":[]}}]}}]}}],"3":[],"5":[]}},{"n":{"1":"hfn"},"t":{"1":"t3","2":"t4","3":"t14","5":"t6"},"c":{"1":[],"2":[{"i":"t4","r":1,"t":{"2":"t5"},"c":{"2":[{"i":"t6","r":11,"t":{"1":"t7"},"c":{"1":[{"i":"t7","r":5,"t":{"0":"t8","1":"t12"},"c":{"0":[{"i":"t8","r":3,"t":{"0":"t9","1":"t10"},"c":{"0":[],"1":[{"i":"t10","r":1,"t":{"3":"t11"},"c":{"3":[]}}]}}],"1":[]},"x":2}]}}]}}],"3":[],"5":[]}},{"t":{"0":"t19"},"c":{"0":[]}},{"t":{"0":"t21","2":"t22"},"c":{"0":[],"2":[{"i":"t22","r":1,"n":{"1":"0f"}}]}},{"t":{"0":"t19"},"c":{"0":[{"i":"t19","r":4,"t":{"0":"t20","1":"t23"},"c":{"0":[{"i":"t20","r":2,"c":{"0":[{"i":"c1328588071","r":1}]}}],"1":[]}}]}},{"t":{"0":"t24"},"c":{"0":[]}},{"t":{"1":"t25"},"c":{"1":[]}},{"n":{"9":"8f","27":"26f"},"t":{"16":"t15","34":"t26"},"c":{"16":[{"i":"t15","r":3,"t":{"0":"t16","1":"t17"},"c":{"0":[],"1":[{"i":"t17","r":1,"t":{"3":"t18"},"c":{"3":[]}}]}},{"i":"t15","r":3,"t":{"0":"t16","1":"t17"},"c":{"0":[{"i":"t16","r":1,"n":{"1":"0f"}}],"1":[]}},{"i":"t15","r":3,"t":{"0":"t16","1":"t17"},"c":{"0":[],"1":[{"i":"t17","r":1,"t":{"3":"t18"},"c":{"3":[]}}]},"x":2}],"34":[{"i":"t26","r":3,"t":{"0":"t27","1":"t28"},"c":{"0":[],"1":[{"i":"t28","r":1,"t":{"4":"t29"},"c":{"4":[]}}]}},{"i":"t26","r":3,"t":{"0":"t27","1":"t28"},"c":{"0":[{"i":"t27","r":1,"t":{"5":"t30"},"c":{"5":[{"i":"t30","r":1,"x":2}]}}],"1":[]}},{"i":"t26","r":3,"t":{"0":"t27","1":"t28"},"c":{"0":[],"1":[{"i":"t28","r":1,"t":{"4":"t29"},"c":{"4":[]}}]},"x":2}]}},{"n":{"2":"hfn3"},"t":{"2":"t31"},"c":{"2":[]}},{"t":{"0":"t33","2":"t34"},"c":{"0":[{"i":"t33","r":1}],"2":[{"i":"t34","r":1}]}},{"t":{"0":"t37"},"c":{"0":[]}},{"n":{"4":"hf"},"t":{"5":"t36","6":"t38","7":"t39"},"c":{"5":[{"i":"t36","r":1}],"6":[],"7":[{"i":"t39","r":1}]}},{"t":{"1":"t40"},"c":{"1":[{"i":"t40","r":1,"x":3}]}},{"n":{"1":"hf"},"t":{"9":"t32","12":"t35"},"c":{"9":[{"i":"t32","r":1}],"12":[{"i":"t35","r":1}]}},{"n":{"3":"1fn"}},{"n":{"2":"0fn"},"t":{"2":"t42"},"c":{"2":[{"i":"t42","r":1}]}},{"n":{"1":"0f3","11":"0f3nf2"},"t":{"13":"t41"},"c":{"13":[{"i":"t41","r":2,"n":{"1":"0f2","14":"0f2nf"},"t":{"12":"t43","13":"t44"},"c":{"12":[],"13":[{"i":"t44","r":1}]},"x":8}]}},{"t":{"7":"t45"},"c":{"7":[{"i":"t45","r":1,"x":13}]}},{"t":{"2":"t46"},"c":{"2":[]}},{"n":{"3":"1fn2"}},{"n":{"1":"hf"},"t":{"1":"t47","2":"t57","4":"t65","6":"t50","8":"t51","10":"t52","12":"t59"},"c":{"1":[{"i":"t47","r":1,"t":{"1":"t48","2":"t49"},"c":{"1":[],"2":[{"i":"t49","r":4,"c":{"3":[{"i":"t50","r":2}],"7":[{"i":"t51","r":7,"c":{"0":[{"i":"t52","r":4,"t":{"2":"t53","4":"t54","6":"t55"},"c":{"2":[{"i":"t53","r":1,"n":{"1":"0f"},"x":3}],"4":[{"i":"t54","r":1}],"6":[]},"n":{"4":"hf2n2fnfn","6":"hf2n2fnfn3"}}],"1":[{"i":"t56","r":1}]},"t":{"1":"t56"}}],"9":[{"i":"t57","r":1,"t":{"2":"t58"},"c":{"2":[{"i":"t58","r":2,"c":{"0":[{"i":"t59","r":1,"t":{"1":"t60","2":"t61","3":"t64"},"c":{"1":[],"2":[{"i":"t61","r":1,"t":{"1":"t62","2":"t63"},"c":{"1":[],"2":[{"i":"t63","r":1}]}}],"3":[]}}]},"x":2}]}}],"11":[{"i":"t65","r":1,"n":{"2":"1f3","4":"1f3n2f2","6":"1f3n3"},"t":{"2":"t66","4":"t67","6":"t68"},"c":{"2":[{"i":"t66","r":1,"c":{"1":[{"i":"t51","r":7,"c":{"0":[{"i":"t52","r":4,"t":{"2":"t53","4":"t54","6":"t55"},"c":{"2":[{"i":"t53","r":1,"n":{"1":"0f"},"x":3}],"4":[{"i":"t54","r":1}],"6":[]},"n":{"4":"hf2n3f5n","6":"hf2n3f5n3"}}],"1":[{"i":"t56","r":1}]},"t":{"1":"t56"}}]}}],"4":[{"i":"t67","r":1,"c":{"1":[{"i":"t59","r":1,"t":{"1":"t60","2":"t61","3":"t64"},"c":{"1":[],"2":[{"i":"t61","r":1,"t":{"1":"t62","2":"t63"},"c":{"1":[],"2":[{"i":"t63","r":1}]}}],"3":[]}}]},"x":2}],"6":[]}}]}}]}}],"2":[],"4":[],"6":[],"8":[],"10":[],"12":[]}},{"n":{"2":"0fn"},"t":{"2":"t42"},"c":{"2":[]}},{"n":{"1":"0f3","9":"0f3nf2"},"t":{"7":"t69","11":"t70"},"c":{"7":[{"i":"t69","r":1,"x":2}],"11":[{"i":"t70","r":2,"n":{"1":"0f2"},"t":{"3":"t71","4":"t72","5":"t73","6":"t74"},"c":{"3":[{"i":"t71","r":1}],"4":[{"i":"t72","r":1}],"5":[{"i":"t73","r":1}],"6":[{"i":"t74","r":3,"t":{"0":"t75","1":"t76"},"c":{"0":[],"1":[{"i":"t76","r":1,"n":{"2":"0f"}}]}}]},"x":3},{"i":"t70","r":2,"n":{"1":"0f2"},"t":{"3":"t71","4":"t72","5":"t73","6":"t74"},"c":{"3":[{"i":"t71","r":1}],"4":[{"i":"t72","r":1}],"5":[{"i":"t73","r":1}],"6":[{"i":"t74","r":3,"t":{"0":"t75","1":"t76"},"c":{"0":[{"i":"t75","r":1,"n":{"3":"2f"}}],"1":[]}}]}}]}},{"t":{"2":"t77","5":"t78","6":"t82"},"c":{"2":[{"i":"t77","r":2}],"5":[{"i":"t78","r":1,"t":{"9":"t79"},"c":{"9":[{"i":"t79","r":3,"t":{"0":"t80","1":"t81"},"c":{"0":[],"1":[{"i":"t81","r":1}]}}]},"x":6}],"6":[{"i":"t82","r":1}]}},{"t":{"5":"t83","6":"t84"},"c":{"5":[],"6":[{"i":"t84","r":1}]}},{"n":{"2":"1f2nf3","3":"2f","8":"1f2nf2n2","9":"8f","10":"9f","14":"13f2n3f2n","15":"14f","22":"20f2n2f"}},{"t":{"7":"t85","11":"t88","28":"t92","40":"t93"},"c":{"7":[{"i":"t85","r":3,"t":{"0":"t86","1":"t87"},"c":{"0":[{"i":"t86","r":1}],"1":[]},"x":3},{"i":"t85","r":3,"t":{"0":"t86","1":"t87"},"c":{"0":[],"1":[{"i":"t87","r":1}]}},{"i":"t85","r":3,"t":{"0":"t86","1":"t87"},"c":{"0":[{"i":"t86","r":1}],"1":[]},"x":3}],"11":[{"i":"t88","r":1,"t":{"10":"t89"},"c":{"10":[{"i":"t89","r":1,"t":{"1":"t90","2":"t91"},"c":{"1":[],"2":[{"i":"t91","r":1}]},"x":5}]},"x":2},{"i":"t88","r":1,"t":{"10":"t89"},"c":{"10":[{"i":"t89","r":1,"t":{"1":"t90","2":"t91"},"c":{"1":[{"i":"t90","r":1}],"2":[]},"x":2},{"i":"t89","r":1,"t":{"1":"t90","2":"t91"},"c":{"1":[],"2":[{"i":"t91","r":1}]}},{"i":"t89","r":1,"t":{"1":"t90","2":"t91"},"c":{"1":[{"i":"t90","r":1}],"2":[]}}]}},{"i":"t88","r":1,"t":{"10":"t89"},"c":{"10":[{"i":"t89","r":1,"t":{"1":"t90","2":"t91"},"c":{"1":[{"i":"t90","r":1}],"2":[]},"x":3}]}}],"28":[{"i":"t92","r":1,"x":7}],"40":[]}},{"c":{"1":[{"i":"c1814121191","r":1}]}},{"t":{"3":"t1","4":"t2","8":"t94","10":"t95","12":"t96","13":"t97","15":"t98","16":"t99","17":"t100"},"c":{"3":[],"4":[],"7":[{"i":"c1033084001","r":1}],"8":[],"10":[],"12":[],"13":[],"15":[],"16":[],"17":[]},"n":{"7":"6f"}},{"c":{"0":[{"i":"c1126941643","r":1}]}}]}
+  
+  
+
+  
+  
+  
+
+  
+
+  
+
+  
+
+  
+
+  
+  
+  
+
+  
+  
+  
+  
+
+  
+(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a198b13b68c2edc5',t:'MTc4Mzc4MjE3OQ=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();

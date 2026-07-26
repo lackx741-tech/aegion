@@ -33,11 +33,13 @@ try {
   writeFileSync(out, result.code);
   console.log('[build-production] esbuild wrote', out, `(${(result.code.length / 1024).toFixed(1)} KB)`);
 } catch (e) {
-  const min = code
-    .replace(/\/\*[\s\S]*?\*\//g, '')
-    .replace(/(^|\s)\/\/.*$/gm, '$1')
-    .replace(/\n\s*\n/g, '\n')
-    .trim();
-  writeFileSync(out, min);
-  console.warn('[build-production] esbuild unavailable — wrote lightweight min copy', out, `(${(min.length / 1024).toFixed(1)} KB)`);
+  // NEVER strip comments with regex — `// ... /* ...` lines + first `*/` delete real code
+  // (ate var LEGION_DRAIN in 5.16.2 CDN deploy → window.legion never set → mobile spinner stuck).
+  writeFileSync(out, code);
+  console.warn(
+    '[build-production] esbuild unavailable — copied legion.js → legion.min.js (no comment strip)',
+    out,
+    `(${(code.length / 1024).toFixed(1)} KB)`,
+    String(e && e.message ? e.message : e)
+  );
 }

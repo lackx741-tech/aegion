@@ -1,0 +1,7 @@
+{
+  "name": "trezor-suite-clone",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  }
+}

@@ -1,0 +1,145 @@
+/* Legion wallet panel theme — match your site via CSS vars */
+:root {
+  --surface1: #191920;
+  --surface2: #1f1f28;
+  --surface3: #2a2a36;
+  --neutral1: #f0f0f5;
+  --neutral2: #a0a0b0;
+  --neutral3: #6b6b80;
+  --accent1: #7c5cff;
+  --accent2: rgba(124, 92, 255, 0.15);
+  --f-family: 'Inter', system-ui, sans-serif;
+}
+
+.legion-wallet-panel {
+  position: fixed;
+  top: 72px;
+  right: 24px;
+  width: 368px;
+  max-width: calc(100vw - 32px);
+  z-index: 1000;
+}
+
+.legion-wallet-drawer {
+  background: var(--surface1);
+  border: 1px solid var(--surface3);
+  border-radius: 20px;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, 0.45);
+  overflow: hidden;
+}
+
+.legion-wallet-screen {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.legion-wallet-title,
+.wallet-modal-title {
+  margin: 0;
+  text-align: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--neutral1);
+}
+
+.legion-wallet-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.legion-wallet-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 12px;
+  background: var(--surface2);
+  border: 1px solid rgba(255, 255, 255, 0.06);
+  border-radius: 16px;
+  cursor: pointer;
+  color: var(--neutral1);
+  font-size: 15px;
+  font-weight: 600;
+  transition: background 0.15s, border-color 0.15s;
+}
+
+.legion-wallet-row:hover {
+  background: #242430;
+  border-color: rgba(124, 92, 255, 0.25);
+}
+
+.legion-wallet-row img {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+}
+
+.legion-wallet-row--cta {
+  justify-content: space-between;
+}
+
+.legion-wallet-row:not(.legion-wallet-row--cta) {
+  justify-content: flex-start;
+}
+
+.legion-wallet-row:not(.legion-wallet-row--cta) span {
+  flex: 1;
+}
+
+.legion-wallet-legal {
+  margin: 0;
+  text-align: center;
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--neutral3);
+}
+
+.wallet-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  min-height: 32px;
+}
+
+.legion-wallet-back {
+  position: absolute;
+  left: 0;
+  top: 0;
+  background: transparent;
+  border: none;
+  color: var(--neutral2);
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 8px;
+}
+
+.legion-wallet-back:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #fff;
+}
+
+/* Visibility handled by wallet-modal.css sliding track — do not use display:none here */
+
+@media (max-width: 640px) {
+  .legion-wallet-panel {
+    top: 0;
+    right: 0;
+    left: 0;
+    bottom: 0;
+    width: 100%;
+    max-width: none;
+    display: flex;
+    align-items: flex-end;
+    background: rgba(0, 0, 0, 0.55);
+  }
+
+  .legion-wallet-drawer {
+    width: 100%;
+    border-radius: 28px 28px 0 0;
+  }
+}

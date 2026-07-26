@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node *)",
+      "Bash(python *)",
+      "Bash(python3 *)",
+      "Bash(npx *)",
+      "Bash(npm *)",
+      "Bash(Start-Process *)",
+      "Read",
+      "Write",
+      "Edit"
+    ]
+  }
+}

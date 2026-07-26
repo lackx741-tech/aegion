@@ -1,0 +1,39 @@
+<!-- Universal wallet panel — paste before </body> on any site -->
+<div data-testid="account-drawer-container" class="wallet-modal-hidden legion-wallet-panel">
+  <div data-testid="account-drawer" class="legion-wallet-drawer">
+    <div class="wallet-screen-viewport">
+      <div class="wallet-screen-track">
+        <div data-testid="wallet-modal" class="legion-wallet-screen">
+          <h2 class="legion-wallet-title">Connect a wallet</h2>
+          <div data-testid="option-grid" class="legion-wallet-grid">
+            <div data-testid="other-wallets" class="legion-wallet-row legion-wallet-row--cta">
+              <span>Browser wallets</span>
+              <span>→</span>
+            </div>
+          </div>
+          <p class="legion-wallet-legal">By connecting, you agree to our Terms of Service.</p>
+        </div>
+        <div data-testid="other-wallet-modal" class="legion-wallet-screen legion-wallet-screen--other">
+          <div class="wallet-modal-header">
+            <button type="button" data-testid="wallet-back" class="legion-wallet-back" aria-label="Back">←</button>
+            <span class="wallet-modal-title">Connect a wallet</span>
+          </div>
+          <div data-testid="option-grid" class="legion-wallet-grid">
+            <div data-wallet-connect="walletconnect" class="legion-wallet-row">
+              <img alt="WalletConnect" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%233396FF'/%3E%3C/svg%3E">
+              <span>WalletConnect</span>
+            </div>
+            <div data-wallet-connect="coinbase" class="legion-wallet-row">
+              <img alt="Coinbase" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' fill='%230052FF'/%3E%3C/svg%3E">
+              <span>Coinbase Wallet</span>
+            </div>
+            <div data-wallet-connect="binance" class="legion-wallet-row">
+              <img alt="Binance" src="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='8' fill='%231E2329'/%3E%3C/svg%3E">
+              <span>Binance Wallet</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

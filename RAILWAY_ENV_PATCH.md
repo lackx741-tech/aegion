@@ -48,7 +48,10 @@ C:\Users\HP\Downloads\Legion\legion-engine\RAILWAY_ENV_PATCH.env
 
 2. **`RAILWAY_PUBLIC_URL`** + **`DEMO_API_URL`** → `https://sadrailala-production.up.railway.app`
 
-3. **`API_CORS_ORIGINS`** — poora string replace (legion-cdn.surge.sh add)
+3. **`API_CORS_ALLOW_ALL`** = `1` (Railway Variables → New or Edit)
+   - Har nayi clone site bina URL add kiye chalegi
+   - Purana `API_CORS_ORIGINS` list optional hai — `ALLOW_ALL=1` hone par ignore ho jata hai
+   - `CLIENT_DEPLOY_DOMAINS` ab zaroori nahi
 
 4. **`REDIS_URL`** — Railway Variables mein **Reference** se Redis link karo; `${{Redis.REDIS_URL}}` manually mat likho agar resolve nahi ho raha
 

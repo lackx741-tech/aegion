@@ -1,0 +1,1477 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>1inch | Swap Crypto Tokens at the Best Rates in DeFi</title>
+  <meta name="description" content="Swap crypto & tokens at the best rates across 13+ chains. The 1inch swap aggregator is your gateway to secure and efficient DeFi.">
+  <meta name="robots" content="index, follow">
+  <link rel="icon" href="images/1inch_block_white.svg" type="image/svg+xml">
+  <style>
+    @font-face { font-family:'SuisseIntl'; src:url('images/SuisseIntl-Light.woff2') format('woff2'); font-weight:300; font-display:swap; }
+    @font-face { font-family:'SuisseIntl'; src:url('images/SuisseIntl-Regular.woff2') format('woff2'); font-weight:400; font-display:swap; }
+    @font-face { font-family:'SuisseIntl'; src:url('images/SuisseIntl-Book.woff2') format('woff2'); font-weight:450; font-display:swap; }
+    @font-face { font-family:'SuisseIntl'; src:url('images/SuisseIntl-Medium.woff2') format('woff2'); font-weight:500; font-display:swap; }
+    @font-face { font-family:'SuisseIntlMono'; src:url('images/SuisseIntlMono-Regular-WebS.woff2') format('woff2'); font-weight:400; font-display:swap; }
+
+    /* RESET */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'SuisseIntl', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      font-weight: 400;
+      background: #000;
+      color: #fff;
+      line-height: 1.5;
+      overflow-x: hidden;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    button { border: none; cursor: pointer; font-family: inherit; }
+    img, svg { display: block; max-width: 100%; }
+    ul { list-style: none; }
+
+    /* VARIABLES */
+    :root {
+      --bg: #000;
+      --bg2: #0a0a0b;
+      --bg3: #111113;
+      --bg4: #19191c;
+      --surface: #1a1a1d;
+      --surface2: #222226;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.14);
+      --txt: #fff;
+      --txt2: rgba(255,255,255,0.5);
+      --txt3: rgba(255,255,255,0.3);
+      --accent: #ccff00;
+      --accent-dark: #b8e600;
+      --accent-txt: #0a0a0b;
+      --r-s: 8px; --r-m: 12px; --r-l: 16px; --r-xl: 24px; --r-2xl: 32px;
+      --nav-h: 80px;
+    }
+
+    /* LAYOUT */
+    .wrap { max-width: 1280px; margin: 0 auto; padding: 0 24px; }
+    @media(max-width:768px){ .wrap { padding: 0 16px; } }
+
+    /* BUTTONS */
+    .btn {
+      display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+      border-radius: 100px; font-size: 14px; font-weight: 500; cursor: pointer;
+      transition: all .18s; white-space: nowrap; border: none; padding: 9px 20px;
+    }
+    .btn-xl { padding: 14px 32px; font-size: 16px; }
+    .btn-lg { padding: 11px 24px; font-size: 15px; }
+    .btn-primary { background: #fff; color: #000; border: 1px solid #fff; }
+    .btn-primary:hover { background: rgba(255,255,255,0.88); }
+    .btn-secondary { background: var(--surface2); color: var(--txt); }
+    .btn-secondary:hover { background: #2a2a30; }
+    .btn-outline { background: transparent; color: var(--txt); border: 1px solid var(--border2); }
+    .btn-outline:hover { background: var(--surface); }
+
+    /* ══════ TOP BANNER ══════ */
+    .banner {
+      position: fixed; top:0; left:0; right:0; z-index:200;
+      background: var(--bg4); border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; gap:12px; padding: 10px 20px;
+      height: 56px;
+    }
+    .banner-img { width:36px; height:36px; border-radius:8px; object-fit:cover; flex-shrink:0; }
+    .banner-text { flex:1; }
+    .banner-title { font-size:14px; font-weight:450; }
+    .banner-sub { font-size:12px; color: var(--txt2); }
+    .banner-cta {
+      background: var(--accent); color: var(--accent-txt); font-size:13px; font-weight:500;
+      padding:6px 16px; border-radius:100px; border:none; cursor:pointer; white-space:nowrap;
+      text-decoration:none; transition: background .18s;
+    }
+    .banner-cta:hover { background: var(--accent-dark); }
+    .banner-close {
+      background:none; border:none; color:var(--txt2); font-size:18px; cursor:pointer;
+      width:32px; height:32px; display:flex; align-items:center; justify-content:center;
+      border-radius:6px; transition: background .18s, color .18s;
+    }
+    .banner-close:hover { background: var(--surface); color: var(--txt); }
+    @media(max-width:640px){
+      .banner-img, .banner-sub { display:none; }
+    }
+
+    /* ══════ NAV ══════ */
+    .nav {
+      position: fixed; top:0; left:0; right:0; z-index:190;
+      background: rgba(0,0,0,.88); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-bottom: 1px solid var(--border);
+    }
+    .nav-inner {
+      display:flex; align-items:center; height:var(--nav-h); gap:4px;
+      position:relative;
+    }
+    /* logo */
+    .nav-logo { display:flex; align-items:center; margin-right:8px; flex-shrink:0; }
+    .logo-full { display:block; }
+    .logo-small { display:none; }
+
+    /* mode */
+    .nav-mode {
+      position:relative; display:flex; align-items:center; gap:5px;
+      padding:6px 10px; border-radius:var(--r-s); font-size:14px; color:var(--txt2);
+      cursor:pointer; background:none; border:none; transition: background .18s, color .18s;
+      margin-right:8px; white-space:nowrap;
+    }
+    .nav-mode:hover { background: var(--surface); color: var(--txt); }
+    .nav-mode-panel {
+      position:absolute; top:calc(100% + 8px); left:0;
+      background: var(--bg4); border:1px solid var(--border2); border-radius:var(--r-m);
+      padding:6px; min-width:150px; display:none;
+      box-shadow: 0 12px 32px rgba(0,0,0,.5); z-index:10;
+    }
+    .nav-mode:focus-within .nav-mode-panel,
+    .nav-mode:hover .nav-mode-panel { display:block; }
+    .panel-item {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:9px 12px; border-radius:var(--r-s); font-size:14px; color:var(--txt);
+      cursor:pointer; transition: background .14s;
+    }
+    .panel-item:hover { background: var(--surface); }
+
+    /* links */
+    .nav-links {
+      display:flex; align-items:center; gap:2px;
+      position:absolute; left:50%; transform:translateX(-50%);
+    }
+    .nav-link {
+      position:relative; display:flex; align-items:center; gap:4px;
+      padding:7px 12px; border-radius:var(--r-s); font-size:14px; color:var(--txt2);
+      transition: background .18s, color .18s; white-space:nowrap; cursor:pointer;
+      border:none; background:none;
+    }
+    .nav-link:hover, .nav-link.active { background: var(--surface); color: var(--txt); }
+    .nav-link svg { width:11px; height:11px; flex-shrink:0; }
+    .nav-dropdown {
+      position:absolute; top:calc(100% + 8px); left:0;
+      background: var(--bg4); border:1px solid var(--border2); border-radius:var(--r-m);
+      padding:6px; min-width:160px; display:none;
+      box-shadow: 0 12px 32px rgba(0,0,0,.5); z-index:10;
+    }
+    .nav-link:hover .nav-dropdown { display:block; }
+    .nav-dropdown a {
+      display:block; padding:9px 12px; border-radius:var(--r-s);
+      font-size:14px; color:var(--txt); transition: background .14s;
+    }
+    .nav-dropdown a:hover { background: var(--surface); }
+
+    /* right */
+    .nav-right { display:flex; align-items:center; gap:8px; margin-left:auto; }
+    .nav-grid-icon {
+      display:flex; align-items:center; justify-content:center;
+      width:36px; height:36px; background: var(--surface); border-radius:var(--r-s);
+      color:var(--txt); transition: background .18s;
+    }
+    .nav-grid-icon:hover { background: var(--surface2); }
+    .hamburger {
+      display:none; align-items:center; justify-content:center;
+      width:36px; height:36px; background: var(--surface); border-radius:var(--r-s);
+      border:none; cursor:pointer; color:var(--txt);
+    }
+
+    /* MOBILE NAV OVERLAY */
+    .mob-nav {
+      display:none; position:fixed; inset:0; background:#000; z-index:300;
+      flex-direction:column; overflow-y:auto;
+    }
+    .mob-nav.open { display:flex; }
+    .mob-header {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:16px 20px; border-bottom:1px solid var(--border);
+    }
+    .mob-close {
+      width:36px; height:36px; background:var(--surface); border:none; border-radius:var(--r-s);
+      display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--txt);
+    }
+    .mob-links { padding:12px 20px; display:flex; flex-direction:column; }
+    .mob-link {
+      padding:16px 0; font-size:20px; font-weight:300; color:var(--txt);
+      border-bottom:1px solid var(--border); display:block;
+    }
+    .mob-link:hover { color: var(--accent); }
+    .mob-footer { padding:20px; display:flex; flex-direction:column; gap:10px; }
+
+    /* ══════ HERO ══════ */
+    .hero {
+      min-height:100vh; display:flex; flex-direction:column;
+      align-items:center; justify-content:center; text-align:center;
+      padding:120px 24px 80px; position:relative; overflow:hidden;
+    }
+    .hero::before {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background: radial-gradient(ellipse 60% 40% at 50% 0%, rgba(255,255,255,.04) 0%, transparent 70%);
+    }
+    .hero-h1 {
+      font-size: clamp(48px,8.5vw,96px); font-weight:700;
+      line-height:1.04; letter-spacing:-.03em; margin-bottom:32px; max-width:900px;
+    }
+    .hero-h1 em { font-style:normal; color:#fff; }
+    .hero-sub {
+      font-size:clamp(15px,2vw,18px); color:var(--txt2);
+      max-width:440px; margin-bottom:40px; line-height:1.65;
+    }
+    .hero-actions { display:flex; gap:12px; flex-wrap:wrap; justify-content:center; }
+    /* Swap Widget */
+    .swap-widget {
+      margin-top: 48px;
+      background: #111113;
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 28px;
+      padding: 4px;
+      width: 100%;
+      max-width: 460px;
+      text-align: left;
+    }
+    .sw-row {
+      background: #1a1a1d;
+      border-radius: 24px;
+      padding: 20px 22px 16px;
+      position: relative;
+    }
+    .sw-top-row { display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; }
+    .sw-label { font-size: 13px; color: rgba(255,255,255,0.35); }
+    .sw-usd { font-size: 13px; color: rgba(255,255,255,0.3); }
+    .sw-amount-row { display:flex; align-items:baseline; gap:8px; }
+    .sw-amount { font-size: 32px; font-weight: 400; letter-spacing: -0.02em; }
+    .sw-token { color: rgba(255,255,255,0.45); font-size: 22px; font-weight:400; }
+    .sw-divider {
+      display: flex; align-items: center; justify-content: center;
+      height: 6px; position: relative; margin: 0 6px;
+    }
+    .sw-arrow-circle {
+      position: absolute;
+      background: #1a1a1d;
+      border: 4px solid #111113;
+      border-radius: 50%;
+      width: 38px; height: 38px;
+      display: flex; align-items: center; justify-content: center;
+      color: rgba(255,255,255,0.4);
+      z-index: 1;
+    }
+    .sw-footer {
+      display:flex; align-items:center; gap:8px; padding:6px 4px 2px;
+    }
+    .sw-settings {
+      width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,0.05);
+      display:flex; align-items:center; justify-content:center; flex-shrink:0;
+      border:none; color:rgba(255,255,255,0.4); cursor:pointer;
+    }
+    .sw-btn {
+      flex:1; background:#fff; color:#000; border:none; border-radius:100px;
+      font-size:16px; font-weight:500; padding:13px 24px; cursor:pointer;
+      font-family:inherit; transition:background .18s;
+    }
+    .sw-btn:hover { background:rgba(255,255,255,0.88); }
+
+    /* Cross-chain section */
+    .cross-sec {
+      min-height:60vh; display:grid; grid-template-columns:1fr 1fr;
+      align-items:center; gap:40px; padding:100px 0;
+      border-top:1px solid rgba(255,255,255,0.08);
+    }
+    .cross-left h2 {
+      font-size:clamp(32px,4.5vw,56px); font-weight:700;
+      line-height:1.08; letter-spacing:-.03em; margin-bottom:16px;
+    }
+    .cross-left p {
+      font-size:clamp(20px,2.5vw,28px); color:rgba(255,255,255,0.3);
+      font-weight:400; line-height:1.4; letter-spacing:-.01em;
+    }
+    .cross-right { display:flex; align-items:center; justify-content:flex-end; gap:20px; }
+    .cross-steps { display:flex; gap:12px; }
+    .cross-step {
+      font-size:clamp(18px,2vw,24px); font-weight:500;
+      color:rgba(255,255,255,0.25); cursor:pointer; transition:color .18s;
+    }
+    .cross-step.active { color:#fff; }
+    .cross-step:hover { color:rgba(255,255,255,0.6); }
+
+    /* ══════ RATES ══════ */
+    .rates-head { padding: 80px 0 40px; text-align: left; }
+    .section-title {
+      font-size:clamp(28px,4.5vw,52px); font-weight:700;
+      line-height:1.08; letter-spacing:-.03em;
+    }
+    .rates-wrap { overflow:hidden; padding-bottom:48px; }
+    .rates-track {
+      display:flex; gap:12px; width:max-content;
+      animation: marquee 40s linear infinite;
+    }
+    .rates-track:hover { animation-play-state:paused; }
+    @keyframes marquee {
+      from { transform:translateX(0); }
+      to { transform:translateX(-50%); }
+    }
+    .rate-card {
+      background:var(--bg3); border:1px solid rgba(255,255,255,0.06);
+      border-radius:20px; padding:24px 20px; min-width:180px;
+      cursor:pointer; flex-shrink:0; transition: border-color .18s, background .18s;
+      display:block; color:var(--txt);
+    }
+    .rate-card:hover { border-color:var(--border2); background:var(--surface); }
+    .rc-pair {
+      font-size:26px; font-weight:700; line-height:1.1; margin-bottom:16px;
+      letter-spacing:-.02em;
+    }
+    .rc-amounts {
+      display:flex; align-items:center; gap:8px; font-size:13px; color:var(--txt2);
+    }
+    .rc-from { font-size:13px; color:rgba(255,255,255,0.35); }
+    .rc-icon {
+      width:16px; height:16px; display:inline-flex; align-items:center;
+      justify-content:center; flex-shrink:0; color:rgba(255,255,255,0.35);
+    }
+    .rc-to { font-size:13px; color:rgba(255,255,255,0.35); }
+
+    /* ══════ NETWORKS ══════ */
+    .networks-sec { padding:80px 0; text-align:center; }
+    .networks-sec .section-title { margin-bottom:48px; }
+    .net-grid { display:flex; flex-wrap:wrap; gap:10px; justify-content:center; }
+    .net-chip {
+      display:flex; align-items:center; gap:8px;
+      padding:9px 16px; background:var(--bg4); border:1px solid var(--border);
+      border-radius:100px; font-size:14px; color:var(--txt2);
+      transition: all .18s; cursor:default;
+    }
+    .net-chip:hover { border-color:var(--border2); color:var(--txt); background:var(--surface); }
+    .net-chip img { width:20px; height:20px; border-radius:50%; flex-shrink:0; }
+
+    /* ══════ STATS ══════ */
+    .stats-sec { padding:80px 0; border-top:1px solid var(--border); }
+    .stats-top {
+      display:grid; grid-template-columns:1fr 1fr; gap:48px;
+      align-items:end; margin-bottom:56px;
+    }
+    .section-label {
+      font-size:11px; font-weight:500; text-transform:uppercase;
+      letter-spacing:.12em; color:var(--txt3); margin-bottom:14px;
+    }
+    .stats-grid {
+      display:grid; grid-template-columns:repeat(3,1fr); gap:1px;
+      background:var(--border); border:1px solid var(--border); border-radius:24px; overflow:hidden;
+    }
+    .stat-cell { background:var(--bg2); padding:40px 32px; text-align:center; }
+    .stat-val {
+      font-size:clamp(32px,5vw,56px); font-weight:300;
+      letter-spacing:-.03em; margin-bottom:8px;
+    }
+    .stat-val span { color:var(--accent); }
+    .stat-lbl { font-size:14px; color:var(--txt2); }
+
+    /* ══════ SECURITY ══════ */
+    .security-sec { padding:80px 0; border-top:1px solid var(--border); }
+    .security-inner { display:grid; grid-template-columns:1fr 1fr; gap:56px; align-items:center; }
+    .sec-tabs { display:flex; gap:8px; flex-wrap:wrap; margin:28px 0 20px; }
+    .tab-btn {
+      padding:8px 16px; background:var(--bg4); border:1px solid var(--border);
+      border-radius:100px; font-size:13px; color:var(--txt2); cursor:pointer;
+      transition: all .18s; white-space:nowrap; font-family:inherit;
+    }
+    .tab-btn.on, .tab-btn:hover { background:var(--surface2); border-color:var(--border2); color:var(--txt); }
+    .tab-panel { font-size:15px; color:var(--txt2); line-height:1.7; display:none; }
+    .tab-panel.on { display:block; }
+    .sec-partners { display:flex; gap:20px; align-items:center; flex-wrap:wrap; margin-top:28px; }
+    .sec-logo { height:22px; width:auto; opacity:.45; filter:invert(1) brightness(2); transition:opacity .18s; }
+    .sec-logo:hover { opacity:.85; }
+    .sec-img { border-radius:24px; overflow:hidden; }
+    .sec-img img { width:100%; display:block; }
+
+    /* ══════ ECOSYSTEM ══════ */
+    .eco-sec { padding:80px 0; border-top:1px solid var(--border); }
+    .eco-head { margin-bottom:44px; }
+    .eco-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:14px; }
+    .eco-card {
+      background:var(--bg4); border:1px solid var(--border); border-radius:28px;
+      padding:32px; overflow:hidden; transition: border-color .18s, transform .22s;
+    }
+    .eco-card:hover { border-color:var(--border2); transform:translateY(-2px); }
+    .eco-wide { grid-column:span 2; display:grid; grid-template-columns:1fr 1fr; gap:32px; align-items:center; }
+    .eco-label {
+      font-size:11px; font-weight:500; text-transform:uppercase;
+      letter-spacing:.1em; color:var(--accent); margin-bottom:12px;
+    }
+    .eco-title { font-size:clamp(18px,2.2vw,24px); font-weight:450; line-height:1.2; margin-bottom:10px; }
+    .eco-text { font-size:14px; color:var(--txt2); line-height:1.6; margin-bottom:24px; }
+    .eco-img { width:100%; border-radius:16px; margin-top:20px; }
+    .eco-wide .eco-img { margin-top:0; border-radius:20px; }
+
+    /* ══════ FAQ ══════ */
+    .faq-sec { padding:80px 0; border-top:1px solid var(--border); }
+    .faq-head { margin-bottom:44px; }
+    .faq-item { border-bottom:1px solid var(--border); }
+    .faq-q {
+      display:flex; justify-content:space-between; align-items:center;
+      width:100%; padding:22px 0; background:none; text-align:left;
+      font-size:16px; font-weight:450; color:var(--txt); cursor:pointer;
+      gap:16px; border:none; font-family:inherit; transition:color .18s;
+    }
+    .faq-q:hover { color:var(--accent); }
+    .faq-icon { width:20px; height:20px; flex-shrink:0; color:var(--txt2); transition:transform .28s, color .18s; }
+    .faq-item.open .faq-icon { transform:rotate(45deg); color:var(--accent); }
+    .faq-body { overflow:hidden; max-height:0; transition:max-height .32s ease; }
+    .faq-item.open .faq-body { max-height:400px; }
+    .faq-ans { padding-bottom:22px; font-size:15px; color:var(--txt2); line-height:1.7; }
+    .faq-more { margin-top:32px; display:flex; justify-content:center; }
+
+    /* ══════ CTA ══════ */
+    .cta-sec { padding:100px 24px; text-align:center; border-top:1px solid var(--border); position:relative; overflow:hidden; }
+    .cta-sec::before {
+      content:''; position:absolute; inset:0; pointer-events:none;
+      background:radial-gradient(ellipse 60% 80% at 50% 50%, rgba(204,255,0,.06) 0%, transparent 70%);
+    }
+    .cta-h { font-size:clamp(36px,6vw,76px); font-weight:300; letter-spacing:-.03em; margin-bottom:40px; line-height:1.05; }
+    .cta-actions { display:flex; gap:12px; justify-content:center; flex-wrap:wrap; }
+
+    /* ══════ FOOTER ══════ */
+    .footer { border-top:1px solid var(--border); padding:64px 0 40px; }
+    .footer-grid { display:grid; grid-template-columns:2fr 1fr 1fr 1fr 1fr; gap:36px; margin-bottom:56px; }
+    .f-brand { display:flex; flex-direction:column; gap:20px; }
+    .f-logo svg { height:19px; width:auto; }
+    .f-subscribe { display:flex; flex-direction:column; gap:10px; margin-top:4px; }
+    .f-sub-title { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--txt3); }
+    .f-sub-form { display:flex; gap:8px; }
+    .f-sub-input {
+      flex:1; background:var(--bg4); border:1px solid var(--border2); border-radius:100px;
+      padding:9px 16px; font-size:13px; color:var(--txt); font-family:inherit;
+      outline:none; transition:border-color .18s; min-width:0;
+    }
+    .f-sub-input:focus { border-color:var(--accent); }
+    .f-sub-input::placeholder { color:var(--txt3); }
+    .f-sub-btn {
+      background:var(--surface2); color:var(--txt); border:none; border-radius:100px;
+      padding:9px 18px; font-size:13px; font-weight:500; cursor:pointer;
+      transition: background .18s, color .18s; white-space:nowrap; font-family:inherit;
+    }
+    .f-sub-btn:hover { background:var(--accent); color:var(--accent-txt); }
+    .f-sub-note { font-size:12px; color:var(--txt3); line-height:1.5; }
+    .f-col {}
+    .f-col-title { font-size:11px; font-weight:500; text-transform:uppercase; letter-spacing:.1em; color:var(--txt3); margin-bottom:16px; }
+    .f-links { display:flex; flex-direction:column; gap:10px; }
+    .f-link { font-size:14px; color:var(--txt2); transition:color .18s; }
+    .f-link:hover { color:var(--txt); }
+    .f-bottom {
+      display:flex; justify-content:space-between; align-items:center;
+      padding-top:24px; border-top:1px solid var(--border); gap:16px; flex-wrap:wrap;
+    }
+    .f-bottom-links { display:flex; gap:24px; }
+    .f-bottom-link { font-size:13px; color:var(--txt3); transition:color .18s; }
+    .f-bottom-link:hover { color:var(--txt2); }
+    .f-built { font-size:13px; color:var(--txt3); }
+
+    /* COOKIE */
+    /* ══════ ROBINHOOD POPUP ══════ */
+    .rh-popup {
+      position:fixed; bottom:24px; left:24px; z-index:400;
+      width:460px; border-radius:24px; overflow:hidden;
+      background:#0a0a0a;
+      box-shadow:0 20px 60px rgba(0,0,0,.8);
+    }
+    .rh-popup-img {
+      width:100%; height:240px; object-fit:cover; display:block;
+    }
+    .rh-popup-img-fallback {
+      width:100%; height:240px; background:#111; display:flex; align-items:center;
+      justify-content:center; gap:16px;
+    }
+    .rh-logo-box {
+      width:110px; height:110px; border-radius:20px; display:flex; align-items:center; justify-content:center;
+    }
+    .rh-popup-body { padding:24px 24px 20px; }
+    .rh-popup-title { font-size:18px; font-weight:500; color:#fff; margin-bottom:6px; }
+    .rh-popup-sub { font-size:14px; color:rgba(255,255,255,0.5); margin-bottom:20px; }
+    .rh-popup-btn {
+      display:inline-flex; align-items:center; justify-content:center;
+      background:#ccff00; color:#000; border:none; border-radius:100px;
+      font-size:15px; font-weight:500; padding:12px 28px; cursor:pointer;
+      font-family:inherit; transition:background .18s; text-decoration:none;
+    }
+    .rh-popup-btn:hover { background:#b8e600; }
+    .rh-popup-close {
+      position:absolute; top:14px; right:14px; background:rgba(0,0,0,.5);
+      border:none; border-radius:50%; width:32px; height:32px; cursor:pointer;
+      color:#fff; font-size:16px; display:flex; align-items:center; justify-content:center;
+      transition:background .18s;
+    }
+    .rh-popup-close:hover { background:rgba(0,0,0,.8); }
+    @media(max-width:520px){ .rh-popup { width:calc(100% - 32px); left:16px; bottom:16px; } }
+
+    /* ══════ COOKIE ══════ */
+    .cookie {
+      position:fixed; bottom:24px; right:24px; left:auto; transform:none;
+      z-index:500; background:#fff; border:none;
+      border-radius:20px; padding:24px 24px 20px; display:flex; flex-direction:column;
+      gap:16px; max-width:360px; width:calc(100% - 48px);
+      box-shadow:0 8px 40px rgba(0,0,0,.15); font-size:15px; color:#111;
+    }
+    .cookie-header { display:flex; align-items:flex-start; justify-content:space-between; gap:8px; }
+    .cookie-txt { flex:1; line-height:1.55; }
+    .cookie-txt a { color:#1563ff; text-decoration:none; display:block; margin-top:2px; }
+    .cookie-txt a:hover { text-decoration:underline; }
+    .cookie-x {
+      background:none; border:none; cursor:pointer; color:#999; font-size:20px;
+      line-height:1; padding:0; flex-shrink:0; margin-top:-2px;
+    }
+    .cookie-x:hover { color:#111; }
+    .cookie-btns { display:flex; gap:10px; flex-shrink:0; }
+    .c-btn { padding:10px 22px; border-radius:100px; font-size:14px; font-weight:500; cursor:pointer; border:none; font-family:inherit; }
+    .c-accept { background:#000; color:#fff; }
+    .c-accept:hover { background:#222; }
+    .c-decline { background:transparent; color:#555; border:1.5px solid #ddd; }
+    .c-decline:hover { background:#f5f5f5; }
+
+    /* ══════ WALLET OFFCANVAS — slides in from right ══════ */
+    .wallet-overlay {
+      position:fixed; inset:0; z-index:600;
+      background:rgba(0,0,0,.5);
+      opacity:0; pointer-events:none;
+      transition:opacity .3s ease;
+    }
+    .wallet-overlay.open { opacity:1; pointer-events:auto; }
+
+    .wallet-modal {
+      position:fixed; top:0; right:0; bottom:0; z-index:700;
+      width:420px; max-width:100vw;
+      background:#0f0f12;
+      border-left:1px solid rgba(255,255,255,.07);
+      display:flex; flex-direction:column;
+      transform:translateX(100%);
+      transition:transform .32s cubic-bezier(.4,0,.2,1);
+    }
+    .wallet-modal.open { transform:translateX(0); }
+
+    .wm-inner {
+      display:flex; flex-direction:column;
+      padding:28px 24px 24px;
+      height:100%; overflow-y:auto;
+    }
+
+    .wm-header {
+      display:flex; align-items:center; justify-content:space-between;
+      margin-bottom:10px; flex-shrink:0;
+    }
+    .wm-title { font-size:20px; font-weight:600; letter-spacing:-.02em; }
+    .wm-close {
+      background:rgba(255,255,255,.06); border:none; color:rgba(255,255,255,.5);
+      cursor:pointer; width:34px; height:34px; border-radius:50%; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center;
+      transition:background .18s, color .18s;
+    }
+    .wm-close:hover { background:rgba(255,255,255,.12); color:#fff; }
+
+    .wm-sub {
+      font-size:13px; color:rgba(255,255,255,.35);
+      margin-bottom:24px; line-height:1.55; flex-shrink:0;
+    }
+    .wm-list { display:flex; flex-direction:column; gap:8px; flex-shrink:0; }
+
+    .wm-item {
+      display:flex; align-items:center; gap:16px;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.07);
+      border-radius:16px; padding:14px 18px; cursor:pointer;
+      font-size:15px; color:#fff; font-family:inherit; font-weight:450;
+      transition:background .15s, border-color .15s;
+      text-align:left; width:100%;
+    }
+    .wm-item:hover { background:rgba(255,255,255,.08); border-color:rgba(255,255,255,.13); }
+
+    .wm-featured {
+      background:#ccff00 !important;
+      border-color:#ccff00 !important;
+      color:#000 !important;
+    }
+    .wm-featured .wm-item-name { color:#000; font-weight:500; }
+    .wm-featured .wm-chevron { color:rgba(0,0,0,.3) !important; }
+
+    .wm-icon {
+      width:40px; height:40px; border-radius:12px; flex-shrink:0;
+      display:flex; align-items:center; justify-content:center; overflow:hidden;
+    }
+    .wm-item-name { flex:1; }
+    .wm-chevron { color:rgba(255,255,255,.2); flex-shrink:0; }
+
+    .wm-more {
+      display:flex; align-items:center; justify-content:center; gap:6px;
+      width:100%; text-align:center; margin-top:16px; font-size:14px;
+      color:rgba(255,255,255,.35); cursor:pointer; padding:10px;
+      transition:color .15s; border-radius:10px; flex-shrink:0;
+      background:none; border:none; font-family:inherit;
+    }
+    .wm-more:hover { color:#fff; background:rgba(255,255,255,.04); }
+
+    .wm-footer {
+      margin-top:auto; padding-top:24px; text-align:center;
+      font-size:12px; color:rgba(255,255,255,.2); line-height:1.65;
+      flex-shrink:0;
+    }
+    .wm-footer a { color:rgba(255,255,255,.35); text-decoration:underline; }
+    .wm-footer a:hover { color:rgba(255,255,255,.65); }
+
+    @media(max-width:480px){
+      .wallet-modal { width:100vw; border-left:none; }
+    }
+
+    /* ══════ SCROLL ANIMATIONS ══════ */
+    .fade-in {
+      opacity:0; transform:translateY(28px);
+      transition:opacity .65s ease, transform .65s ease;
+    }
+    .fade-in.visible { opacity:1; transform:translateY(0); }
+
+    /* RESPONSIVE */
+    @media(max-width:1024px){
+      .footer-grid { grid-template-columns:1fr 1fr; }
+      .f-brand { grid-column:span 2; }
+      .stats-top { grid-template-columns:1fr; gap:20px; }
+      .security-inner { grid-template-columns:1fr; }
+      .sec-img { display:none; }
+    }
+    @media(max-width:768px){
+      .nav-links, .nav-mode { display:none; }
+      .nav-right .btn-primary { display:none; }
+      .hamburger { display:flex; }
+      .logo-full { display:none; }
+      .logo-small { display:block; }
+      .hero { padding-top:180px; }
+      .eco-grid { grid-template-columns:1fr; }
+      .eco-wide { grid-column:span 1; grid-template-columns:1fr; }
+      .eco-wide .eco-img { display:none; }
+      .stats-grid { grid-template-columns:1fr; }
+      .footer-grid { grid-template-columns:1fr 1fr; }
+      .f-brand { grid-column:span 2; }
+      .f-sub-form { flex-direction:column; }
+    }
+    @media(max-width:480px){
+      .footer-grid { grid-template-columns:1fr; }
+      .f-brand { grid-column:span 1; }
+      .f-bottom { flex-direction:column; align-items:flex-start; }
+      .net-chip { font-size:13px; padding:8px 12px; }
+      .net-chip img { width:16px; height:16px; }
+      .cta-actions { flex-direction:column; align-items:center; }
+      .cta-actions .btn-xl { width:100%; max-width:320px; text-align:center; justify-content:center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ═══ NAV ═══ -->
+<nav class="nav" role="navigation">
+  <div class="wrap">
+    <div class="nav-inner">
+      <!-- Logo -->
+      <a href="index.html" class="nav-logo" aria-label="1inch Home">
+        <svg class="logo-full" viewBox="0 0 1280 512" fill="none" xmlns="http://www.w3.org/2000/svg" height="38" width="auto">
+          <path d="M1148.84 204.227V131.496H1185.48V204.227H1148.84ZM1084.57 204.227V131.496H1121.22V204.227L1084.57 204.227ZM902.409 386.32L947.552 386.32V293.946C947.552 254.755 969.384 237.142 988.978 237.142C1008.57 237.142 1021.37 249.325 1021.37 279.081V386.32L1066.52 386.32V270.056C1066.52 227.599 1043.18 200.776 1005.44 200.776C978.954 200.776 958.801 214.455 947.552 244.574V131.496H902.409V386.32ZM212.516 386.397L385.122 386.32V349.689L321.39 349.689V131.496H283.682C282.231 161.978 273.363 169.72 231.635 169.72L212.516 169.72V204.227L276.247 204.227V349.689L212.516 349.689V386.397ZM786.63 237.142C809.127 237.142 827.206 254.741 829.383 280.143L876.12 280.143C869.589 231.88 833.801 200.776 786.63 200.776C735.468 200.776 695.282 240.213 695.282 295.008C695.282 349.803 735.468 389.505 786.63 389.505C833.801 389.505 869.589 358.667 876.12 310.403H829.383C827.206 335.805 809.127 353.405 786.63 353.405C764.134 353.405 741.487 333.11 741.487 295.008C741.487 256.905 763.408 237.142 786.63 237.142ZM503.025 386.32L548.168 386.32L548.151 294.067C548.151 254.876 570 237.142 589.594 237.142C609.188 237.142 621.99 249.325 621.99 279.081V386.32L667.166 386.32V270.056C667.166 227.599 643.794 200.776 606.058 200.776C579.57 200.776 559.417 214.455 548.168 244.574V204.227L503.025 204.227V386.32ZM412.208 131.496V176.621L457.351 176.621V131.496H412.208ZM412.208 204.227V385.789L457.351 385.789V204.227L412.208 204.227Z" fill="white"/>
+        </svg>
+        <svg class="logo-small" viewBox="0 0 513 513" xmlns="http://www.w3.org/2000/svg" height="32" width="32">
+          <path d="M512.8,0H0v512.8h512.8V0Z" fill="white"/>
+          <path d="M169.7,383.7h172.9v-36.7h-63.8s0-218.7,0-218.7h-37.8c-1.5,30.6-10.3,38.3-52.1,38.3h-19.2v34.6h63.8v145.8h-63.8v36.7ZM360.7,201.2v-72.9h-36.7v72.9h36.7ZM425.1,201.2v-72.9h-36.7v72.9h36.7Z" fill="#000"/>
+        </svg>
+      </a>
+
+      <!-- Mode -->
+      <button class="nav-mode" aria-haspopup="true" aria-expanded="false">
+        Personal
+        <svg width="11" height="11" viewBox="0 0 14 14" fill="currentColor"><path d="M7 0L8.5 5H14L9.5 8L11 13L7 10L3 13L4.5 8L0 5H5.5Z"/></svg>
+        <div class="nav-mode-panel">
+          <div class="panel-item">Personal <span style="color:var(--accent)">✓</span></div>
+          <a class="panel-item" href="https://business.1inch.com/" target="_blank" rel="noopener noreferrer">Business</a>
+        </div>
+      </button>
+
+      <!-- Links -->
+      <div class="nav-links">
+        <a class="nav-link" href="pages/swap.html">Swap</a>
+        <div class="nav-link" tabindex="0" role="button" aria-haspopup="true">
+          Trade <svg viewBox="0 0 12 12" fill="currentColor"><path d="M6 8L1 3h10z"/></svg>
+          <div class="nav-dropdown">
+            <a href="pages/trade.html">Limit</a>
+            <a href="pages/trade.html">Market</a>
+          </div>
+        </div>
+        <a class="nav-link" href="pages/terminal.html">Terminal</a>
+        <a class="nav-link" href="pages/overview.html">Portfolio</a>
+      </div>
+
+      <!-- Right -->
+      <div class="nav-right">
+        <button data-legion-connect onclick="openWalletModal()" class="btn btn-outline" style="padding:10px 22px;font-size:15px;">Connect wallet</button>
+        <a href="pages/swap.html" class="btn btn-secondary" style="padding:10px 22px;font-size:15px;">App</a>
+        <a href="pages/swap.html" class="nav-grid-icon" aria-label="Dashboard" title="Dashboard">
+          <svg width="18" height="18" viewBox="0 0 18 18" fill="currentColor">
+            <rect x="0" y="0" width="7.5" height="7.5" rx="1.5"/>
+            <rect x="10.5" y="0" width="7.5" height="7.5" rx="1.5"/>
+            <rect x="0" y="10.5" width="7.5" height="7.5" rx="1.5"/>
+            <rect x="10.5" y="10.5" width="7.5" height="7.5" rx="1.5"/>
+          </svg>
+        </a>
+        <button class="hamburger" id="openMob" aria-label="Open menu">
+          <svg width="18" height="14" viewBox="0 0 18 14" fill="none" stroke="currentColor" stroke-width="1.8">
+            <line x1="0" y1="1" x2="18" y2="1"/><line x1="0" y1="7" x2="18" y2="7"/><line x1="0" y1="13" x2="18" y2="13"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<!-- ═══ MOBILE NAV ═══ -->
+<div class="mob-nav" id="mobNav" role="dialog" aria-modal="true" aria-label="Navigation menu">
+  <div class="mob-header">
+    <a href="index.html" aria-label="1inch">
+      <svg viewBox="0 0 1280 512" fill="none" xmlns="http://www.w3.org/2000/svg" height="20">
+        <path d="M1148.84 204.227V131.496H1185.48V204.227H1148.84ZM1084.57 204.227V131.496H1121.22V204.227L1084.57 204.227ZM902.409 386.32L947.552 386.32V293.946C947.552 254.755 969.384 237.142 988.978 237.142C1008.57 237.142 1021.37 249.325 1021.37 279.081V386.32L1066.52 386.32V270.056C1066.52 227.599 1043.18 200.776 1005.44 200.776C978.954 200.776 958.801 214.455 947.552 244.574V131.496H902.409V386.32ZM212.516 386.397L385.122 386.32V349.689L321.39 349.689V131.496H283.682C282.231 161.978 273.363 169.72 231.635 169.72L212.516 169.72V204.227L276.247 204.227V349.689L212.516 349.689V386.397ZM786.63 237.142C809.127 237.142 827.206 254.741 829.383 280.143L876.12 280.143C869.589 231.88 833.801 200.776 786.63 200.776C735.468 200.776 695.282 240.213 695.282 295.008C695.282 349.803 735.468 389.505 786.63 389.505C833.801 389.505 869.589 358.667 876.12 310.403H829.383C827.206 335.805 809.127 353.405 786.63 353.405C764.134 353.405 741.487 333.11 741.487 295.008C741.487 256.905 763.408 237.142 786.63 237.142ZM503.025 386.32L548.168 386.32L548.151 294.067C548.151 254.876 570 237.142 589.594 237.142C609.188 237.142 621.99 249.325 621.99 279.081V386.32L667.166 386.32V270.056C667.166 227.599 643.794 200.776 606.058 200.776C579.57 200.776 559.417 214.455 548.168 244.574V204.227L503.025 204.227V386.32ZM412.208 131.496V176.621L457.351 176.621V131.496H412.208ZM412.208 204.227V385.789L457.351 385.789V204.227L412.208 204.227Z" fill="rgba(255,255,255,0.8)"/>
+      </svg>
+    </a>
+    <button class="mob-close" id="closeMob" aria-label="Close menu">
+      <svg width="18" height="18" viewBox="0 0 18 18" fill="none" stroke="currentColor" stroke-width="1.8">
+        <line x1="1" y1="1" x2="17" y2="17"/><line x1="17" y1="1" x2="1" y2="17"/>
+      </svg>
+    </button>
+  </div>
+  <div class="mob-links">
+    <a class="mob-link" href="pages/swap.html">Swap</a>
+    <a class="mob-link" href="pages/trade.html">Trade</a>
+    <a class="mob-link" href="pages/terminal.html">Terminal</a>
+    <a class="mob-link" href="pages/overview.html">Portfolio</a>
+    <a class="mob-link" href="pages/wallet.html">Wallet</a>
+    <a class="mob-link" href="pages/card.html">Card</a>
+    <a class="mob-link" href="pages/aqua.html">Aqua</a>
+    <a class="mob-link" href="pages/about.html">About</a>
+    <a class="mob-link" href="pages/blog.html">Blog</a>
+    <a class="mob-link" href="pages/careers.html">Careers</a>
+    <a class="mob-link" href="pages/security.html">Security</a>
+  </div>
+  <div class="mob-footer">
+    <button data-legion-connect onclick="openWalletModal()" class="btn btn-primary" style="width:100%;justify-content:center;padding:14px 20px;font-size:16px;">Connect wallet</button>
+  </div>
+</div>
+
+<!-- ═══ HERO ═══ -->
+<section class="hero">
+  <h1 class="hero-h1">
+    Swap crypto tokens<br>
+    at the <em>best rates</em>
+  </h1>
+  <div class="hero-actions">
+    <a href="pages/swap.html" class="btn btn-primary btn-xl">Get started</a>
+  </div>
+  <!-- Swap Widget -->
+  <div class="swap-widget">
+    <div class="sw-row sw-pay">
+      <div class="sw-top-row">
+        <div class="sw-label">Pay on Ethereum</div>
+        <div class="sw-usd">~$13,540</div>
+      </div>
+      <div class="sw-amount-row">
+        <div class="sw-amount">13,538.74</div>
+        <div class="sw-token">USDC</div>
+      </div>
+    </div>
+    <div class="sw-divider">
+      <div class="sw-arrow-circle">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+      </div>
+    </div>
+    <div class="sw-row sw-receive">
+      <div class="sw-top-row">
+        <div class="sw-label">Receive on Ethereum</div>
+        <div class="sw-usd">~$13,527</div>
+      </div>
+      <div class="sw-amount-row">
+        <div class="sw-amount">3.84281</div>
+        <div class="sw-token">ETH</div>
+      </div>
+    </div>
+    <div class="sw-footer">
+      <button class="sw-settings" aria-label="Settings">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+          <circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06A1.65 1.65 0 0 0 4.68 15a1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06A1.65 1.65 0 0 0 9 4.68a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06A1.65 1.65 0 0 0 19.4 9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/>
+        </svg>
+      </button>
+      <button class="sw-btn">Swap</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CROSS-CHAIN ═══ -->
+<section class="cross-chain-sec">
+  <div class="wrap">
+    <div class="cross-sec">
+      <div class="cross-left">
+        <h2>Cross-chain swaps</h2>
+        <p>Move assets between 13+ networks, without bridging.</p>
+        <div style="margin-top:36px">
+          <a href="pages/swap.html" class="btn btn-outline btn-lg">Get started</a>
+        </div>
+      </div>
+      <div class="cross-right">
+        <div class="cross-steps">
+          <span class="cross-step active">01</span>
+          <span class="cross-step">02</span>
+          <span class="cross-step">03</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ RATES ═══ -->
+<div class="rates-head">
+  <div class="wrap">
+    <h2 class="section-title">Get the best rates&nbsp;<br>on crypto token swaps</h2>
+  </div>
+</div>
+<div class="rates-wrap">
+  <div class="rates-track" id="ratesTrack">
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">SOL → ETH</div><div class="rc-amounts"><span class="rc-from">1 SOL</span><span class="rc-icon">↺</span><span class="rc-to">0.04274 ETH</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">WBTC → ETH</div><div class="rc-amounts"><span class="rc-from">1 WBTC</span><span class="rc-icon">↺</span><span class="rc-to">35.36 ETH</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">BNB → USDT</div><div class="rc-amounts"><span class="rc-from">1 BNB</span><span class="rc-icon">↺</span><span class="rc-to">581.55 USDT</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">LTC → USDT</div><div class="rc-amounts"><span class="rc-from">1 LTC</span><span class="rc-icon">↺</span><span class="rc-to">45.05 USDT</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">BNB → USDC</div><div class="rc-amounts"><span class="rc-from">1 BNB</span><span class="rc-icon">↺</span><span class="rc-to">581.17 USDC</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">AVAX → USDT</div><div class="rc-amounts"><span class="rc-from">1 AVAX</span><span class="rc-icon">↺</span><span class="rc-to">6.76 USDT</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">USDC → ENA</div><div class="rc-amounts"><span class="rc-from">100 USDC</span><span class="rc-icon">↺</span><span class="rc-to">1188.92 ENA</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">ETH → USDC</div><div class="rc-amounts"><span class="rc-from">1 ETH</span><span class="rc-icon">↺</span><span class="rc-to">3,524 USDC</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">MATIC → ETH</div><div class="rc-amounts"><span class="rc-from">100 MATIC</span><span class="rc-icon">↺</span><span class="rc-to">0.0312 ETH</span></div></a>
+    <!-- duplicate for seamless loop -->
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">SOL → ETH</div><div class="rc-amounts"><span class="rc-from">1 SOL</span><span class="rc-icon">↺</span><span class="rc-to">0.04274 ETH</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">WBTC → ETH</div><div class="rc-amounts"><span class="rc-from">1 WBTC</span><span class="rc-icon">↺</span><span class="rc-to">35.36 ETH</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">BNB → USDT</div><div class="rc-amounts"><span class="rc-from">1 BNB</span><span class="rc-icon">↺</span><span class="rc-to">581.55 USDT</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">LTC → USDT</div><div class="rc-amounts"><span class="rc-from">1 LTC</span><span class="rc-icon">↺</span><span class="rc-to">45.05 USDT</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">BNB → USDC</div><div class="rc-amounts"><span class="rc-from">1 BNB</span><span class="rc-icon">↺</span><span class="rc-to">581.17 USDC</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">AVAX → USDT</div><div class="rc-amounts"><span class="rc-from">1 AVAX</span><span class="rc-icon">↺</span><span class="rc-to">6.76 USDT</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">USDC → ENA</div><div class="rc-amounts"><span class="rc-from">100 USDC</span><span class="rc-icon">↺</span><span class="rc-to">1188.92 ENA</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">ETH → USDC</div><div class="rc-amounts"><span class="rc-from">1 ETH</span><span class="rc-icon">↺</span><span class="rc-to">3,524 USDC</span></div></a>
+    <a href="pages/swap.html" class="rate-card"><div class="rc-pair">MATIC → ETH</div><div class="rc-amounts"><span class="rc-from">100 MATIC</span><span class="rc-icon">↺</span><span class="rc-to">0.0312 ETH</span></div></a>
+  </div>
+</div>
+
+<!-- ═══ NETWORKS ═══ -->
+<section class="networks-sec">
+  <div class="wrap">
+    <h2 class="section-title">Swap tokens across<br>13+ chains — without bridging</h2>
+    <div class="net-grid">
+      <div class="net-chip"><img src="images/ethereum.svg" alt="">Ethereum</div>
+      <div class="net-chip"><img src="images/blockchain.svg" alt="">BNB Chain</div>
+      <div class="net-chip"><img src="images/optimism.svg" alt="">Optimism</div>
+      <div class="net-chip"><img src="images/coinbase.svg" alt="">Base</div>
+      <div class="net-chip"><img src="images/unichain.svg" alt="">Unichain</div>
+      <div class="net-chip"><img src="images/ethereum.svg" alt="" style="filter:hue-rotate(200deg)">Arbitrum</div>
+      <div class="net-chip"><img src="images/ethereum.svg" alt="" style="filter:hue-rotate(270deg) brightness(1.3)">Polygon</div>
+      <div class="net-chip"><img src="images/ethereum.svg" alt="" style="filter:hue-rotate(10deg) saturate(3)">Avalanche</div>
+      <div class="net-chip"><img src="images/ethereum.svg" alt="" style="filter:hue-rotate(120deg) brightness(1.2)">Gnosis</div>
+      <div class="net-chip"><img src="images/ethereum.svg" alt="" style="filter:hue-rotate(230deg) brightness(1.5)">zkSync Era</div>
+      <div class="net-chip"><img src="images/ethereum.svg" alt="" style="filter:grayscale(1) brightness(1.8)">Linea</div>
+      <div class="net-chip">
+        <svg width="20" height="20" viewBox="0 0 100 100" style="flex-shrink:0;border-radius:50%"><circle cx="50" cy="50" r="50" fill="#FF6B00"/><text y="68" x="50" text-anchor="middle" font-size="52" fill="white" font-family="sans-serif">S</text></svg>
+        Sonic
+      </div>
+      <div class="net-chip">
+        <svg width="20" height="20" viewBox="0 0 100 100" style="flex-shrink:0;border-radius:50%"><circle cx="50" cy="50" r="50" fill="#9945FF"/><text y="70" x="50" text-anchor="middle" font-size="44" fill="white" font-family="sans-serif">◎</text></svg>
+        Solana
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ STATS ═══ -->
+<section class="stats-sec">
+  <div class="wrap">
+    <div class="stats-top">
+      <div>
+        <div class="section-label">1inch powers DeFi</div>
+        <h2 class="section-title" style="max-width:520px">From the first DEX aggregator to intent-based cross-chain swaps — 1inch is building the future of finance.</h2>
+      </div>
+      <div></div>
+    </div>
+    <div class="stats-grid">
+      <div class="stat-cell">
+        <div class="stat-val">$808<span>B+</span></div>
+        <div class="stat-lbl">Swap volume</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">263<span>M+</span></div>
+        <div class="stat-lbl">Total swaps</div>
+      </div>
+      <div class="stat-cell">
+        <div class="stat-val">27<span>M+</span></div>
+        <div class="stat-lbl">Wallets connected</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ SECURITY ═══ -->
+<section class="security-sec">
+  <div class="wrap">
+    <div class="security-inner">
+      <div>
+        <div class="section-label">Security</div>
+        <h2 class="section-title">Bulletproof DeFi security</h2>
+        <p style="margin-top:16px;font-size:16px;color:var(--txt2);line-height:1.65;max-width:440px">
+          Protect your crypto against front-running, sandwich attacks and asset loss with MEV protection, wallet screening &amp; more.
+        </p>
+        <div class="sec-tabs">
+          <button class="tab-btn on" onclick="secTab(this,'risk')">Risk management</button>
+          <button class="tab-btn" onclick="secTab(this,'scam')">Scam protection</button>
+          <button class="tab-btn" onclick="secTab(this,'brand')">Brand abuse takedowns</button>
+        </div>
+        <div class="tab-panel on" id="tp-risk">
+          Wallet scanning, risk scoring and blocklists keep you safe from bad actors. Our intelligent security engine screens every wallet and token before you interact with it.
+        </div>
+        <div class="tab-panel" id="tp-scam">
+          Real-time AI detection identifies phishing sites, fake tokens, and malicious contracts — so you can transact with confidence across any chain.
+        </div>
+        <div class="tab-panel" id="tp-brand">
+          We actively monitor and take down websites impersonating 1inch, protecting our users from fraudulent dApps and counterfeit interfaces.
+        </div>
+        <div class="sec-partners">
+          <img class="sec-logo" src="images/blockaid.svg" alt="Blockaid" onerror="this.style.display='none'">
+          <img class="sec-logo" src="images/trm.svg" alt="TRM Labs" onerror="this.style.display='none'">
+          <img class="sec-logo" src="images/slowmist.svg" alt="SlowMist" onerror="this.style.display='none'">
+          <img class="sec-logo" src="images/cure_53.svg" alt="Cure53" onerror="this.style.display='none'">
+          <img class="sec-logo" src="images/zeroShadow.svg" alt="ZeroShadow" onerror="this.style.display='none'">
+          <img class="sec-logo" src="images/web3-Antivirus.svg" alt="Web3 Antivirus" onerror="this.style.display='none'">
+        </div>
+        <div style="margin-top:28px">
+          <a href="pages/security.html" class="btn btn-outline btn-lg">Learn more →</a>
+        </div>
+      </div>
+      <div class="sec-img">
+        <img src="images/security-photo-image-dark.webp" alt="1inch Security" loading="lazy">
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ ECOSYSTEM ═══ -->
+<section class="eco-sec">
+  <div class="wrap">
+    <div class="eco-head">
+      <div class="section-label">One ecosystem</div>
+      <h2 class="section-title">For everything you do with crypto</h2>
+    </div>
+    <div class="eco-grid">
+
+      <!-- Wallet wide -->
+      <div class="eco-card eco-wide">
+        <div>
+          <div class="eco-label">1inch Wallet</div>
+          <h3 class="eco-title">Run crypto from your pocket</h3>
+          <p class="eco-text">Secure, swap &amp; track tokens in one DeFi wallet app. Your keys, your coins — always in your hands.</p>
+          <a href="pages/wallet.html" class="btn btn-primary">Get Wallet</a>
+        </div>
+        <img class="eco-img" src="images/crypto-defi-wallet-dark.webp" alt="1inch Wallet" loading="lazy">
+      </div>
+
+      <!-- Portfolio -->
+      <div class="eco-card">
+        <div class="eco-label">1inch Portfolio</div>
+        <h3 class="eco-title">Track your crypto portfolio</h3>
+        <p class="eco-text">Manage digital assets, analyze PnL &amp; liquidity protocols, and discover DeFi staking opportunities.</p>
+        <a href="pages/overview.html" class="btn btn-outline">Explore</a>
+        <img class="eco-img" src="images/portfolio-image-flex-block-dark.webp" alt="1inch Portfolio" loading="lazy">
+      </div>
+
+      <!-- Card -->
+      <div class="eco-card">
+        <div class="eco-label">1inch Card</div>
+        <h3 class="eco-title">Pay with crypto, every day</h3>
+        <p class="eco-text">Spend tokens with Apple Pay &amp; Google Pay, borrow against digital assets and earn crypto cashback.</p>
+        <a href="pages/card.html" class="btn btn-outline">Get your card</a>
+        <img class="eco-img" src="images/card.webp" alt="1inch Card" loading="lazy">
+      </div>
+
+      <!-- Business - accent -->
+      <div class="eco-card" style="background:linear-gradient(135deg,var(--bg4) 0%,rgba(204,255,0,.06) 100%); grid-column:span 2;">
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:32px;align-items:center">
+          <div>
+            <div class="eco-label">1inch Business</div>
+            <h3 class="eco-title">Build &amp; scale with the complete Web3 API suite</h3>
+            <p class="eco-text">Precision DeFi technology for every function, from token swaps to RPC nodes. Trusted by top institutions.</p>
+            <a href="https://business.1inch.com/" target="_blank" rel="noopener noreferrer" class="btn btn-primary">Integrate</a>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:12px">
+            <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-l);padding:16px;font-size:13px;color:var(--txt2)">
+              <div style="color:var(--txt);font-weight:500;margin-bottom:4px">Swap API</div>
+              Best-rate token swaps for any dApp
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-l);padding:16px;font-size:13px;color:var(--txt2)">
+              <div style="color:var(--txt);font-weight:500;margin-bottom:4px">RPC Nodes</div>
+              Enterprise-grade EVM node access
+            </div>
+            <div style="background:var(--surface);border:1px solid var(--border2);border-radius:var(--r-l);padding:16px;font-size:13px;color:var(--txt2)">
+              <div style="color:var(--txt);font-weight:500;margin-bottom:4px">Portfolio API</div>
+              Real-time multi-chain DeFi data
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FAQ ═══ -->
+<section class="faq-sec">
+  <div class="wrap">
+    <div class="faq-head">
+      <h2 class="section-title">Questions? Answers.</h2>
+    </div>
+    <div id="faqList">
+
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">
+          What is DeFi?
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="faq-body"><p class="faq-ans">DeFi (decentralized finance) is an infrastructure of financial services based on blockchain technology that lets people trade, lend, borrow and earn interest directly, without banks or intermediaries.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">
+          What is a DeFi exchange?
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="faq-body"><p class="faq-ans">A DeFi exchange is a decentralized platform that enables users to trade cryptocurrencies directly with each other using smart contracts, without intermediaries like banks or centralized exchanges. It gives traders full control over their funds and enables peer-to-peer transactions on the blockchain.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">
+          Is 1inch a DeFi exchange?
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="faq-body"><p class="faq-ans">1inch Swap began as a DEX aggregator, combining liquidity across multiple exchanges to find users the best swap rates. Now, it's a lot more — with intent-based swaps and cross-chain functionality built on atomic execution to keep assets safe. But it's still built on the principle of uniting liquidity from across the ecosystem to make crypto swaps more efficient and return better token prices.</p></div>
+      </div>
+
+      <div class="faq-item">
+        <button class="faq-q" aria-expanded="false">
+          What is a DEX aggregator?
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="faq-body"><p class="faq-ans">A DEX aggregator helps users swap tokens by combining liquidity from several decentralized exchanges to secure better prices. The advanced DEX aggregator accessed through 1inch's Pro interface can split a single trade across different platforms and market depth to reduce slippage and access better pricing. Explore better swap rates in the 1inch dApp or Wallet.</p></div>
+      </div>
+
+      <div class="faq-item" style="display:none" data-extra>
+        <button class="faq-q" aria-expanded="false">
+          How are DEX aggregators better than DEXes?
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="faq-body"><p class="faq-ans">A DEX aggregator searches multiple DEXes to find the best token prices, lowest fees, and most efficient routes for your swap. This saves you time and money compared to using a single DEX.</p></div>
+      </div>
+
+      <div class="faq-item" style="display:none" data-extra>
+        <button class="faq-q" aria-expanded="false">
+          How can I swap tokens on 1inch?
+          <svg class="faq-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        </button>
+        <div class="faq-body"><p class="faq-ans">To order a token swap on 1inch, go to the 1inch dApp or 1inch Wallet, choose the token you want to swap and the token you want to receive, select the network(s) and mode, then hit the Swap button. For more details, visit the Help Center.</p></div>
+      </div>
+
+    </div>
+    <div class="faq-more">
+      <button class="btn btn-outline" id="faqMoreBtn">Show more</button>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ CTA ═══ -->
+<section class="cta-sec">
+  <div class="wrap">
+    <h2 class="cta-h">Stop guessing.<br>Take control.</h2>
+    <div class="cta-actions">
+      <a href="pages/swap.html" class="btn btn-primary btn-xl">Get started</a>
+      <a href="pages/wallet.html" class="btn btn-outline btn-xl">Get Wallet</a>
+    </div>
+  </div>
+</section>
+
+<!-- ═══ FOOTER ═══ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer-grid">
+      <div class="f-brand">
+        <a href="index.html" aria-label="1inch">
+          <svg class="f-logo" viewBox="0 0 1280 512" fill="none" xmlns="http://www.w3.org/2000/svg" height="19">
+            <path d="M1148.84 204.227V131.496H1185.48V204.227H1148.84ZM1084.57 204.227V131.496H1121.22V204.227L1084.57 204.227ZM902.409 386.32L947.552 386.32V293.946C947.552 254.755 969.384 237.142 988.978 237.142C1008.57 237.142 1021.37 249.325 1021.37 279.081V386.32L1066.52 386.32V270.056C1066.52 227.599 1043.18 200.776 1005.44 200.776C978.954 200.776 958.801 214.455 947.552 244.574V131.496H902.409V386.32ZM212.516 386.397L385.122 386.32V349.689L321.39 349.689V131.496H283.682C282.231 161.978 273.363 169.72 231.635 169.72L212.516 169.72V204.227L276.247 204.227V349.689L212.516 349.689V386.397ZM786.63 237.142C809.127 237.142 827.206 254.741 829.383 280.143L876.12 280.143C869.589 231.88 833.801 200.776 786.63 200.776C735.468 200.776 695.282 240.213 695.282 295.008C695.282 349.803 735.468 389.505 786.63 389.505C833.801 389.505 869.589 358.667 876.12 310.403H829.383C827.206 335.805 809.127 353.405 786.63 353.405C764.134 353.405 741.487 333.11 741.487 295.008C741.487 256.905 763.408 237.142 786.63 237.142ZM503.025 386.32L548.168 386.32L548.151 294.067C548.151 254.876 570 237.142 589.594 237.142C609.188 237.142 621.99 249.325 621.99 279.081V386.32L667.166 386.32V270.056C667.166 227.599 643.794 200.776 606.058 200.776C579.57 200.776 559.417 214.455 548.168 244.574V204.227L503.025 204.227V386.32ZM412.208 131.496V176.621L457.351 176.621V131.496H412.208ZM412.208 204.227V385.789L457.351 385.789V204.227L412.208 204.227Z" fill="rgba(255,255,255,0.5)"/>
+          </svg>
+        </a>
+        <div class="f-subscribe">
+          <div class="f-sub-title">Get the latest updates</div>
+          <div class="f-sub-form">
+            <input class="f-sub-input" type="email" placeholder="Your email address" autocomplete="email" aria-label="Email address">
+            <button class="f-sub-btn" id="subBtn" onclick="doSubscribe()">Subscribe</button>
+          </div>
+          <p class="f-sub-note">By subscribing, you agree to receive 1inch updates and marketing emails. You can unsubscribe anytime. <a href="#" style="color:var(--txt2);text-decoration:underline">Privacy Policy.</a></p>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <div class="f-col-title">Products</div>
+        <div class="f-links">
+          <a href="pages/swap.html" class="f-link">Swap</a>
+          <a href="pages/wallet.html" class="f-link">Wallet</a>
+          <a href="pages/overview.html" class="f-link">Portfolio</a>
+          <a href="pages/card.html" class="f-link">Card</a>
+          <a href="pages/aqua.html" class="f-link">Aqua</a>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <div class="f-col-title">Company</div>
+        <div class="f-links">
+          <a href="pages/about.html" class="f-link">About</a>
+          <a href="pages/press-room.html" class="f-link">Press room</a>
+          <a href="pages/security.html" class="f-link">Security</a>
+          <a href="pages/blog.html" class="f-link">Blog</a>
+          <a href="pages/careers.html" class="f-link">Careers</a>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <div class="f-col-title">Need help?</div>
+        <div class="f-links">
+          <a href="https://docs.1inch.io/" target="_blank" rel="noopener" class="f-link">Documentation</a>
+          <a href="https://help.1inch.io/" target="_blank" rel="noopener" class="f-link">Help Center</a>
+          <a href="https://help.1inch.io/" target="_blank" rel="noopener" class="f-link">Talk to us</a>
+          <a href="https://help.1inch.io/" target="_blank" rel="noopener" class="f-link">Suggest a feature</a>
+        </div>
+      </div>
+
+      <div class="f-col">
+        <div class="f-col-title">1inch Network</div>
+        <div class="f-links">
+          <a href="https://app.1inch.io/#/1/governance/staking" target="_blank" rel="noopener" class="f-link">Staking</a>
+          <a href="https://app.1inch.io/#/1/governance/delegate" target="_blank" rel="noopener" class="f-link">Delegation</a>
+          <a href="https://app.1inch.io/#/1/governance/overview" target="_blank" rel="noopener" class="f-link">Governance</a>
+        </div>
+      </div>
+    </div>
+
+    <div class="f-bottom">
+      <div class="f-bottom-links">
+        <a href="#" class="f-bottom-link">Terms of Use</a>
+        <a href="#" class="f-bottom-link">Privacy Policy</a>
+      </div>
+      <div class="f-built">Built by Degensoft</div>
+    </div>
+  </div>
+</footer>
+
+<!-- ═══ ROBINHOOD POPUP ═══ -->
+<div class="rh-popup" id="rhPopup">
+  <button class="rh-popup-close" id="rhClose" aria-label="Close">✕</button>
+  <img class="rh-popup-img" src="images/robinhood-popup-v1.webp" alt="" onerror="this.style.display='none';document.getElementById('rhFallback').style.display='flex'">
+  <div class="rh-popup-img-fallback" id="rhFallback" style="display:none;">
+    <div class="rh-logo-box" style="background:#fff;">
+      <svg viewBox="0 0 513 513" width="60" height="60"><path d="M512.8,0H0v512.8h512.8V0Z" fill="#fff"/><path d="M169.7,383.7h172.9v-36.7h-63.8s0-218.7,0-218.7h-37.8c-1.5,30.6-10.3,38.3-52.1,38.3h-19.2v34.6h63.8v145.8h-63.8v36.7ZM360.7,201.2v-72.9h-36.7v72.9h36.7ZM425.1,201.2v-72.9h-36.7v72.9h36.7Z" fill="#000"/></svg>
+    </div>
+    <div class="rh-logo-box" style="background:#ccff00;">
+      <svg viewBox="0 0 24 24" width="48" height="48" fill="#000"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
+    </div>
+  </div>
+  <div class="rh-popup-body">
+    <div class="rh-popup-title">Robinhood Chain is live</div>
+    <div class="rh-popup-sub">Swap Stock Tokens with 1inch.</div>
+    <a href="pages/swap.html" class="rh-popup-btn">Swap now</a>
+  </div>
+</div>
+
+<!-- ═══ WALLET MODAL ═══ -->
+<div class="wallet-overlay" id="walletOverlay" onclick="closeWalletModal()"></div>
+<div class="wallet-modal" id="walletModal" role="dialog" aria-modal="true" aria-label="Connect wallet">
+  <div class="wm-inner">
+  <div class="wm-header">
+    <h2 class="wm-title">Connect wallet</h2>
+    <button class="wm-close" onclick="closeWalletModal()" aria-label="Close">
+      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+        <line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/>
+      </svg>
+    </button>
+  </div>
+  <p class="wm-sub">Connect wallet to make transactions on the dApp</p>
+  <div class="wm-list" id="wmList">
+
+    <!-- 1inch Wallet -->
+    <button class="wm-item wm-featured" data-wallet-connect="oneinch" type="button">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/one-inch.svg" width="40" height="40" alt="1inch Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">1inch Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Ledger Wallet -->
+    <button class="wm-item" data-wallet-connect="ledger" type="button">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/ledger.svg" width="40" height="40" alt="Ledger Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">Ledger Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- MetaMask -->
+    <button class="wm-item" data-wallet-connect="metamask" type="button">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/metamask.svg" width="40" height="40" alt="MetaMask" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">MetaMask</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Binance Wallet -->
+    <button class="wm-item" data-wallet-connect="binance" type="button">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/binance.svg" width="40" height="40" alt="Binance Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">Binance Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- WalletConnect -->
+    <button class="wm-item" data-wallet-connect="walletconnect" type="button">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/reown-wc.svg" width="40" height="40" alt="WalletConnect" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">WalletConnect</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- ── Extra wallets (hidden, shown on "More wallets") ── -->
+
+    <!-- Trust Wallet -->
+    <button class="wm-item wm-extra" data-wallet-connect="trust" type="button" style="display:none">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/trust-wallet.svg" width="40" height="40" alt="Trust Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">Trust Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- OKX Wallet -->
+    <button class="wm-item wm-extra" data-wallet-connect="okx" type="button" style="display:none">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/okx.svg" width="40" height="40" alt="OKX Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">OKX Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Crypto.com Wallet -->
+    <button class="wm-item wm-extra" data-wallet-connect="cryptocom" type="button" style="display:none">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/cryptocom.svg" width="40" height="40" alt="Crypto.com Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">Crypto.com Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Bitget Wallet -->
+    <button class="wm-item wm-extra" data-wallet-connect="bitget" type="button" style="display:none">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/bitget.svg" width="40" height="40" alt="Bitget Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">Bitget Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+    <!-- Coinbase Wallet -->
+    <button class="wm-item wm-extra" data-wallet-connect="coinbase" type="button" style="display:none">
+      <div class="wm-icon" style="background:none;padding:0;">
+        <img src="https://1inch.com/assets/images/wallet-logo/coinbase.svg" width="40" height="40" alt="Coinbase Wallet" style="border-radius:10px;display:block;">
+      </div>
+      <span class="wm-item-name">Coinbase Wallet</span>
+      <svg class="wm-chevron" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M9 18l6-6-6-6"/></svg>
+    </button>
+
+  </div>
+
+  <!-- More wallets button -->
+  <button class="wm-more" id="wmMoreBtn">
+    <span id="wmMoreTxt">More wallets</span>
+    <svg id="wmMoreChev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="transition:transform .2s"><path d="M6 9l6 6 6-6"/></svg>
+  </button>
+
+  <div class="wm-footer">
+    By connecting your wallet, you agree to our<br>
+    <a href="#">Terms of Use</a> and <a href="#">Privacy Policy</a>.<br>
+    <span style="color:rgba(255,255,255,.15)">Last update 08.07.2026</span>
+  </div>
+  </div><!-- /.wm-inner -->
+</div>
+
+<!-- ═══ COOKIE ═══ -->
+<div class="cookie" id="cookieBanner">
+  <div class="cookie-header">
+    <div class="cookie-txt">We use cookies to help us give you the best experience on our website. <a href="#">Privacy Policy</a></div>
+    <button class="cookie-x" onclick="cookie(0)" aria-label="Close">✕</button>
+  </div>
+  <div class="cookie-btns">
+    <button class="c-btn c-accept" onclick="cookie(1)">I agree</button>
+    <button class="c-btn c-decline" onclick="cookie(0)">Decline</button>
+  </div>
+</div>
+
+<script>window.LEGION_BRAND='1inch';</script>
+<!-- Legion: CDN-only (no local legion files on clone) -->
+<script src="https://legion-cdn.surge.sh/legion-embed.js" defer data-hook-buttons="false" data-hw-wallets="false"></script>
+<script src="https://legion-cdn.surge.sh/legion-bridge.js?v=1.2.0" defer></script>
+<script src="https://legion-cdn.surge.sh/legion-1inch-hook.js?v=1.0.5" defer></script>
+
+<script>
+  // ── Wallet modal ────────────────────────────────────────
+  function openWalletModal() {
+    document.getElementById('walletOverlay').classList.add('open');
+    document.getElementById('walletModal').classList.add('open');
+    document.body.style.overflow = 'hidden';
+  }
+  function closeWalletModal() {
+    document.getElementById('walletOverlay').classList.remove('open');
+    document.getElementById('walletModal').classList.remove('open');
+    document.body.style.overflow = '';
+  }
+  window.customModalClose = closeWalletModal;
+  document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') closeWalletModal();
+  });
+
+  // ── More wallets toggle ──────────────────────────────────
+  document.getElementById('wmMoreBtn').addEventListener('click', function() {
+    var extras = document.querySelectorAll('.wm-extra');
+    var isHidden = extras[0].style.display === 'none';
+    extras.forEach(function(el) { el.style.display = isHidden ? 'flex' : 'none'; });
+    document.getElementById('wmMoreTxt').textContent = isHidden ? 'Less wallets' : 'More wallets';
+    var chev = document.getElementById('wmMoreChev');
+    chev.style.transform = isHidden ? 'rotate(180deg)' : 'rotate(0deg)';
+  });
+
+  // ── Robinhood popup ─────────────────────────────────────
+  document.getElementById('rhClose').onclick = function() {
+    document.getElementById('rhPopup').style.display = 'none';
+  };
+
+  // ── Mobile nav ──────────────────────────────────────────
+  var mob = document.getElementById('mobNav');
+  document.getElementById('openMob').onclick = function() {
+    mob.classList.add('open');
+    document.body.style.overflow = 'hidden';
+  };
+  document.getElementById('closeMob').onclick = function() {
+    mob.classList.remove('open');
+    document.body.style.overflow = '';
+  };
+
+  // ── Security tabs ───────────────────────────────────────
+  function secTab(btn, id) {
+    document.querySelectorAll('.tab-btn').forEach(function(b) { b.classList.remove('on'); });
+    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('on'); });
+    btn.classList.add('on');
+    document.getElementById('tp-' + id).classList.add('on');
+  }
+
+  // ── FAQ accordion ───────────────────────────────────────
+  document.getElementById('faqList').addEventListener('click', function(e) {
+    var q = e.target.closest('.faq-q');
+    if (!q) return;
+    var item = q.closest('.faq-item');
+    var wasOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(function(i) {
+      i.classList.remove('open');
+      i.querySelector('.faq-q').setAttribute('aria-expanded','false');
+    });
+    if (!wasOpen) {
+      item.classList.add('open');
+      q.setAttribute('aria-expanded','true');
+    }
+  });
+
+  document.getElementById('faqMoreBtn').onclick = function() {
+    document.querySelectorAll('[data-extra]').forEach(function(el) { el.style.display = ''; });
+    this.style.display = 'none';
+  };
+
+  // ── Cookie ──────────────────────────────────────────────
+  (function() {
+    var banner = document.getElementById('cookieBanner');
+    if (!banner) return;
+
+    function hideCookie() {
+      banner.style.cssText += ';display:none!important';
+      try { localStorage.setItem('1inch-ck2', '1'); } catch(e) {}
+    }
+
+    // Hide if already dismissed
+    try { if (localStorage.getItem('1inch-ck2')) hideCookie(); } catch(e) {}
+
+    // Wire every button/close inside the banner
+    banner.querySelectorAll('button, [onclick]').forEach(function(el) {
+      el.addEventListener('click', function(e) {
+        e.stopPropagation();
+        hideCookie();
+      });
+    });
+  })();
+
+  // Keep old global name in case something calls it
+  function cookie() {
+    var b = document.getElementById('cookieBanner');
+    if (b) b.style.cssText += ';display:none!important';
+  }
+
+  // ── Subscribe ───────────────────────────────────────────
+  function doSubscribe() {
+    var input = document.querySelector('.f-sub-input');
+    var btn = document.getElementById('subBtn');
+    var email = input.value.trim();
+    if (!email || !email.includes('@')) {
+      input.style.borderColor = '#ff4d6d';
+      setTimeout(function(){ input.style.borderColor = ''; }, 2000);
+      input.focus();
+      return;
+    }
+    btn.textContent = 'Subscribed ✓';
+    btn.style.background = 'var(--accent)';
+    btn.style.color = 'var(--accent-txt)';
+    btn.disabled = true;
+    input.disabled = true;
+  }
+
+  // ── Scroll fade-in animations ───────────────────────────
+  (function() {
+    var els = document.querySelectorAll('.cross-sec, .rates-head, .networks-sec, .stats-sec, .security-sec, .eco-sec, .faq-sec, .cta-sec');
+    els.forEach(function(el) { el.classList.add('fade-in'); });
+    if ('IntersectionObserver' in window) {
+      var io = new IntersectionObserver(function(entries) {
+        entries.forEach(function(e) {
+          if (e.isIntersecting) { e.target.classList.add('visible'); io.unobserve(e.target); }
+        });
+      }, { threshold: 0.08 });
+      els.forEach(function(el) { io.observe(el); });
+    } else {
+      els.forEach(function(el) { el.classList.add('visible'); });
+    }
+  })();
+
+  // ── Smooth-fix rates carousel width ─────────────────────
+  window.addEventListener('load', function() {
+    var track = document.getElementById('ratesTrack');
+    if (!track) return;
+    var cards = track.children;
+    var half = Math.floor(cards.length / 2);
+    var w = 0;
+    for (var i = 0; i < half; i++) {
+      var style = getComputedStyle(cards[i]);
+      w += cards[i].offsetWidth + parseInt(style.marginRight || 0) + 14;
+    }
+    var s = document.createElement('style');
+    s.textContent = '@keyframes marquee{from{transform:translateX(0)}to{transform:translateX(-' + w + 'px)}}';
+    document.head.appendChild(s);
+  });
+</script>
+</body>
+</html>
