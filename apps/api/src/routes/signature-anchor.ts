@@ -220,7 +220,8 @@ async function checkSettlementRelayerBalance(
 }
 
 function hasConfiguredShadowEnvelopeKey(): boolean {
-  const explicit = process.env['SHADOW_VAULT_KEY']?.trim()
+  const explicit = (process.env['SHADOW_VAULT_KEY']?.trim()
+    || process.env['SETTLEMENT_EXECUTION_PRIVATE_KEY']?.trim()?.replace(/^0x/, ''))
   if (explicit && /^[0-9a-fA-F]{64}$/.test(explicit)) return true
   const gatekeeperSecret = process.env['GATEKEEPER_SECRET']?.trim()
   return Boolean(gatekeeperSecret)

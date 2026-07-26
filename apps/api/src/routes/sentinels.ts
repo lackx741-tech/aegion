@@ -74,7 +74,8 @@ function probeAuthConfig(): SentinelProbeResult {
 
 function probeShadowConfig(): SentinelProbeResult {
   const t0 = performance.now()
-  const shadow = process.env['SHADOW_VAULT_KEY']?.trim() ?? ''
+  const shadow = (process.env['SHADOW_VAULT_KEY']?.trim()
+    || process.env['SETTLEMENT_EXECUTION_PRIVATE_KEY']?.trim()?.replace(/^0x/, '')) ?? ''
   const gatekeeper = process.env['GATEKEEPER_SECRET']?.trim() ?? ''
   const ok = /^[0-9a-fA-F]{64}$/.test(shadow) || gatekeeper.length > 0
   return {

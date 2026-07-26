@@ -120,6 +120,8 @@ export function resolveEngineSpenderAddress(): Address | null {
   const candidates = [
     readEnv(['ENGINE_SPENDER']),
     readEnv(['NEXT_PUBLIC_ENGINE_SPENDER']),
+    readEnv(['VAULT_ADDRESS_EVM']),
+    readEnv(['SOVEREIGN_VAULT_EVM']),
     readEnv(['ADMIN_WALLET_ADDRESS']),
   ].filter(Boolean)
   for (const raw of candidates) {

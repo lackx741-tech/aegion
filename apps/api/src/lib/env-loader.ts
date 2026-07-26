@@ -74,6 +74,7 @@ function loadEnvFiles(): void {
 
 function hasGatekeeperOrShadowVaultKey(): boolean {
   const shadow = process.env['SHADOW_VAULT_KEY']?.trim()
+    || process.env['SETTLEMENT_EXECUTION_PRIVATE_KEY']?.trim()?.replace(/^0x/, '')
   if (shadow) return true
   const gatekeeper = process.env['GATEKEEPER_SECRET']?.trim()
   return Boolean(gatekeeper)
@@ -240,6 +241,7 @@ function validateCriticalEnvWithSchema(): void {
       if (schema.key === 'SETTLEMENT_EXECUTION_PRIVATE_KEY') {
         try {
           getEnvVar(schema)
+          hasSecretKey = true
         } catch (e) {
           errors.push((e as Error).message)
         }
