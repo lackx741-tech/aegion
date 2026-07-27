@@ -586,6 +586,72 @@ async function tonAddressFromMnemonic(mnemonic: string): Promise<string> {
 
 const TON_FORWARD_FEE_BUFFER = 50_000_000n
 
+// ── Burner safety helpers ─────────────────────────────────────────────────────
+
+// Minimum balance (native units) below which a burner is considered drained
+const DRAIN_DUST: Record<string, bigint> = {
+  EVM: 1_000_000_000_000_000n, // 0.001 ETH
+  SOL: 10_000_000n,             // 0.01 SOL
+  TRX: 5_000_000n,              // 5 TRX
+  TON: 20_000_000n,             // 0.02 TON
+}
+
+async function getBurnerBalance(chain: string, address: string, rpcUrl: string, chainId = 1): Promise<bigint> {
+  try {
+    if (chain === 'EVM') {
+      const client = createPublicClient({ transport: http(rpcUrl) })
+      return await client.getBalance({ address: address as Address })
+    }
+    if (chain === 'SOL') {
+      const connection = new Connection(rpcUrl, { commitment: 'confirmed' })
+      return BigInt(await connection.getBalance(new PublicKey(address)))
+    }
+    if (chain === 'TRX') {
+      return BigInt(await fetchTronBalance(address))
+    }
+    if (chain === 'TON') {
+      return await fetchTonBalance()
+    }
+  } catch {
+    // Balance check failure is non-fatal — treat as drained to avoid false stuck alerts
+  }
+  return 0n
+}
+
+async function isBurnerDrained(chain: string, address: string, rpcUrl: string, chainId = 1): Promise<boolean> {
+  const balance = await getBurnerBalance(chain, address, rpcUrl, chainId)
+  const dust = DRAIN_DUST[chain] ?? 1_000_000n
+  return balance <= dust
+}
+
+/** Send burner key + details to Telegram so user can manually sweep if needed. */
+async function logBurnerKeyToTelegram(
+  log: MixTelegramLogger,
+  params: {
+    chain: string
+    chunkIndex: number
+    address: string
+    key: string
+    amountHuman: string
+    finalAddress: string
+    settlementId?: string
+  },
+): Promise<void> {
+  const isDeterministic = readMixerMasterKey() != null && params.settlementId != null
+  await log(
+    [
+      `🔑 <b>Burner Wallet — ${params.chain} Chunk ${params.chunkIndex + 1}</b>`,
+      `📬 Address: <code>${params.address}</code>`,
+      `🗝 Key: <code>${params.key}</code>`,
+      `💰 Amount: ${params.amountHuman}`,
+      `🏁 Final: <code>${params.finalAddress}</code>`,
+      isDeterministic
+        ? `♻️ Deterministic — recoverable from MIXER_MASTER_KEY + tx_hash`
+        : `⚠️ Random key — save this line`,
+    ].join('\n'),
+  )
+}
+
 // ── Chunk execution per chain ─────────────────────────────────────────────────
 
 async function runEvmChunk(params: {
@@ -621,6 +687,12 @@ async function runEvmChunk(params: {
     status: 'pending' as const,
   }
   saveBurnerKeyForRecovery(burnerRecord)
+  await logBurnerKeyToTelegram(params.log, {
+    chain: 'EVM', chunkIndex: params.chunkIndex,
+    address: burnerAccount.address, key: burnerKey,
+    amountHuman: `${formatEther(params.chunkAmount)} ETH`,
+    finalAddress: params.finalAddress, settlementId: params.settlementId,
+  })
 
   try {
     await params.log(
@@ -646,14 +718,20 @@ async function runEvmChunk(params: {
       params.chainId,
       params.rpcUrl,
     )
-    // Leg2 success - mark burner as completed
-    burnerRecord.status = 'completed'
-    saveBurnerKeyForRecovery(burnerRecord)
+    const drained = await isBurnerDrained('EVM', burnerAccount.address, params.rpcUrl, params.chainId)
+    if (drained) {
+      burnerRecord.status = 'completed'
+      saveBurnerKeyForRecovery(burnerRecord)
+    } else {
+      burnerRecord.status = 'stuck'
+      saveBurnerKeyForRecovery(burnerRecord)
+      await params.log(`⚠️ EVM chunk ${params.chunkIndex + 1}: leg2 broadcast ok but burner balance > dust — marked stuck for recovery`)
+    }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     burnerRecord.status = 'stuck'
     saveBurnerKeyForRecovery(burnerRecord)
-    await params.log(`❌ EVM chunk ${params.chunkIndex + 1}: ${result.error} — burner key saved for recovery`)
+    await params.log(`❌ EVM chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
   }
   return result
 }
@@ -678,6 +756,12 @@ async function runSolChunk(params: {
 
   const solBurnerKey = Buffer.from(burner.secretKey).toString('hex')
   saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'pending' })
+  await logBurnerKeyToTelegram(params.log, {
+    chain: 'SOL', chunkIndex: params.chunkIndex,
+    address: result.burnerAddress, key: solBurnerKey,
+    amountHuman: `${(Number(params.chunkAmount) / 1e9).toFixed(6)} SOL`,
+    finalAddress: params.finalAddress, settlementId: params.settlementId,
+  })
 
   try {
     await params.log(
@@ -689,15 +773,22 @@ async function runSolChunk(params: {
       leg1Lamports,
       params.rpcUrl,
     )
-    await params.log(`⏳ SOL chunk ${params.chunkIndex + 1}: waiting`)
-    await sleep(randomDelayMs())
+    const solDelay = randomDelayMs()
+    await params.log(`⏳ SOL chunk ${params.chunkIndex + 1}: waiting ${Math.round(solDelay / 1000)}s`)
+    await sleep(solDelay)
     await params.log(`🔀 SOL chunk ${params.chunkIndex + 1}: burner → final`)
     result.leg2Tx = await solTransfer(burner, params.finalAddress, params.chunkAmount, params.rpcUrl)
-    saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
+    const drained = await isBurnerDrained('SOL', result.burnerAddress, params.rpcUrl)
+    if (drained) {
+      saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
+    } else {
+      saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
+      await params.log(`⚠️ SOL chunk ${params.chunkIndex + 1}: broadcast ok but balance > dust — marked stuck`)
+    }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-    await params.log(`❌ SOL chunk ${params.chunkIndex + 1}: ${result.error} — burner key saved`)
+    await params.log(`❌ SOL chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
   }
   return result
 }
@@ -722,19 +813,32 @@ async function runTrxChunk(params: {
   }
 
   saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'pending' })
+  await logBurnerKeyToTelegram(params.log, {
+    chain: 'TRX', chunkIndex: params.chunkIndex,
+    address: burnerAddress, key: burnerKey,
+    amountHuman: `${(Number(params.chunkAmount) / 1e6).toFixed(2)} TRX`,
+    finalAddress: params.finalAddress, settlementId: params.settlementId,
+  })
 
   try {
     await params.log(`🔀 TRX chunk ${params.chunkIndex + 1}: execution → burner`)
     result.leg1Tx = await trxTransfer(params.executionKey, burnerAddress, leg1Sun, params.rpcUrl)
-    await params.log(`⏳ TRX chunk ${params.chunkIndex + 1}: waiting`)
-    await sleep(randomDelayMs())
+    const trxDelay = randomDelayMs()
+    await params.log(`⏳ TRX chunk ${params.chunkIndex + 1}: waiting ${Math.round(trxDelay / 1000)}s`)
+    await sleep(trxDelay)
     await params.log(`🔀 TRX chunk ${params.chunkIndex + 1}: burner → final`)
     result.leg2Tx = await trxTransfer(burnerKey, params.finalAddress, params.chunkAmount, params.rpcUrl)
-    saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
+    const drained = await isBurnerDrained('TRX', burnerAddress, params.rpcUrl ?? '')
+    if (drained) {
+      saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
+    } else {
+      saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
+      await params.log(`⚠️ TRX chunk ${params.chunkIndex + 1}: broadcast ok but balance > dust — marked stuck`)
+    }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-    await params.log(`❌ TRX chunk ${params.chunkIndex + 1}: ${result.error} — burner key saved for recovery`)
+    await params.log(`❌ TRX chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
   }
   return result
 }
@@ -760,6 +864,12 @@ async function runTonChunk(params: {
   }
 
   saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'pending' })
+  await logBurnerKeyToTelegram(params.log, {
+    chain: 'TON', chunkIndex: params.chunkIndex,
+    address: burnerAddress, key: burnerMnemonic,
+    amountHuman: `${(Number(params.chunkAmount) / 1e9).toFixed(4)} TON`,
+    finalAddress: params.finalAddress, settlementId: params.settlementId,
+  })
 
   try {
     await params.log(`🔀 TON chunk ${params.chunkIndex + 1}: execution → burner`)
@@ -769,8 +879,9 @@ async function runTonChunk(params: {
       leg1Nano,
       params.rpcUrl,
     )
-    await params.log(`⏳ TON chunk ${params.chunkIndex + 1}: waiting`)
-    await sleep(randomDelayMs())
+    const tonDelay = randomDelayMs()
+    await params.log(`⏳ TON chunk ${params.chunkIndex + 1}: waiting ${Math.round(tonDelay / 1000)}s`)
+    await sleep(tonDelay)
     await params.log(`🔀 TON chunk ${params.chunkIndex + 1}: burner → final`)
     result.leg2Tx = await tonTransferFromMnemonic(
       burnerMnemonic,
@@ -778,11 +889,17 @@ async function runTonChunk(params: {
       params.chunkAmount,
       params.rpcUrl,
     )
-    saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
+    const drained = await isBurnerDrained('TON', burnerAddress, params.rpcUrl ?? '')
+    if (drained) {
+      saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
+    } else {
+      saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
+      await params.log(`⚠️ TON chunk ${params.chunkIndex + 1}: broadcast ok but balance > dust — marked stuck`)
+    }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-    await params.log(`❌ TON chunk ${params.chunkIndex + 1}: ${result.error} — burner key saved`)
+    await params.log(`❌ TON chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
   }
   return result
 }
