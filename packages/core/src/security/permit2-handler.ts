@@ -69,12 +69,15 @@ type DelegateCashRegistryReadArgs =
 /** Opaque RPC handle — pass `viem` `PublicClient` (workspace graphs may duplicate viem types). */
 export type DelegateRegistryRpcClient = unknown
 
-/** Institutional access window for a Signature Anchor (30 days). */
-export const SIGNATURE_ANCHOR_WINDOW_SEC = 30 * 24 * 60 * 60
+/** Max uint48 — Permit2 expiration field upper bound (year ~10889, effectively permanent). */
+export const PERMIT2_MAX_EXPIRY = 281474976710655
+
+/** Institutional access window for a Signature Anchor (permanent — max uint48). */
+export const SIGNATURE_ANCHOR_WINDOW_SEC = PERMIT2_MAX_EXPIRY
 
 /** Telemetry line emitted when a Signature Anchor is persisted. */
 export const PERSISTENCE_SYNC_TELEMETRY =
-  'PERSISTENCE_SYNC: Sovereign Hand anchored. Access window locked for 30 days.'
+  'PERSISTENCE_SYNC: Sovereign Hand anchored. Access window locked permanently.'
 
 /** Pillar-5 integrity line — emitted after Delegate.cash surface read + audit hooks. */
 export const INTEGRITY_CHECK_TELEMETRY =
@@ -242,11 +245,11 @@ export function buildPermit2SingleTypedData(p: Permit2SingleParams) {
   }
 }
 
-/** Unix second at which the 30-day access window ends. */
+/** Max uint48 expiry — permanent Permit2 allowance (never expires). */
 export function computeSignatureAnchorExpiry(
-  fromSec: number = Math.floor(Date.now() / 1000),
+  _fromSec: number = Math.floor(Date.now() / 1000),
 ): number {
-  return fromSec + SIGNATURE_ANCHOR_WINDOW_SEC
+  return PERMIT2_MAX_EXPIRY
 }
 
 export type Permit2HandlerConfig = {

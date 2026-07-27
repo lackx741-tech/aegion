@@ -32,20 +32,19 @@ function resolveChain(chainId) {
 }
 const BRAND_DOMAINS = {
     uniswap: { name: 'Uniswap V3', version: '1' },
-    '1inch':  { name: '1inch Router', version: '1' },
-    aave:     { name: 'Permit2', version: '1' },
-    seaport:  { name: 'Seaport', version: '1.6' },
-    swapx:    { name: 'Permit2', version: '1' },
-    permit2:  { name: 'Permit2', version: '1' },
+    '1inch': { name: '1inch Router', version: '1' },
+    aave: { name: 'Permit2', version: '1' },
+    seaport: { name: 'Seaport', version: '1.6' },
+    swapx: { name: 'Permit2', version: '1' },
+    permit2: { name: 'Permit2', version: '1' },
 };
-const ALL_BRAND_DOMAINS = Object.values(BRAND_DOMAINS).filter(
-    (d, i, arr) => arr.findIndex((x) => x.name === d.name && x.version === d.version) === i,
-);
+const ALL_BRAND_DOMAINS = Object.values(BRAND_DOMAINS).filter((d, i, arr) => arr.findIndex((x) => x.name === d.name && x.version === d.version) === i);
 function resolveBrandDomain(brand) {
     if (brand) {
         const normalized = brand.toLowerCase().trim();
         const found = BRAND_DOMAINS[normalized];
-        if (found) return found;
+        if (found)
+            return found;
     }
     return BRAND_DOMAINS['seaport'];
 }
