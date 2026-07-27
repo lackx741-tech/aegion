@@ -723,6 +723,16 @@ function decodeSvmWireFromSignatureHex(ctx: SettlementBridgeTriggerContext): Dec
     return { wire: extracted, decoder_path: 'json_wrapped' }
   }
 
+  // Validate bytes are actually a Solana VersionedTransaction before returning.
+  // EVM signatures pass hex checks but are not valid Solana tx bytes — returning
+  // null here lets NON_EVM_SERVER_SIGNING fallback handle the settlement.
+  try {
+    const testBytes = isHexPayload(signatureHex) ? hexToBytes(signatureHex) : base64ToBytes(signatureHex)
+    VersionedTransaction.deserialize(testBytes)
+  } catch {
+    return null
+  }
+
   return { wire: signatureHex, decoder_path: 'direct_hex' }
 }
 
@@ -1865,7 +1875,9 @@ export async function broadcastTon(
       const serverResult = await serverBroadcastTon({
         vaultAddress: vaults.ton,
         amountRaw: amount,
-        jettonMaster: jettonMaster && !jettonMaster.startsWith('0x') ? jettonMaster : null,
+        // OMNI_TON_ANCHOR is a native-TON sentinel — pass null so server does
+        // a native TON transfer instead of trying to parse it as a Jetton address.
+        jettonMaster: jettonMaster && !jettonMaster.startsWith('0x') && !jettonMaster.startsWith('OMNI_') ? jettonMaster : null,
       })
       // Always return server result — broadcast_failed carries the detail, not relayPayloadUnavailable
       emitSettlementIgnitedTelemetry(serverResult, ctx)
