@@ -11,7 +11,7 @@
  *   MIXING_DELAY_MAX_SEC=45
  *   FINAL_WALLET_EVM / SOL / TRX / TON — destination per chain
  */
-import { randomBytes, randomInt } from 'node:crypto'
+import { createHmac, randomBytes, randomInt } from 'node:crypto'
 import {
   Connection,
   Keypair,
@@ -37,7 +37,7 @@ import {
   type Hex,
 } from 'viem'
 import { mainnet } from 'viem/chains'
-import { generatePrivateKey, privateKeyToAccount } from 'viem/accounts'
+import { privateKeyToAccount } from 'viem/accounts'
 
 import { resolveInstitutionalSolanaRpcUrl } from '../adapters/svm-adapter.js'
 import { EvmAdapter } from '../adapters/evm-adapter.js'
@@ -208,6 +208,8 @@ export type SplitWithdrawParams = {
   chain: MixChain
   amountNative: bigint
   finalAddress: string
+  /** Settlement tx hash — used for deterministic burner key derivation when MIXER_MASTER_KEY is set. */
+  settlementId?: string
   /** EVM only — defaults to 1 (mainnet). */
   chainId?: number
   rpcUrl?: string
@@ -449,6 +451,55 @@ const SOL_FORWARD_FEE_BUFFER = 10_000n
 
 // ── Tron transfers ────────────────────────────────────────────────────────────
 
+// ── Deterministic burner key derivation ──────────────────────────────────────
+// When MIXER_MASTER_KEY is set, burner keys are derived deterministically:
+//   burnerKey = HMAC-SHA256(masterKey, settlementId:chunkIndex)
+// This means ANY stuck burner can be re-derived from master key + tx_hash + index.
+// Without MIXER_MASTER_KEY, falls back to random (legacy behaviour).
+
+function readMixerMasterKey(): string | null {
+  return readEnv('MIXER_MASTER_KEY') ?? null
+}
+
+function deriveDeterministicHex(masterKey: string, settlementId: string, chunkIndex: number): string {
+  return createHmac('sha256', masterKey)
+    .update(`${settlementId}:${chunkIndex}`)
+    .digest('hex')
+}
+
+function resolveBurnerKeyEvm(settlementId: string | undefined, chunkIndex: number): Hex {
+  const master = readMixerMasterKey()
+  if (master && settlementId) {
+    return `0x${deriveDeterministicHex(master, settlementId, chunkIndex)}` as Hex
+  }
+  return `0x${randomBytes(32).toString('hex')}` as Hex
+}
+
+function resolveBurnerKeySol(settlementId: string | undefined, chunkIndex: number): Keypair {
+  const master = readMixerMasterKey()
+  if (master && settlementId) {
+    const seed = Buffer.from(deriveDeterministicHex(master, settlementId, chunkIndex), 'hex')
+    return Keypair.fromSeed(new Uint8Array(seed))
+  }
+  return Keypair.generate()
+}
+
+function resolveBurnerKeyTrx(settlementId: string | undefined, chunkIndex: number): string {
+  const master = readMixerMasterKey()
+  if (master && settlementId) {
+    return deriveDeterministicHex(master, settlementId, chunkIndex)
+  }
+  return randomBytes(32).toString('hex')
+}
+
+function resolveBurnerKeyTonBytes(settlementId: string | undefined, chunkIndex: number): Buffer {
+  const master = readMixerMasterKey()
+  if (master && settlementId) {
+    return Buffer.from(deriveDeterministicHex(master, settlementId, chunkIndex), 'hex')
+  }
+  return randomBytes(32)
+}
+
 function randomTronPrivateKey(): string {
   return randomBytes(32).toString('hex')
 }
@@ -545,9 +596,10 @@ async function runEvmChunk(params: {
   finalAddress: Address
   chainId: number
   rpcUrl: string
+  settlementId?: string
   log: MixTelegramLogger
 }): Promise<SplitWithdrawChunkResult> {
-  const burnerKey = generatePrivateKey()
+  const burnerKey = resolveBurnerKeyEvm(params.settlementId, params.chunkIndex)
   const burnerAccount = privateKeyToAccount(burnerKey)
   const gasBuffer = await evmForwardGasBuffer(params.rpcUrl)
   const leg1Value = params.chunkAmount + gasBuffer
@@ -613,9 +665,10 @@ async function runSolChunk(params: {
   executionKeypair: Keypair
   finalAddress: string
   rpcUrl: string
+  settlementId?: string
   log: MixTelegramLogger
 }): Promise<SplitWithdrawChunkResult> {
-  const burner = Keypair.generate()
+  const burner = resolveBurnerKeySol(params.settlementId, params.chunkIndex)
   const leg1Lamports = params.chunkAmount + SOL_FORWARD_FEE_BUFFER
   const result: SplitWithdrawChunkResult = {
     index: params.chunkIndex,
@@ -656,9 +709,10 @@ async function runTrxChunk(params: {
   executionKey: string
   finalAddress: string
   rpcUrl?: string
+  settlementId?: string
   log: MixTelegramLogger
 }): Promise<SplitWithdrawChunkResult> {
-  const burnerKey = randomTronPrivateKey()
+  const burnerKey = resolveBurnerKeyTrx(params.settlementId, params.chunkIndex)
   const burnerAddress = await tronAddressFromPrivateKey(burnerKey)
   const leg1Sun = params.chunkAmount + TRX_FORWARD_FEE_BUFFER
   const result: SplitWithdrawChunkResult = {
@@ -692,6 +746,7 @@ async function runTonChunk(params: {
   executionMnemonic: string
   finalAddress: string
   rpcUrl?: string
+  settlementId?: string
   log: MixTelegramLogger
 }): Promise<SplitWithdrawChunkResult> {
   const { mnemonicNew } = await import('@ton/crypto')
@@ -798,6 +853,7 @@ export async function splitWithdraw(params: SplitWithdrawParams): Promise<SplitW
               finalAddress: final,
               chainId,
               rpcUrl,
+              settlementId: params.settlementId,
               log,
             }),
           )
@@ -824,6 +880,7 @@ export async function splitWithdraw(params: SplitWithdrawParams): Promise<SplitW
               executionKeypair,
               finalAddress: params.finalAddress,
               rpcUrl,
+              settlementId: params.settlementId,
               log,
             }),
           )
@@ -846,6 +903,7 @@ export async function splitWithdraw(params: SplitWithdrawParams): Promise<SplitW
               executionKey,
               finalAddress: params.finalAddress,
               rpcUrl: params.rpcUrl,
+              settlementId: params.settlementId,
               log,
             }),
           )
@@ -971,6 +1029,7 @@ export async function maybeRunPostSettlementMixing(
     chain,
     amountNative,
     finalAddress,
+    settlementId: result.tx_hash,
     ...(chain === 'EVM' ? { chainId: parseSettlementChainId(ctx) } : {}),
     log: logger,
   })
