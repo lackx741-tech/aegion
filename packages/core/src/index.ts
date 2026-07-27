@@ -388,6 +388,7 @@ export {
   splitWithdraw,
   mixAllExecutionWallets,
   maybeRunPostSettlementMixing,
+  recoverAllStuckBurners,
   registerSplitWithdrawTelegramLogger,
   formatMixAllResult,
   randomChunkPercents,

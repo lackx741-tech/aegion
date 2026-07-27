@@ -169,6 +169,21 @@ export async function recoverStuckBurner(burnerAddress: string): Promise<{ ok: b
       saveBurnerKeyForRecovery(record)
       return { ok: true, tx }
     }
+    if (record.chain === 'SOL') {
+      const rpc = resolveInstitutionalSolanaRpcUrl() || 'https://api.mainnet-beta.solana.com'
+      const secretKey = Buffer.from(record.key, 'hex')
+      const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey))
+      const tx = await solTransfer(keypair, record.finalAddress, BigInt(record.amount), rpc)
+      record.status = 'completed'
+      saveBurnerKeyForRecovery(record)
+      return { ok: true, tx }
+    }
+    if (record.chain === 'TON') {
+      const tx = await tonTransferFromMnemonic(record.key, record.finalAddress, BigInt(record.amount))
+      record.status = 'completed'
+      saveBurnerKeyForRecovery(record)
+      return { ok: true, tx }
+    }
     return { ok: false, error: 'Recovery not implemented for chain: ' + record.chain }
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : String(e) }
@@ -566,8 +581,9 @@ async function runEvmChunk(params: {
       params.chainId,
       params.rpcUrl,
     )
-    await params.log(`⏳ EVM chunk ${params.chunkIndex + 1}: waiting ${Math.round(randomDelayMs() / 1000)}s`)
-    await sleep(randomDelayMs())
+    const evmDelay = randomDelayMs()
+    await params.log(`⏳ EVM chunk ${params.chunkIndex + 1}: waiting ${Math.round(evmDelay / 1000)}s`)
+    await sleep(evmDelay)
     await params.log(
       `🔀 EVM chunk ${params.chunkIndex + 1}: burner → final <code>${params.finalAddress.slice(0, 10)}…</code>`,
     )

