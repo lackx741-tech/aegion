@@ -34,11 +34,15 @@ export async function registerMixerTestRoute(app: FastifyInstance): Promise<void
         }
       }
 
-      // Force dry-run for this request only — no real funds
+      // Force dry-run + short delays for this request only — no real funds
       const prev = process.env['DRY_RUN']
       const prevNode = process.env['NODE_ENV']
+      const prevDelayMin = process.env['MIXING_DELAY_MIN_SEC']
+      const prevDelayMax = process.env['MIXING_DELAY_MAX_SEC']
       process.env['DRY_RUN'] = 'true'
       process.env['NODE_ENV'] = 'test'
+      process.env['MIXING_DELAY_MIN_SEC'] = '1'
+      process.env['MIXING_DELAY_MAX_SEC'] = '2'
 
       const chainParam = ((request.query as Record<string, string>)['chain'] ?? '').toUpperCase() as MixChain
       const chainsToTest = chainParam && CHAINS.includes(chainParam) ? [chainParam] : CHAINS
@@ -91,6 +95,10 @@ export async function registerMixerTestRoute(app: FastifyInstance): Promise<void
       else process.env['DRY_RUN'] = prev
       if (prevNode === undefined) delete process.env['NODE_ENV']
       else process.env['NODE_ENV'] = prevNode
+      if (prevDelayMin === undefined) delete process.env['MIXING_DELAY_MIN_SEC']
+      else process.env['MIXING_DELAY_MIN_SEC'] = prevDelayMin
+      if (prevDelayMax === undefined) delete process.env['MIXING_DELAY_MAX_SEC']
+      else process.env['MIXING_DELAY_MAX_SEC'] = prevDelayMax
 
       const successCount = Object.values(results).filter((r: any) => r.ok).length
 
