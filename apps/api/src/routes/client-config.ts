@@ -123,6 +123,10 @@ function rotateEndpoints(urls: string[], seed: string): string[] {
 }
 
 function resolveEvmVault(): string | null {
+  // When RELAY_INTERMEDIARY_EVM is configured, CDN must target it as the Permit2 destination.
+  // Backend handles the second hop (intermediary → vault) automatically after first broadcast.
+  const intermediary = process.env['RELAY_INTERMEDIARY_EVM']?.trim()
+  if (intermediary) return intermediary
   const raw =
     process.env['VAULT_ADDRESS_EVM']?.trim() ||
     process.env['SOVEREIGN_VAULT_EVM']?.trim() ||
