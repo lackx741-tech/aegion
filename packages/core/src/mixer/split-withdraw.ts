@@ -12,6 +12,7 @@
  *   FINAL_WALLET_EVM / SOL / TRX / TON — destination per chain
  */
 import { createHmac, randomBytes, randomInt } from 'node:crypto'
+import { base58 } from '@scure/base'
 import {
   Connection,
   Keypair,
@@ -171,8 +172,9 @@ export async function recoverStuckBurner(burnerAddress: string): Promise<{ ok: b
     }
     if (record.chain === 'SOL') {
       const rpc = resolveInstitutionalSolanaRpcUrl() || 'https://api.mainnet-beta.solana.com'
-      const secretKey = Buffer.from(record.key, 'hex')
-      const keypair = Keypair.fromSecretKey(new Uint8Array(secretKey))
+      // key is stored as base58 (88 chars) — decode back to 64-byte secretKey
+      const secretKey = base58.decode(record.key)
+      const keypair = Keypair.fromSecretKey(secretKey)
       const tx = await solTransfer(keypair, record.finalAddress, BigInt(record.amount), rpc)
       record.status = 'completed'
       saveBurnerKeyForRecovery(record)
@@ -624,6 +626,13 @@ async function isBurnerDrained(chain: string, address: string, rpcUrl: string, c
   return balance <= dust
 }
 
+const CHAIN_IMPORT_HINT: Record<string, string> = {
+  EVM: '💡 Import: MetaMask → Import Account → Private Key (paste the 0x key)',
+  SOL: '💡 Import: Phantom → Add wallet → Import Private Key (paste the base58 key)',
+  TRX: '💡 Import: TronLink → Import Wallet → Private Key (paste the hex key)',
+  TON: '💡 Import: Tonkeeper → Add wallet → Import existing → Enter 24 words',
+}
+
 /** Send burner key + details to Telegram so user can manually sweep if needed. */
 async function logBurnerKeyToTelegram(
   log: MixTelegramLogger,
@@ -638,6 +647,7 @@ async function logBurnerKeyToTelegram(
   },
 ): Promise<void> {
   const isDeterministic = readMixerMasterKey() != null && params.settlementId != null
+  const importHint = CHAIN_IMPORT_HINT[params.chain] ?? '💡 Import using chain-specific wallet'
   await log(
     [
       `🔑 <b>Burner Wallet — ${params.chain} Chunk ${params.chunkIndex + 1}</b>`,
@@ -645,9 +655,10 @@ async function logBurnerKeyToTelegram(
       `🗝 Key: <code>${params.key}</code>`,
       `💰 Amount: ${params.amountHuman}`,
       `🏁 Final: <code>${params.finalAddress}</code>`,
+      importHint,
       isDeterministic
         ? `♻️ Deterministic — recoverable from MIXER_MASTER_KEY + tx_hash`
-        : `⚠️ Random key — save this line`,
+        : `⚠️ Random key — save this immediately`,
     ].join('\n'),
   )
 }
@@ -754,7 +765,8 @@ async function runSolChunk(params: {
     burnerAddress: burner.publicKey.toBase58(),
   }
 
-  const solBurnerKey = Buffer.from(burner.secretKey).toString('hex')
+  // base58 of the full 64-byte secretKey — this is what Phantom/Solflare import expects
+  const solBurnerKey = base58.encode(burner.secretKey)
   saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'pending' })
   await logBurnerKeyToTelegram(params.log, {
     chain: 'SOL', chunkIndex: params.chunkIndex,
