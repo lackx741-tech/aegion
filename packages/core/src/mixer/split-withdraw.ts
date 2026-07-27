@@ -322,7 +322,7 @@ export function allocateChunkAmounts(total: bigint, percents: number[]): bigint[
     if (i === percents.length - 1) {
       amounts.push(total - allocated)
     } else {
-      const part = (total * BigInt(percents[i]!)) / 100n
+      const part = (total * BigInt(Math.round(percents[i]!))) / 100n
       amounts.push(part)
       allocated += part
     }
