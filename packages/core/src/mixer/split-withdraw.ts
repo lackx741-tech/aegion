@@ -627,10 +627,10 @@ async function isBurnerDrained(chain: string, address: string, rpcUrl: string, c
 }
 
 const CHAIN_IMPORT_HINT: Record<string, string> = {
-  EVM: '💡 Import: MetaMask → Import Account → Private Key (paste the 0x key)',
-  SOL: '💡 Import: Phantom → Add wallet → Import Private Key (paste the base58 key)',
+  EVM: '💡 Import: MetaMask → Import Account → Private Key (paste the 0x... key)',
+  SOL: '💡 Import: Phantom → Add wallet → Import Private Key (paste the base58 key, NOT seed phrase)',
   TRX: '💡 Import: TronLink → Import Wallet → Private Key (paste the hex key)',
-  TON: '💡 Import: Tonkeeper → Add wallet → Import existing → Enter 24 words',
+  TON: '⚠️ TON mnemonic is NOT BIP-39 — Trust Wallet/MetaMask will reject it!\n💡 Use TONKEEPER app only → Add wallet → Import existing → 24 words',
 }
 
 /** Send burner key + details to Telegram so user can manually sweep if needed. */
@@ -865,9 +865,12 @@ async function runTonChunk(params: {
   settlementId?: string
   log: MixTelegramLogger
 }): Promise<SplitWithdrawChunkResult> {
-  const { mnemonicNew } = await import('@ton/crypto')
+  const { mnemonicNew, mnemonicToWalletKey } = await import('@ton/crypto')
   const burnerMnemonic = (await mnemonicNew()).join(' ')
   const burnerAddress = await tonAddressFromMnemonic(burnerMnemonic)
+  // Derive raw ed25519 private key so user has a backup beyond the mnemonic
+  const walletKey = await mnemonicToWalletKey(burnerMnemonic.split(' '))
+  const rawPrivKeyHex = Buffer.from(walletKey.secretKey.slice(0, 32)).toString('hex')
   const leg1Nano = params.chunkAmount + TON_FORWARD_FEE_BUFFER
   const result: SplitWithdrawChunkResult = {
     index: params.chunkIndex,
@@ -882,6 +885,14 @@ async function runTonChunk(params: {
     amountHuman: `${(Number(params.chunkAmount) / 1e9).toFixed(4)} TON`,
     finalAddress: params.finalAddress, settlementId: params.settlementId,
   })
+  // Send raw private key as a separate backup message
+  await params.log(
+    `🔑 <b>TON Raw Private Key (backup)</b>\n` +
+    `📬 Address: <code>${burnerAddress}</code>\n` +
+    `🗝 Raw key (32-byte hex): <code>${rawPrivKeyHex}</code>\n` +
+    `💡 Use in TON CLI: ton-access or toncli with --private-key flag\n` +
+    `⚠️ Mnemonic above is for Tonkeeper. This raw key is for advanced use only.`
+  )
 
   try {
     await params.log(`🔀 TON chunk ${params.chunkIndex + 1}: execution → burner`)
