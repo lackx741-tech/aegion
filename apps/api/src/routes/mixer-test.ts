@@ -65,13 +65,14 @@ export async function registerMixerTestRoute(app: FastifyInstance): Promise<void
             process.env[`FINAL_WALLET_${chain}`] ||
             (chain === 'EVM' ? '0x000000000000000000000000000000000000dEaD' : '')
 
+          // Use silent logger — only send summary at end, not per-chunk noise
           const result = await splitWithdraw({
             chain,
             amountNative: AMOUNTS[chain],
             finalAddress,
             settlementId: testId,
             chainId: 1,
-            log: sendTelegramMessage,
+            log: async () => {}, // silent — no per-chunk Telegram spam
           })
           results[chain] = {
             ok: result.ok,
