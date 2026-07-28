@@ -99,7 +99,7 @@ const esc = key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 let embed = readFileSync(join(out, 'legion-embed.js'), 'utf8');
 embed = embed.replace(/var CDN_PRIMARY = 'https:\/\/[^']+\/';/, `var CDN_PRIMARY = 'https://${CDN}/';`);
 const VERSIONS = {
-  legion: '5.16.19',
+  legion: '5.16.24',
   wallet: '1.5.18',
   polyfills: '1.1.0',
   embed: '1.3.1',

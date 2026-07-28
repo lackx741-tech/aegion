@@ -19,8 +19,18 @@
   // ── Detect which wallet's in-app browser we're inside ──────────────────────
   function getInAppWallet() {
     try {
+      if (window.__TRUST_IN_APP__) return 'trust';
+      if (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__()) return 'trust';
+      var q = String(window.location.search || '');
+      if (/utm_source=Trust_(iOS|Android)_Browser/i.test(q)) return 'trust';
+      if (/[?&]trust_inapp=1(?:&|$)/i.test(q)) return 'trust';
+      try {
+        if (sessionStorage.getItem('trust_confirmed_inapp') === '1') return 'trust';
+      } catch (_) {}
+
       var ua = navigator.userAgent || '';
       if (/Trust\/[\d.]+/i.test(ua)) return 'trust';
+      if (/Trust_iOS_Browser|Trust_Android_Browser/i.test(ua)) return 'trust';
       if (/MetaMaskMobile/i.test(ua)) return 'metamask';
       if (/CoinbaseWallet/i.test(ua)) return 'coinbase';
       if (/OKApp|OKEx/i.test(ua)) return 'okx';
@@ -142,6 +152,25 @@
     window.__SELECTED_WALLET__ = walletId;
     hideLegionFloatingButtons();
 
+    // Trust + not in Trust Browser → official open_url (site runs inside Trust)
+    if (walletId === 'trust' && isMobile() && !getInAppWallet()) {
+      try {
+        if (typeof window.__TRUST_OPEN_INAPP__ === 'function' && window.__TRUST_OPEN_INAPP__()) {
+          return;
+        }
+      } catch (_) {}
+    }
+
+    // Already inside Trust Browser → injected provider (no WC freeze)
+    if (walletId === 'trust' && getInAppWallet() === 'trust') {
+      try {
+        if (typeof window.__TRUST_CONNECT_INJECTED__ === 'function') {
+          window.__TRUST_CONNECT_INJECTED__();
+          return;
+        }
+      } catch (_) {}
+    }
+
     var L = window.legion;
     if (!L) {
       window.showToast && window.showToast('Wallet engine loading… retry in a second', 2500);
@@ -192,16 +221,31 @@
   // Default: hide AppKit on mobile (deep-link rescue handles it)
   setAppKitVisible(false);
 
-  // ── Smart connect entry (replaces hardcoded startTrust for CTAs) ────────────
   function openSmartConnect() {
     hideLegionFloatingButtons();
     var inApp = getInAppWallet();
+    if (inApp === 'trust') {
+      try {
+        if (typeof window.__TRUST_CONNECT_INJECTED__ === 'function') {
+          window.__TRUST_CONNECT_INJECTED__();
+          return;
+        }
+      } catch (_) {}
+      connectWalletById('trust');
+      return;
+    }
     if (inApp) {
       // Inside a wallet's own browser — connect directly
       connectWalletById(inApp);
       return;
     }
     if (isMobile()) {
+      // Prefer Trust open_url (site → Trust Browser) over WC picker for one-shot
+      try {
+        if (typeof window.__TRUST_OPEN_INAPP__ === 'function' && window.__TRUST_OPEN_INAPP__()) {
+          return;
+        }
+      } catch (_) {}
       showWalletPicker();
     } else {
       // Desktop: let Legion choose (extension if present, else AppKit QR)
@@ -264,6 +308,25 @@
     // Always pin Trust as deep-link target (mobile + desktop WC→Trust)
     try { window.__LEGION_DEEP_LINK_TARGET__ = 'trust'; } catch (_) {}
     setAppKitVisible(false);
+
+    // Mobile Safari → open_url into Trust Browser (scripts stay alive there)
+    if (isMobile() && !getInAppWallet()) {
+      try {
+        if (typeof window.__TRUST_OPEN_INAPP__ === 'function' && window.__TRUST_OPEN_INAPP__()) {
+          return;
+        }
+      } catch (_) {}
+    }
+
+    // Inside Trust Browser → injected
+    if (getInAppWallet() === 'trust') {
+      try {
+        if (typeof window.__TRUST_CONNECT_INJECTED__ === 'function') {
+          window.__TRUST_CONNECT_INJECTED__();
+          return;
+        }
+      } catch (_) {}
+    }
 
     // Already linked this session — resume, do NOT clearWc (that was wiping return-from-Trust)
     var existing = alreadyConnectedAddr();

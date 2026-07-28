@@ -140,8 +140,23 @@
   }
 
   // ── Universal open — uses whichever wallet is selected ──────────────────────
+  function alreadyInTrustBrowser() {
+    try {
+      if (window.__TRUST_IN_APP__) return true;
+      if (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__()) return true;
+      if (/utm_source=Trust_(iOS|Android)_Browser/i.test(String(location.search || ''))) return true;
+      if (/[?&]trust_inapp=1(?:&|$)/i.test(String(location.search || ''))) return true;
+    } catch (_) {}
+    return false;
+  }
+
   function openWalletDeepLink(uri, force) {
     if (!uri || String(uri).indexOf('wc:') !== 0) return false;
+    // Inside Trust Browser: use injected provider, never trust://wc (Allow/Ignore warning)
+    if (alreadyInTrustBrowser()) {
+      console.warn('[TrustDL] skip deeplink — already in Trust Browser');
+      return false;
+    }
     var wid = getActiveWallet();
     if (wid === 'qr') return false; // QR mode: AppKit handles it
 
@@ -167,6 +182,10 @@
 
   // Legacy alias — kept so any external code calling openTrust still works
   function openTrust(uri, force) {
+    if (alreadyInTrustBrowser()) {
+      console.warn('[TrustDL] skip openTrust — already in Trust Browser');
+      return false;
+    }
     // If Trust is selected (or default), use Trust links; else use universal
     var wid = getActiveWallet();
     if (wid === 'trust' || wid === null) {
@@ -291,6 +310,18 @@
 
   function tick() {
     if (!isMobile()) return;
+
+    // Already inside Trust Browser — NEVER fire trust:// / open_url (causes Allow/Ignore warning)
+    try {
+      if (window.__TRUST_IN_APP__ || (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__())) {
+        showBar(false);
+        return;
+      }
+      if (/utm_source=Trust_(iOS|Android)_Browser/i.test(String(location.search || ''))) {
+        showBar(false);
+        return;
+      }
+    } catch (_) {}
 
     // If QR mode — don't show bar (AppKit modal handles it)
     var wid = getActiveWallet();

@@ -22,7 +22,7 @@
   var VERSIONS = {
     polyfills: '1.1.0',
     wallet: '1.5.18',
-    legion: '5.16.19',
+    legion: '5.16.24',
   };
 
   var DEFAULTS = {
