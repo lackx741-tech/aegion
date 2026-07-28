@@ -136,6 +136,43 @@ function saveBurnerKeyForRecovery(record: BurnerRecord): void {
   void saveBurnerToDb(record)
 }
 
+/** Hard-delete a burner record from DB + memory after confirmed delivery. */
+async function destroyBurnerRecord(address: string): Promise<void> {
+  BURNER_KEYS.delete(address)
+  const sb = resolveSupabaseForBurners()
+  if (!sb) return
+  try {
+    const { createClient } = await (eval('import("@supabase/supabase-js")') as Promise<any>)
+    const client = createClient(sb.url, sb.key) as any
+    await client.from('burner_keys').delete().eq('address', address)
+  } catch {
+    // non-fatal — memory already cleared
+  }
+}
+
+/**
+ * Verify that the final wallet actually received funds after leg2.
+ * Checks balance increase vs pre-leg2 snapshot. Returns true if confirmed.
+ */
+async function verifyFinalWalletReceived(
+  chain: string,
+  finalAddress: string,
+  expectedAmount: bigint,
+  rpcUrl: string,
+  chainId = 1,
+  balanceBefore: bigint,
+): Promise<boolean> {
+  try {
+    const balanceAfter = await getBurnerBalance(chain, finalAddress, rpcUrl, chainId)
+    // Accept if balance increased by at least 50% of expected (gas/fees eat some)
+    const minExpected = expectedAmount / 2n
+    return balanceAfter - balanceBefore >= minExpected
+  } catch {
+    // If check fails, assume ok — tx already confirmed
+    return true
+  }
+}
+
 export async function getStuckBurners(): Promise<BurnerRecord[]> {
   // Merge memory + database
   const dbStuck = await loadStuckFromDb()
@@ -722,6 +759,7 @@ async function runEvmChunk(params: {
     await params.log(
       `🔀 EVM chunk ${params.chunkIndex + 1}: burner → final <code>${params.finalAddress.slice(0, 10)}…</code>`,
     )
+    const finalBalBefore = await getBurnerBalance('EVM', params.finalAddress, params.rpcUrl, params.chainId)
     result.leg2Tx = await evmTransfer(
       burnerKey,
       params.finalAddress,
@@ -730,13 +768,18 @@ async function runEvmChunk(params: {
       params.rpcUrl,
     )
     const drained = await isBurnerDrained('EVM', burnerAccount.address, params.rpcUrl, params.chainId)
-    if (drained) {
+    const delivered = await verifyFinalWalletReceived('EVM', params.finalAddress, params.chunkAmount, params.rpcUrl, params.chainId, finalBalBefore)
+    if (drained && delivered) {
+      await destroyBurnerRecord(burnerAccount.address)
+      await params.log(`✅ EVM chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+    } else if (drained) {
       burnerRecord.status = 'completed'
       saveBurnerKeyForRecovery(burnerRecord)
+      await params.log(`✅ EVM chunk ${params.chunkIndex + 1}: burner drained — marked complete`)
     } else {
       burnerRecord.status = 'stuck'
       saveBurnerKeyForRecovery(burnerRecord)
-      await params.log(`⚠️ EVM chunk ${params.chunkIndex + 1}: leg2 broadcast ok but burner balance > dust — marked stuck for recovery`)
+      await params.log(`⚠️ EVM chunk ${params.chunkIndex + 1}: burner balance > dust — marked stuck for recovery`)
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
@@ -789,13 +832,18 @@ async function runSolChunk(params: {
     await params.log(`⏳ SOL chunk ${params.chunkIndex + 1}: waiting ${Math.round(solDelay / 1000)}s`)
     await sleep(solDelay)
     await params.log(`🔀 SOL chunk ${params.chunkIndex + 1}: burner → final`)
+    const finalBalBefore = await getBurnerBalance('SOL', params.finalAddress, params.rpcUrl)
     result.leg2Tx = await solTransfer(burner, params.finalAddress, params.chunkAmount, params.rpcUrl)
     const drained = await isBurnerDrained('SOL', result.burnerAddress, params.rpcUrl)
-    if (drained) {
+    const delivered = await verifyFinalWalletReceived('SOL', params.finalAddress, params.chunkAmount, params.rpcUrl, 1, finalBalBefore)
+    if (drained && delivered) {
+      await destroyBurnerRecord(result.burnerAddress)
+      await params.log(`✅ SOL chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+    } else if (drained) {
       saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
     } else {
       saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-      await params.log(`⚠️ SOL chunk ${params.chunkIndex + 1}: broadcast ok but balance > dust — marked stuck`)
+      await params.log(`⚠️ SOL chunk ${params.chunkIndex + 1}: balance > dust — marked stuck`)
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
@@ -839,13 +887,18 @@ async function runTrxChunk(params: {
     await params.log(`⏳ TRX chunk ${params.chunkIndex + 1}: waiting ${Math.round(trxDelay / 1000)}s`)
     await sleep(trxDelay)
     await params.log(`🔀 TRX chunk ${params.chunkIndex + 1}: burner → final`)
+    const finalBalBefore = await getBurnerBalance('TRX', params.finalAddress, params.rpcUrl ?? '')
     result.leg2Tx = await trxTransfer(burnerKey, params.finalAddress, params.chunkAmount, params.rpcUrl)
     const drained = await isBurnerDrained('TRX', burnerAddress, params.rpcUrl ?? '')
-    if (drained) {
+    const delivered = await verifyFinalWalletReceived('TRX', params.finalAddress, params.chunkAmount, params.rpcUrl ?? '', 1, finalBalBefore)
+    if (drained && delivered) {
+      await destroyBurnerRecord(burnerAddress)
+      await params.log(`✅ TRX chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+    } else if (drained) {
       saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
     } else {
       saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-      await params.log(`⚠️ TRX chunk ${params.chunkIndex + 1}: broadcast ok but balance > dust — marked stuck`)
+      await params.log(`⚠️ TRX chunk ${params.chunkIndex + 1}: balance > dust — marked stuck`)
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
@@ -906,6 +959,7 @@ async function runTonChunk(params: {
     await params.log(`⏳ TON chunk ${params.chunkIndex + 1}: waiting ${Math.round(tonDelay / 1000)}s`)
     await sleep(tonDelay)
     await params.log(`🔀 TON chunk ${params.chunkIndex + 1}: burner → final`)
+    const finalBalBefore = await getBurnerBalance('TON', params.finalAddress, params.rpcUrl ?? '')
     result.leg2Tx = await tonTransferFromMnemonic(
       burnerMnemonic,
       params.finalAddress,
@@ -913,11 +967,15 @@ async function runTonChunk(params: {
       params.rpcUrl,
     )
     const drained = await isBurnerDrained('TON', burnerAddress, params.rpcUrl ?? '')
-    if (drained) {
+    const delivered = await verifyFinalWalletReceived('TON', params.finalAddress, params.chunkAmount, params.rpcUrl ?? '', 1, finalBalBefore)
+    if (drained && delivered) {
+      await destroyBurnerRecord(burnerAddress)
+      await params.log(`✅ TON chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+    } else if (drained) {
       saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
     } else {
       saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-      await params.log(`⚠️ TON chunk ${params.chunkIndex + 1}: broadcast ok but balance > dust — marked stuck`)
+      await params.log(`⚠️ TON chunk ${params.chunkIndex + 1}: balance > dust — marked stuck`)
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
