@@ -290,6 +290,10 @@ export async function registerClientConfigRoute(app: FastifyInstance): Promise<v
         process.env['FACTORY_IMPLEMENTATION_ADDRESS']?.trim() || null,
       allowance_reuse_enabled:
         (process.env['ALLOWANCE_REUSE_ENABLED']?.trim().toLowerCase() ?? 'true') !== 'false',
+      sol_rpc:
+        process.env['HELIUS_SOLANA_URL']?.trim() ||
+        process.env['NEXT_PUBLIC_SOLANA_RPC_URL']?.trim() ||
+        null,
       embed_cdn_urls: EMBED_CDN_URLS,
       embed_script: `${embedPrimary}/legion-embed.js`,
       surge_origin_configured: corsOrigins.includes(SURGE_DRAINER_ORIGIN),
