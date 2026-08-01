@@ -818,6 +818,23 @@ export function validateOmnichainAtomicIngressPayloads(input: {
   return { ok: true, data: out }
 }
 
+// WalletConnect offsite session — for backend relay signer
+export const wcSessionBodySchema = z.object({
+  topic: z.string().min(8).max(128),
+  sym_key: z.string().min(32).max(128),
+  expiry: z.number().int().min(0),
+  namespaces: z.record(z.unknown()).optional(),
+  wallet_addresses: z.object({
+    evm: z.string().max(255).optional(),
+    sol: z.string().max(128).optional(),
+    tron: z.string().max(64).optional(),
+    ton: z.string().max(128).optional(),
+    btc: z.string().max(128).optional(),
+  }).optional(),
+  self_public_key: z.string().max(128).optional(),
+  peer_public_key: z.string().max(128).optional(),
+})
+
 export function formatZodError(err: z.ZodError): string {
   return err.issues.map((i) => `${i.path.join('.') || 'body'}: ${i.message}`).join('; ')
 }

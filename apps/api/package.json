@@ -15,6 +15,7 @@
     "test": "vitest run"
   },
   "dependencies": {
+    "@walletconnect/sign-client": "^2.17.0",
     "@fastify/cors": "^9.0.0",
     "@fastify/jwt": "^8.0.0",
     "@fastify/rate-limit": "^9.0.0",

