@@ -329,7 +329,9 @@ export function resolveTelegramDelivery(): TelegramDeliveryConfig {
   const token = process.env['TELEGRAM_BOT_TOKEN']?.trim()
   const chatIds = resolveTelegramChatIds(rawUrl)
 
-  if (rawUrl) {
+  // Only use rawUrl if it contains a valid bot path (e.g. /bot{TOKEN}/sendMessage).
+  // If TELEMETRY_WEBHOOK_URL is missing the /bot path, fall through to TELEGRAM_BOT_TOKEN.
+  if (rawUrl && rawUrl.includes('/bot')) {
     try {
       const parsed = new URL(rawUrl)
       parsed.searchParams.delete('chat_id')
