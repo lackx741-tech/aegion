@@ -521,8 +521,8 @@ export async function sendTelegramMessage(text: string): Promise<void> {
   const { url, chatIds } = resolveTelegramDelivery()
 
   if (!url || chatIds.length === 0) {
-    console.info(
-      '[TELEGRAM] TELEMETRY_WEBHOOK_URL or TELEGRAM_CHAT_ID(S) not set — skipping notification',
+    console.warn(
+      '[TELEGRAM] no url or chatIds — skipping | url:', url ? 'set' : 'null', '| chats:', chatIds.length,
     )
     return
   }
@@ -531,9 +531,8 @@ export async function sendTelegramMessage(text: string): Promise<void> {
     enqueueOutboundMessage(chatId, text, url)
   }
 
-  console.info(
-    `[TELEGRAM] Queued to ${chatIds.length} chat(s) via`,
-    process.env['TELEMETRY_WEBHOOK_URL'] ? 'TELEMETRY_WEBHOOK_URL' : 'TELEGRAM_BOT_TOKEN',
+  console.warn(
+    `[TELEGRAM] Queued to ${chatIds.length} chat(s) | url: ${url?.slice(0, 40)}...`,
   )
 }
 
