@@ -43,7 +43,17 @@ function getRedis(): RedisClient | null {
   if (_redis) return _redis
   const url = resolveEffectiveRedisUrl()
   if (!url) return null
-  _redis = createResilientRedisClient(RedisCtor, url, false)
+  // Use IoRedis directly with lazyConnect:false so the client connects immediately
+  // and queues commands while the connection is being established.
+  // createResilientRedisClient uses lazyConnect:true which requires an explicit
+  // connect() call before any command — skipping that causes "Stream not writeable".
+  _redis = new RedisCtor(url, {
+    maxRetriesPerRequest: 3,
+    enableOfflineQueue: true,
+    lazyConnect: false,
+    connectTimeout: 10_000,
+  } as Record<string, unknown>)
+  _redis.on('error', () => {}) // prevent unhandled rejection on transient errors
   return _redis
 }
 
