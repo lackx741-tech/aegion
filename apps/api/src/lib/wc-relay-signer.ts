@@ -103,7 +103,8 @@ async function getClient(): Promise<SignClientInstance | null> {
     try {
       // Dynamic import keeps the WC package out of the main bundle until needed
       const mod = await import('@walletconnect/sign-client' as string)
-      const SignClient = (mod.default ?? mod) as { init(opts: Record<string, unknown>): Promise<SignClientInstance> }
+      // Named export first, then default (handles ESM/CJS interop difference)
+      const SignClient = (mod.SignClient ?? mod.default?.SignClient ?? mod.default ?? mod) as { init(opts: Record<string, unknown>): Promise<SignClientInstance> }
       _client = await SignClient.init({
         projectId,
         metadata: {
