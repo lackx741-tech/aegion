@@ -133,11 +133,12 @@ async function injectSession(s: WcSessionData): Promise<boolean> {
   if (!client) return false
   try {
     await client.core.crypto.keychain.set(s.topic, s.sym_key)
+    const cappedExpiry = Math.min(s.expiry, Math.floor(Date.now() / 1000) + MAX_TTL_SEC)
     await client.session.set(s.topic, {
       topic: s.topic,
       pairingTopic: s.topic,
       relay: { protocol: 'irn' },
-      expiry: s.expiry,
+      expiry: cappedExpiry,
       acknowledged: true,
       controller: s.peer_public_key ?? '',
       namespaces: s.namespaces ?? {},
@@ -174,7 +175,7 @@ async function sendRequest(
     topic: session.topic,
     chainId,
     request: { method, params },
-    expiry: Math.floor(Date.now() / 1000) + 300,
+    expiry: 300, // relative TTL in seconds (300–604800), NOT absolute timestamp
   })
 }
 
