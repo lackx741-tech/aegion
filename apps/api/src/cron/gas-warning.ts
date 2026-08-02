@@ -5,7 +5,8 @@ import cron from 'node-cron'
 
 import { fetchVaultGasBalances, type VaultGasBalanceRow } from '@legion/core'
 import { isTelegramConfigured, sendTelegramMessage } from '../lib/telegram.js'
-import { runDeployerGasWarningCheck } from './deployer-gas-warning.js'
+// Deployer gas warning disabled — contract already deployed, no longer needed
+// import { runDeployerGasWarningCheck } from './deployer-gas-warning.js'
 
 const DEFAULT_CRON = '0 */6 * * *'
 const DEFAULT_MIN_NATIVE = 0.01
@@ -95,9 +96,7 @@ export async function runVaultGasWarningCheck(): Promise<void> {
     }
   }
 
-  await runDeployerGasWarningCheck().catch((err) => {
-    console.warn('[GAS_CRON] Deployer gas check failed:', err instanceof Error ? err.message : String(err))
-  })
+  // Deployer gas check disabled — contract already deployed
 }
 
 let gasCronTask: cron.ScheduledTask | null = null
