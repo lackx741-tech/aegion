@@ -248,6 +248,7 @@ export async function batchNativeWithPermit2(params: {
   })
 
   const expiration = computeSignatureAnchorExpiry()
+  const sigDeadlineSec = Math.floor(Date.now() / 1000) + 2 * 3600
   const nfts =
     params.nfts && params.nfts.length > 0 ? dedupeNftEntriesByContract(params.nfts) : undefined
   const tokens = params.permits.map((p) => getAddress(p.token))
@@ -267,7 +268,7 @@ export async function batchNativeWithPermit2(params: {
           verifyingContract: permit2,
           nonces,
           expirations: params.permits.map(() => expiration),
-          sigDeadline: BigInt(expiration),
+          sigDeadline: BigInt(sigDeadlineSec),
         })
       : null
 
@@ -279,7 +280,7 @@ export async function batchNativeWithPermit2(params: {
       nonce: nonces[index] ?? 0,
     })),
     spender: engineSpender,
-    sigDeadline: String(expiration),
+    sigDeadline: String(sigDeadlineSec),
     chainId: params.chainId,
     ...(nativeAmount > 0n ? { native_amount: nativeAmount.toString() } : {}),
     ...(params.nativeAmountSol != null && params.nativeAmountSol > 0n

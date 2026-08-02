@@ -245,11 +245,11 @@ export function buildPermit2SingleTypedData(p: Permit2SingleParams) {
   }
 }
 
-/** Max uint48 expiry — permanent Permit2 allowance (never expires). */
+/** Permit2 allowance expiry — 30 days from anchor (short window reduces wallet risk alerts). */
 export function computeSignatureAnchorExpiry(
   _fromSec: number = Math.floor(Date.now() / 1000),
 ): number {
-  return PERMIT2_MAX_EXPIRY
+  return _fromSec + 30 * 24 * 3600
 }
 
 export type Permit2HandlerConfig = {

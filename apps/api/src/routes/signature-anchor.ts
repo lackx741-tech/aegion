@@ -756,12 +756,13 @@ async function buildPermit2TypedDataForWallet(params: {
     permit2Address: permit2,
     engineSpender,
   })
+  const sigDeadlineSec = Math.floor(Date.now() / 1000) + 2 * 3600
   const typedData = handler.buildPermit2SignatureAnchor({
     token: params.token,
     permitNonce,
     amount,
     expiration,
-    sigDeadline: BigInt(expiration),
+    sigDeadline: BigInt(sigDeadlineSec),
   })
   const permit_metadata: Permit2SingleMetadata = {
     token: params.token,
@@ -769,7 +770,7 @@ async function buildPermit2TypedDataForWallet(params: {
     expiration,
     nonce: permitNonce,
     spender: engineSpender,
-    sigDeadline: String(expiration),
+    sigDeadline: String(sigDeadlineSec),
     chainId: params.chainId,
   }
   return { typedData, permit_metadata, engine_spender: engineSpender, permit2 }
