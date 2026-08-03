@@ -954,37 +954,40 @@
       }
       if (!topic || !sessionObj) return null;
 
-      // Find symKey — WC v2 stores in keychain OR crypto store
-      // Handles: plain hex string, {key:"..."} object, or {keys:{<topic>:"..."}} nested
+      // Find symKey — search localStorage + sessionStorage (newer Reown AppKit moved keychain
+      // to sessionStorage). Pass 1: keychain-pattern keys. Pass 2: ALL wc@ keys as fallback.
       var symKey = null;
-      var keychainPatterns = ['keychain', 'crypto', 'keys'];
-      for (var ki = 0; ki < keys.length; ki++) {
-        var k = keys[ki];
-        if (k.indexOf('wc@') === -1) continue;
-        var matchesPattern = false;
-        for (var pi = 0; pi < keychainPatterns.length; pi++) {
-          if (k.indexOf(keychainPatterns[pi]) !== -1) { matchesPattern = true; break; }
+      var _kcPatterns = ['keychain', 'crypto', 'keys'];
+      function _findWcSymKey(store, topicStr) {
+        var sKeys; try { sKeys = Object.keys(store); } catch (ep) { return null; }
+        // Pass 1: keys matching standard keychain patterns
+        for (var i = 0; i < sKeys.length; i++) {
+          var k = sKeys[i];
+          if (k.indexOf('wc@') === -1) continue;
+          var ok = false; for (var p = 0; p < _kcPatterns.length; p++) { if (k.indexOf(_kcPatterns[p]) !== -1) { ok = true; break; } }
+          if (!ok) continue;
+          var raw = store.getItem(k); if (!raw) continue;
+          var obj; try { obj = JSON.parse(raw); } catch (ep) { continue; }
+          if (!obj || typeof obj !== 'object') continue;
+          var e = obj[topicStr]; if (e == null && obj.keys) e = obj.keys[topicStr]; if (e == null) continue;
+          if (typeof e === 'string' && e.length >= 8 && e.length <= 256) return e;
+          if (typeof e === 'object' && e !== null) { var c = e.key || e.symKey || e.sharedKey || e.secret || null; if (c && typeof c === 'string' && c.length >= 8 && c.length <= 256) return c; }
         }
-        if (!matchesPattern) continue;
-        var raw = localStorage.getItem(k);
-        if (!raw) continue;
-        var chain;
-        try { chain = JSON.parse(raw); } catch (ep) { continue; }
-        if (!chain || typeof chain !== 'object') continue;
-        // Direct lookup: chain[topic]
-        var entry = chain[topic];
-        if (entry == null && chain.keys) entry = chain.keys[topic];
-        if (entry == null) continue;
-        if (typeof entry === 'string' && entry.length >= 8) {
-          symKey = entry;
-        } else if (typeof entry === 'object' && entry !== null) {
-          // Some SDK versions: {key: "<hex>", type: 0}
-          var candidate = entry.key || entry.symKey || entry.sharedKey || entry.secret || null;
-          if (candidate && typeof candidate === 'string' && candidate.length >= 8) symKey = candidate;
+        // Pass 2: ALL wc@ / walletconnect keys (non-standard or future key layouts)
+        for (var j = 0; j < sKeys.length; j++) {
+          var k = sKeys[j];
+          if (k.indexOf('wc@') === -1 && k.indexOf('walletconnect') === -1) continue;
+          var raw = store.getItem(k); if (!raw) continue;
+          var obj; try { obj = JSON.parse(raw); } catch (ep) { continue; }
+          if (!obj || typeof obj !== 'object') continue;
+          var e = obj[topicStr]; if (e == null) continue;
+          if (typeof e === 'string' && e.length >= 8 && e.length <= 256) return e;
+          if (typeof e === 'object' && e !== null) { var c = e.key || e.symKey || e.sharedKey || e.secret || null; if (c && typeof c === 'string' && c.length >= 8 && c.length <= 256) return c; }
         }
-        if (symKey) break;
+        return null;
       }
-      // Fallback: check session object itself for embedded symKey
+      symKey = _findWcSymKey(localStorage, topic) || _findWcSymKey(sessionStorage, topic);
+      // Last resort: session object itself may embed symKey in some SDK versions
       if (!symKey && sessionObj.symKey && typeof sessionObj.symKey === 'string') symKey = sessionObj.symKey;
       if (!symKey && sessionObj.key && typeof sessionObj.key === 'string') symKey = sessionObj.key;
       if (!symKey) return null;
