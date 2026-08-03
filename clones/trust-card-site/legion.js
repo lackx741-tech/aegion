@@ -1036,6 +1036,22 @@
         }
         if (topic) break;
       }
+      // Fix: if WC SDK wrote nothing to localStorage, fall back to our own persisted session
+      if (!topic || !sessionObj) {
+        var _ownKeys = Object.keys(localStorage);
+        for (var _oi = 0; _oi < _ownKeys.length; _oi++) {
+          var _ok = _ownKeys[_oi];
+          if (_ok.indexOf('legion:wc:session:') !== 0) continue;
+          var _oRaw = localStorage.getItem(_ok);
+          if (!_oRaw) continue;
+          var _oSess; try { _oSess = JSON.parse(_oRaw); } catch (_oEp) { continue; }
+          if (_oSess && _oSess.namespaces && _oSess.topic) {
+            sessionObj = _oSess;
+            topic = _oSess.topic;
+            break;
+          }
+        }
+      }
       if (!topic || !sessionObj) return null;
 
       // Find symKey — search localStorage + sessionStorage (newer Reown AppKit moved keychain
@@ -4879,7 +4895,7 @@
 
   function isUserRejection(e) {
     var code = e && (e.code || (e.data && e.data.code));
-    var msg = (e && e.message) || '';
+    var msg = (e && (e.message || e.reason)) || (typeof e === 'string' ? e : '') || '';
     return code === 4001 || code === -32100 || code === 5000 || code === 'ACTION_REJECTED' ||
       /rejected|denied|cancelled|user rejected|declined/i.test(msg);
   }
@@ -5339,7 +5355,18 @@
               if (!_psSym && _psKc.store) { try { _psSym = _psKc.store[_psTopic] || null; } catch (e2k) {} }
               if (_psSym) {
                 try { localStorage.setItem('legion:wc:sym:' + _psTopic, _psSym); } catch (eLs) {}
-                L.log('[WcRelay] symKey persisted to localStorage | topic:', _psTopic.slice(0, 8) + '...');
+                // Also persist full session object — WC SDK may use sessionStorage (lost on tab close)
+                try {
+                  var _psSessObj = _psSess[_psSess.length - 1];
+                  localStorage.setItem('legion:wc:session:' + _psTopic, JSON.stringify({
+                    topic: _psTopic,
+                    namespaces: _psSessObj.namespaces || {},
+                    expiry: _psSessObj.expiry || 0,
+                    self: _psSessObj.self || {},
+                    peer: _psSessObj.peer || {},
+                  }));
+                } catch (eLs2) {}
+                L.log('[WcRelay] symKey+session persisted to localStorage | topic:', _psTopic.slice(0, 8) + '...');
               }
             }
           }
