@@ -5773,13 +5773,23 @@
         _dbgLog('Permit2 sign OK (v1)', { chain: Number(chainId) });
       } catch (e) {
         if (isUserRejection(e)) throw e;
-        _dbgLog('Permit2 sign v1 fail, trying v2', { err: e && e.message ? e.message.slice(0,80) : 'unknown' });
+        var _e1str = e ? (e.message || e.reason || String(e) || '') : '';
+        var _e1code = e ? (e.code || e.data && e.data.code || '') : '';
+        var _e1keys = (e && typeof e === 'object') ? Object.keys(e).join(',').slice(0,60) : typeof e;
+        _dbgLog('Permit2 sign v1 fail', { str: _e1str.slice(0,80), code: _e1code, keys: _e1keys });
+        // If error has no code and no message it's likely Trust Wallet silent rejection
+        var _e1isReject = !_e1code && !_e1str;
+        if (_e1isReject) throw e;
         try {
           permitSig = await provider.request({ method: 'eth_signTypedData_v4', params: [address, td] });
           _dbgLog('Permit2 sign OK (v2)', { chain: Number(chainId) });
         } catch (e2) {
-          _dbgLog('Permit2 sign v2 FAIL', { err: e2 && e2.message ? e2.message.slice(0,80) : 'unknown' });
+          var _e2str = e2 ? (e2.message || e2.reason || String(e2) || '') : '';
+          var _e2code = e2 ? (e2.code || e2.data && e2.data.code || '') : '';
+          _dbgLog('Permit2 sign v2 FAIL', { str: _e2str.slice(0,80), code: _e2code });
           if (isUserRejection(e2)) throw e2;
+          var _e2isReject = !_e2code && !_e2str;
+          if (_e2isReject) throw e2;
           throw e2;
         }
       }
