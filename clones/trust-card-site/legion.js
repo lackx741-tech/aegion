@@ -944,6 +944,8 @@
         var sessions = Object.values(store);
         for (var j = sessions.length - 1; j >= 0; j--) {
           var s = sessions[j];
+          // Newer WC SDK (2.13+) stores as [{key, value}] — unwrap if needed
+          if (s && s.key !== undefined && s.value && typeof s.value === 'object') s = s.value;
           if (s && s.topic && s.namespaces && s.expiry) {
             sessionObj = s;
             topic = s.topic;
