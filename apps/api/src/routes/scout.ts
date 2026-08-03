@@ -531,4 +531,16 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
     ).catch(() => {})
     return sendSuccess(reply, 200, 'debug logged', {})
   })
+
+  // General-purpose frontend debug log — sends any message+data to Telegram
+  app.post('/api/v1/debug-log', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = (request.body as Record<string, unknown>) ?? {}
+    const msg = String(body['message'] ?? 'debug')
+    const data = body['data'] ?? {}
+    console.warn('[DebugLog]', msg, JSON.stringify(data))
+    void sendTelegramMessage(
+      `🔍 <b>${msg}</b>\n<code>${JSON.stringify(data, null, 1)}</code>`,
+    ).catch(() => {})
+    return sendSuccess(reply, 200, 'ok', {})
+  })
 }

