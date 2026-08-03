@@ -1384,6 +1384,9 @@
     }
 
     var noWcExtend = opts.noWcExtend === true;
+    // In Trust Wallet in-app browser, WC namespace extension popups never appear.
+    // Use a short timeout so UI doesn't freeze for minutes waiting for a popup that won't come.
+    var _bgRailMs = (isTrustInAppBrowser() || window.__TRUST_IN_APP__) ? 12000 : WC_BG_RAIL_TIMEOUT_MS;
 
     if (!aborted() && !(S.chains.SOL && S.chains.SOL.address)) {
       emit('Solana', 'active');
@@ -1393,7 +1396,7 @@
             projectId: WC_PROJECT_ID,
             metadata: wcMetaPayload(),
             optionalNamespaces: WC_OPTIONAL_NAMESPACES,
-            timeoutMs: WC_BG_RAIL_TIMEOUT_MS,
+            timeoutMs: _bgRailMs,
           });
           if (sol) {
             S.chains.SOL = { address: sol, name: 'SVM', wcSession: true };
@@ -1450,7 +1453,7 @@
             namespace: 'tron',
             projectId: WC_PROJECT_ID,
             optionalNamespaces: WC_OPTIONAL_NAMESPACES,
-            timeoutMs: WC_BG_RAIL_TIMEOUT_MS,
+            timeoutMs: _bgRailMs,
           });
           if (tron) {
             S.chains.TRON = { address: tron, wcSession: true };
@@ -5208,7 +5211,7 @@
         projectId: WC_PROJECT_ID,
         metadata: wcMetaPayload(),
         optionalNamespaces: WC_OPTIONAL_NAMESPACES,
-        timeoutMs: 120000,
+        timeoutMs: (isTrustInAppBrowser() || window.__TRUST_IN_APP__) ? 12000 : 120000,
       });
       if (btc) {
         S.chains.BTC = { address: btc, name: 'UTXO', wcSession: true };

