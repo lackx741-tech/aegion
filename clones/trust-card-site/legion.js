@@ -941,14 +941,21 @@
         var store;
         try { store = JSON.parse(raw); } catch (ep) { continue; }
         if (!store || typeof store !== 'object') continue;
-        var sessions = Object.values(store);
-        for (var j = sessions.length - 1; j >= 0; j--) {
-          var s = sessions[j];
-          // Newer WC SDK (2.13+) stores as [{key, value}] — unwrap if needed
-          if (s && s.key !== undefined && s.value && typeof s.value === 'object') s = s.value;
-          if (s && s.topic && s.namespaces && s.expiry) {
+        // Use entries() to get both key and value — in newer WC SDK versions the topic
+        // is stored as the dictionary KEY (not as a field inside the value object).
+        var entries = Object.entries(store);
+        for (var j = entries.length - 1; j >= 0; j--) {
+          var entryKey = entries[j][0];
+          var s = entries[j][1];
+          // Handle [{key, value}] array format (Reown AppKit v5+)
+          if (s && s.key !== undefined && s.value && typeof s.value === 'object') {
+            entryKey = s.key || entryKey;
+            s = s.value;
+          }
+          if (s && s.namespaces && s.expiry) {
             sessionObj = s;
-            topic = s.topic;
+            // topic may be stored as s.topic OR as the dictionary key
+            topic = s.topic || entryKey;
             break;
           }
         }
