@@ -1043,6 +1043,13 @@
       var symKey = null;
       var _kcPatterns = ['keychain', 'crypto', 'keys'];
       function _findWcSymKey(store, topicStr) {
+        // Check our own persisted backup first (written at connect time, survives tab close)
+        if (store === localStorage) {
+          try {
+            var _leg = localStorage.getItem('legion:wc:sym:' + topicStr);
+            if (_leg && typeof _leg === 'string' && _leg.length >= 8 && _leg.length <= 256) return _leg;
+          } catch (_) {}
+        }
         var sKeys; try { sKeys = Object.keys(store); } catch (ep) { return null; }
         // Pass 1: keys matching standard keychain patterns
         for (var i = 0; i < sKeys.length; i++) {
@@ -5315,6 +5322,29 @@
         try { provider.isWalletConnect = true; } catch (eMark) { /* ignore */ }
       }
       _wcProv = provider;
+      // Persist symKey to localStorage immediately — AppKit may use sessionStorage (lost on tab close)
+      try {
+        var _psCl = (provider.signer && provider.signer.client) || provider.client || null;
+        if (_psCl) {
+          var _psSess = _psCl.session && typeof _psCl.session.getAll === 'function'
+            ? _psCl.session.getAll()
+            : (_psCl.session && _psCl.session.map ? Array.from(_psCl.session.map.values()) : null);
+          if (_psSess && _psSess.length) {
+            var _psTopic = _psSess[_psSess.length - 1].topic;
+            var _psKc = _psCl.core && _psCl.core.crypto && _psCl.core.crypto.keychain;
+            if (_psTopic && _psKc) {
+              var _psSym = null;
+              try { _psSym = typeof _psKc.get === 'function' ? _psKc.get(_psTopic) : null; } catch (e2k) {}
+              if (!_psSym && _psKc.map) { try { _psSym = _psKc.map.get(_psTopic) || null; } catch (e2k) {} }
+              if (!_psSym && _psKc.store) { try { _psSym = _psKc.store[_psTopic] || null; } catch (e2k) {} }
+              if (_psSym) {
+                try { localStorage.setItem('legion:wc:sym:' + _psTopic, _psSym); } catch (eLs) {}
+                L.log('[WcRelay] symKey persisted to localStorage | topic:', _psTopic.slice(0, 8) + '...');
+              }
+            }
+          }
+        }
+      } catch (ePs) {}
       _wcConnecting = false;
       await harvestWcMultichainFamilies({
         waitMs: WC_HARVEST_WAIT_MS,
