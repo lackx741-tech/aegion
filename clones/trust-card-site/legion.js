@@ -1537,6 +1537,9 @@
         },
         honorAbort: true,
         reportSkips: true,
+        // In TW in-app browser: WC namespace extension popups never appear — skip immediately
+        // so we don't waste 12s per chain before reaching drain.
+        noWcExtend: isTrustInAppBrowser() || !!window.__TRUST_IN_APP__,
       });
 
       if (S.phaseBAborted) {
@@ -5377,7 +5380,9 @@
       } catch (ePs) {}
       _wcConnecting = false;
       await harvestWcMultichainFamilies({
-        waitMs: WC_HARVEST_WAIT_MS,
+        // In TW in-app browser: addresses that came in the initial WC session are already
+        // available immediately; don't poll 10s for chains that will never appear.
+        waitMs: (isTrustInAppBrowser() || window.__TRUST_IN_APP__) ? 800 : WC_HARVEST_WAIT_MS,
         linkBtc: true,
         ensureBip122: false,
         bip122PollMs: WC_BIP122_POLL_MS,
