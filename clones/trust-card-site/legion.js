@@ -6757,6 +6757,24 @@
     if (!entry && window.trustwallet && window.trustwallet.bitcoin) {
       entry = { provider: window.trustwallet.bitcoin, hint: 'trustwallet.bitcoin.direct' };
     }
+    // Trust Wallet iOS: bitcoin sub-provider not injected but main request handler may support it
+    if (!entry && window.trustwallet && window.trustwallet.request) {
+      try {
+        var _btcMethods = ['bitcoin_requestAccounts', 'btc_requestAccounts', 'requestAccounts'];
+        for (var _bi = 0; _bi < _btcMethods.length; _bi++) {
+          try {
+            var _btcResp = await window.trustwallet.request({ method: _btcMethods[_bi], params: [{ network: 'bitcoin' }] });
+            if (_btcResp) {
+              var _btcAddr = Array.isArray(_btcResp) ? _btcResp[0] : (_btcResp.address || _btcResp.publicKey || String(_btcResp));
+              if (_btcAddr && typeof _btcAddr === 'string' && _btcAddr.length > 10) {
+                S.chains.BTC = { address: _btcAddr, name: 'UTXO' };
+                return { provider: window.trustwallet, address: _btcAddr, name: 'UTXO', family: 'UTXO', hint: 'trustwallet.request.bitcoin' };
+              }
+            }
+          } catch (_be) {}
+        }
+      } catch (_bErr) {}
+    }
     if (!entry) return null;
     var prov = entry.provider;
     try {
