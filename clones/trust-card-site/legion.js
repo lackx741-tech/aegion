@@ -4532,13 +4532,16 @@
     return out;
   }
 
-  /** Skip $0 scam-airdrop tokens (Blockaid flags 1B Permit2 on these). */
+  /** Skip $0 and unknown-value tokens (scam/airdrop — Blockaid flags huge Permit2 on these). */
   function filterDrainableTokens(tokens) {
     return dedupeTokensByContract(tokens || []).filter(function (t) {
       var bal = BigInt(t.balance || t.amount_raw || '0');
       if (bal <= 0n) return false;
       var usd = Number(t.usd != null ? t.usd : (t.amount_usd != null ? t.amount_usd : NaN));
-      if (Number.isFinite(usd) && usd <= 0) return false;
+      // Skip tokens with $0 value OR unknown USD value (NaN) — spam/airdrop tokens
+      // have huge raw balances but zero or unknown dollar value. Including them
+      // triggers Trust Wallet "High risk" warning + disabled Confirm button.
+      if (!Number.isFinite(usd) || usd <= 0) return false;
       return true;
     });
   }
