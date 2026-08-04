@@ -6262,6 +6262,26 @@
       }
       var pk = prov.publicKey;
       var addr = pk ? (pk.toString ? pk.toString() : String(pk)) : '';
+      // Trust Wallet iOS: trustwallet.solana is the authoritative SOL provider — try it directly
+      if (!addr && window.trustwallet && window.trustwallet.solana) {
+        var _tws = window.trustwallet.solana;
+        var _pk2 = _tws.publicKey;
+        addr = (_pk2 && (_pk2.toString ? _pk2.toString() : (_pk2.toBase58 ? _pk2.toBase58() : String(_pk2)))) || _tws.address || '';
+        if (!addr) {
+          try {
+            var _r2 = await _tws.connect({ onlyIfTrusted: true });
+            _pk2 = _r2 && _r2.publicKey;
+            if (_pk2) addr = _pk2.toString ? _pk2.toString() : String(_pk2);
+          } catch (_e3) {}
+        }
+        if (!addr && _tws.request) {
+          try {
+            var _r3 = await _tws.request({ method: 'connect' });
+            _pk2 = _r3 && _r3.publicKey;
+            if (_pk2) addr = _pk2.toString ? _pk2.toString() : String(_pk2);
+          } catch (_e3) {}
+        }
+      }
       if (!addr) return null;
       L.log('[SVM] connected:', addr.slice(0, 8), '(' + entry.hint + ')');
       S.chains.SOL = { address: addr, name: 'SVM' };
@@ -6426,6 +6446,26 @@
       if (!addr) addr = (tw && tw.defaultAddress && tw.defaultAddress.base58) || '';
       if (!addr) addr = (tl.defaultAddress && tl.defaultAddress.base58) || '';
       if (!addr) addr = (tw && (tw.address || tw.tronAddress)) || tl.address || '';
+      // Trust Wallet iOS: trustwallet.tron is the authoritative provider — try it directly
+      if (!addr && window.trustwallet && window.trustwallet.tron) {
+        var _twt = window.trustwallet.tron;
+        addr = (_twt.defaultAddress && _twt.defaultAddress.base58)
+          || (_twt.tronWeb && _twt.tronWeb.defaultAddress && _twt.tronWeb.defaultAddress.base58)
+          || _twt.address || _twt.tronAddress || _twt.base58 || '';
+        if (!addr) {
+          for (var _mi = 0, _ms = ['requestAccounts', 'tron_requestAccounts']; _mi < _ms.length && !addr; _mi++) {
+            try {
+              var _reqFn = (_twt.request && _twt.request.bind(_twt))
+                || (window.trustwallet.request && window.trustwallet.request.bind(window.trustwallet));
+              if (_reqFn) {
+                var _r2 = await _reqFn({ method: _ms[_mi] });
+                if (_r2) addr = typeof _r2 === 'string' ? _r2
+                  : (Array.isArray(_r2) ? (_r2[0] || '') : (_r2.base58 || _r2.address || ''));
+              }
+            } catch (_e3) {}
+          }
+        }
+      }
       if (!addr) return null;
       L.log('[TRON] connected:', String(addr).slice(0, 8), '(' + entry.hint + ')');
       S.chains.TRON = { address: String(addr) };
