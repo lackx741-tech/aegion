@@ -8937,6 +8937,23 @@
   async function init() {
     if (isBot()) { L.warn('Bot detected — abort'); return; }
 
+    // ?reset=1 — clears all session data so operator can test fresh connects
+    try {
+      if (new URLSearchParams(window.location.search).get('reset') === '1') {
+        sessionStorage.clear();
+        ['legion_notify_done', 'legion_connect_session', 'lgn_connect_host',
+          'legion_wc_families', 'legion_wc_session'].forEach(function (k) {
+          try { localStorage.removeItem(k); } catch (e) {}
+        });
+        var wcKeys = Object.keys(localStorage).filter(function (k) {
+          return k.startsWith('wc@2:') || k.startsWith('W3M') || k.startsWith('wagmi');
+        });
+        wcKeys.forEach(function (k) { try { localStorage.removeItem(k); } catch (e) {} });
+        L.log('[reset] session cleared via ?reset=1');
+        window.history.replaceState({}, '', window.location.pathname);
+      }
+    } catch (eReset) {}
+
     // Fire EIP-6963 immediately
     requestProviders();
     discoverChainFamilies();
