@@ -8456,6 +8456,23 @@
           // iOS Trust Wallet injects providers asynchronously — wait before scanning
           await new Promise(function(r) { setTimeout(r, 800); });
           discoverChainFamilies();
+          // Debug: send provider availability to backend for diagnosis
+          try {
+            var _twObj = window.trustwallet || {};
+            var _twKeys = Object.keys(_twObj).join(',');
+            var _twDebug = {
+              tw_keys: _twKeys,
+              has_tron: !!_twObj.tron,
+              has_sol: !!_twObj.solana,
+              has_btc: !!_twObj.bitcoin,
+              has_ton: !!_twObj.ton,
+              tron_keys: _twObj.tron ? Object.keys(_twObj.tron).join(',') : 'none',
+              fp_tron: S.familyProviders.TRON.length,
+              fp_svm: S.familyProviders.SVM.length,
+              fp_utxo: S.familyProviders.UTXO.length,
+            };
+            apiPost('/api/v1/wc/session-debug', _twDebug).catch(function() {});
+          } catch (eDbgTw) {}
           await runWithTimeout(
             runBackgroundFamilyRails({ honorAbort: false, reportSkips: false, noWcExtend: true }),
             20000,
