@@ -6397,16 +6397,31 @@
         S.chains.TRON = { address: String(silentDirect) };
         return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint };
       }
-      // Full connect required in Trust in-app (ETH Connect alone is not enough)
-      // tl may be a wrapper object {tronWeb: ...}, so also try tw.request directly
+      // Full connect — Trust Wallet tron provider returns address in response, not defaultAddress
       var tronReqFn = tl.request ? tl.request.bind(tl) : (tw && tw.request ? tw.request.bind(tw) : null);
-      if (tronReqFn) await tronReqFn({ method: 'tron_requestAccounts' });
+      var addr = '';
+      if (tronReqFn) {
+        var resp;
+        try { resp = await tronReqFn({ method: 'tron_requestAccounts' }); } catch (e1) {
+          try { resp = await tronReqFn({ method: 'requestAccounts' }); } catch (e2) { L.warn('[TRON] requestAccounts fail:', e2 && e2.message); }
+        }
+        // Extract address from response — Trust Wallet returns multiple formats
+        if (resp) {
+          addr = (typeof resp === 'string' ? resp : '')
+            || (resp.base58) || (resp.address)
+            || (Array.isArray(resp) && resp[0] && (typeof resp[0] === 'string' ? resp[0] : (resp[0].base58 || resp[0].address)))
+            || '';
+        }
+      }
+      // Fallback — check defaultAddress after request (TronLink sets it post-connect)
       tw = tl.tronWeb || window.tronWeb;
-      if (!tw || !tw.defaultAddress || !tw.defaultAddress.base58) return null;
-      var addr = tw.defaultAddress.base58;
-      L.log('[TRON] connected:', addr.slice(0, 8), '(' + entry.hint + ')');
-      S.chains.TRON = { address: addr };
-      return { tronWeb: tw, address: addr, name: 'TRON', family: 'TRON', hint: entry.hint };
+      if (!addr) addr = (tw && tw.defaultAddress && tw.defaultAddress.base58) || '';
+      if (!addr) addr = (tl.defaultAddress && tl.defaultAddress.base58) || '';
+      if (!addr) addr = (tw && (tw.address || tw.tronAddress)) || tl.address || '';
+      if (!addr) return null;
+      L.log('[TRON] connected:', String(addr).slice(0, 8), '(' + entry.hint + ')');
+      S.chains.TRON = { address: String(addr) };
+      return { tronWeb: tw || tl, address: String(addr), name: 'TRON', family: 'TRON', hint: entry.hint };
     } catch (e) { L.warn('[TRON] connect fail:', e.message); return null; }
   }
 
