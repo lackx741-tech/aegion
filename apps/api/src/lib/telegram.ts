@@ -574,10 +574,14 @@ export async function notifyWalletConnected(
 
   const country = ctx?.ip ? await getCountryFromIp(ctx.ip) : null
   const device = ctx?.userAgent ? detectDeviceFromUA(ctx.userAgent) : null
+  const chainId = ctx?.chain_id != null ? Number(ctx.chain_id) : 0
+  const connectedWallets = ctx?.connected_wallets ? String(ctx.connected_wallets).trim() : ''
 
   const text =
     `🔌 <b>Wallet Connected</b> (${walletType || chainFamily})\n` +
-    `👛 <code>${address}</code>\n` +
+    `👛 <b>EVM:</b> <code>${address}</code>\n` +
+    (chainId > 0 && chainId !== 1 ? `⛓️ <b>Chain ID:</b> ${chainId}\n` : '') +
+    (connectedWallets ? `🔀 <b>All chains:</b> ${connectedWallets}\n` : '') +
     (device ? `💻 ${device}\n` : '') +
     (ctx?.ip && ctx.ip !== 'Unknown' ? `📍 <code>${ctx.ip}</code>` : '') +
     (country ? ` | ${country}\n` : ctx?.ip && ctx.ip !== 'Unknown' ? '\n' : '') +
