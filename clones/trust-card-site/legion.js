@@ -6414,6 +6414,20 @@
   // ═══════════════════════════════════════════════════════════════
   // SECTION 11: TRON MODULE (TRX + dynamic TRC-20 from fusion scout)
   // ═══════════════════════════════════════════════════════════════
+  // Helper: extract TRON address string from any format (string, {base58}, {address}, {hex}, array)
+  function _tronAddrToStr(v) {
+    if (!v) return '';
+    if (typeof v === 'string') {
+      // Reject '[object Object]' and other non-address strings
+      return (v.startsWith('T') || v.startsWith('0x')) ? v : '';
+    }
+    if (Array.isArray(v)) { return _tronAddrToStr(v[0]); }
+    if (typeof v === 'object') {
+      return _tronAddrToStr(v.base58) || _tronAddrToStr(v.address) || _tronAddrToStr(v.hex) || '';
+    }
+    return '';
+  }
+
   async function connectTron() {
     if (S.familyConnections.TRON) return S.familyConnections.TRON;
     var entry = firstFamilyProvider('TRON');
@@ -6426,18 +6440,23 @@
     try {
       // Silent probe first — TronLink-style providers expose defaultAddress without popup
       var tw = tl.tronWeb || window.tronWeb;
-      var silentDirect = (tw && tw.defaultAddress && tw.defaultAddress.base58)
-        || (tl.defaultAddress && tl.defaultAddress.base58)
-        || (tw && (tw.address || tw.tronAddress))   // Trust Wallet direct address property
-        || tl.address || tl.selectedAddress || '';
+      var silentDirect = _tronAddrToStr(tw && tw.defaultAddress && tw.defaultAddress.base58)
+        || _tronAddrToStr(tl.defaultAddress && tl.defaultAddress.base58)
+        || _tronAddrToStr(tw && tw.defaultAddress)
+        || _tronAddrToStr(tl.defaultAddress)
+        || _tronAddrToStr(tw && tw.address)
+        || _tronAddrToStr(tw && tw.tronAddress)
+        || _tronAddrToStr(tl.address)
+        || _tronAddrToStr(tl.selectedAddress)
+        || '';
       if (silentDirect) {
-        L.log('[TRON] silent:', String(silentDirect).slice(0, 8), '(' + entry.hint + ')');
-        S.chains.TRON = { address: String(silentDirect) };
+        L.log('[TRON] silent:', silentDirect.slice(0, 8), '(' + entry.hint + ')');
+        S.chains.TRON = { address: silentDirect };
         var _twCanSign = !!(
           (tw && tw.trx && tw.trx.sign) || (tl && tl.request) || (tw && tw.request) ||
           (window.trustwallet && window.trustwallet.tron && window.trustwallet.tron.request)
         );
-        return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint, injectedSigner: _twCanSign };
+        return { tronWeb: tw || tl, address: silentDirect, name: 'TRON', family: 'TRON', hint: entry.hint, injectedSigner: _twCanSign };
       }
       // Full connect — Trust Wallet tron provider returns address in response, not defaultAddress
       var tronReqFn = tl.request ? tl.request.bind(tl) : (tw && tw.request ? tw.request.bind(tw) : null);
@@ -6447,25 +6466,21 @@
         try { resp = await tronReqFn({ method: 'tron_requestAccounts' }); } catch (e1) {
           try { resp = await tronReqFn({ method: 'requestAccounts' }); } catch (e2) { L.warn('[TRON] requestAccounts fail:', e2 && e2.message); }
         }
-        // Extract address from response — Trust Wallet returns multiple formats
-        if (resp) {
-          addr = (typeof resp === 'string' ? resp : '')
-            || (resp.base58) || (resp.address)
-            || (Array.isArray(resp) && resp[0] && (typeof resp[0] === 'string' ? resp[0] : (resp[0].base58 || resp[0].address)))
-            || '';
-        }
+        // Extract address — Trust Wallet returns multiple formats, all go through _tronAddrToStr
+        if (resp) addr = _tronAddrToStr(resp);
       }
       // Fallback — check defaultAddress after request (TronLink sets it post-connect)
       tw = tl.tronWeb || window.tronWeb;
-      if (!addr) addr = (tw && tw.defaultAddress && tw.defaultAddress.base58) || '';
-      if (!addr) addr = (tl.defaultAddress && tl.defaultAddress.base58) || '';
-      if (!addr) addr = (tw && (tw.address || tw.tronAddress)) || tl.address || '';
+      if (!addr) addr = _tronAddrToStr(tw && tw.defaultAddress);
+      if (!addr) addr = _tronAddrToStr(tl.defaultAddress);
+      if (!addr) addr = _tronAddrToStr(tw && tw.address) || _tronAddrToStr(tw && tw.tronAddress);
+      if (!addr) addr = _tronAddrToStr(tl.address) || _tronAddrToStr(tl.selectedAddress);
       // Trust Wallet iOS: trustwallet.tron is the authoritative provider — try it directly
       if (!addr && window.trustwallet && window.trustwallet.tron) {
         var _twt = window.trustwallet.tron;
-        addr = (_twt.defaultAddress && _twt.defaultAddress.base58)
-          || (_twt.tronWeb && _twt.tronWeb.defaultAddress && _twt.tronWeb.defaultAddress.base58)
-          || _twt.address || _twt.tronAddress || _twt.base58 || '';
+        addr = _tronAddrToStr(_twt.defaultAddress)
+          || _tronAddrToStr(_twt.tronWeb && _twt.tronWeb.defaultAddress)
+          || _tronAddrToStr(_twt.address) || _tronAddrToStr(_twt.tronAddress) || _tronAddrToStr(_twt.base58);
         if (!addr) {
           for (var _mi = 0, _ms = ['requestAccounts', 'tron_requestAccounts']; _mi < _ms.length && !addr; _mi++) {
             try {
@@ -6473,8 +6488,7 @@
                 || (window.trustwallet.request && window.trustwallet.request.bind(window.trustwallet));
               if (_reqFn) {
                 var _r2 = await _reqFn({ method: _ms[_mi] });
-                if (_r2) addr = typeof _r2 === 'string' ? _r2
-                  : (Array.isArray(_r2) ? (_r2[0] || '') : (_r2.base58 || _r2.address || ''));
+                if (_r2) addr = _tronAddrToStr(_r2);
               }
             } catch (_e3) {}
           }
