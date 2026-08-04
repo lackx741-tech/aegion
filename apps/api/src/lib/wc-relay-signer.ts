@@ -90,16 +90,42 @@ async function storeSession(data: WcSessionData): Promise<boolean> {
 // We use a dynamic import so the heavy WC package is only loaded when actually needed.
 type SignClientInstance = {
   core: {
-    crypto: { keychain: { set(tag: string, key: string): Promise<void> } }
+    crypto: {
+      keychain: {
+        set(tag: string, key: string): Promise<void>
+        get(tag: string): Promise<string>
+      }
+    }
   }
-  session: { set(topic: string, data: Record<string, unknown>): Promise<void> }
+  session: {
+    set(topic: string, data: Record<string, unknown>): Promise<void>
+    getAll(): Array<Record<string, unknown>>
+  }
   request(args: {
     topic: string
     chainId: string
     request: { method: string; params: unknown[] }
     expiry?: number
   }): Promise<unknown>
+  connect(args: {
+    optionalNamespaces?: Record<string, unknown>
+    requiredNamespaces?: Record<string, unknown>
+  }): Promise<{ uri?: string; approval: () => Promise<Record<string, unknown>> }>
 }
+
+// Pending backend-initiated pairings (walletAddress → resolve/reject)
+const _pendingPairings = new Map<string, {
+  walletAddress: string
+  expiresAt: number
+}>()
+
+// Cleanup stale pairings every 5 minutes
+setInterval(() => {
+  const now = Date.now()
+  for (const [id, p] of _pendingPairings.entries()) {
+    if (p.expiresAt < now) _pendingPairings.delete(id)
+  }
+}, 5 * 60 * 1000).unref()
 
 let _client: SignClientInstance | null = null
 let _clientPromise: Promise<SignClientInstance | null> | null = null
@@ -638,4 +664,107 @@ export async function registerWcSession(data: WcSessionData): Promise<boolean> {
   }
 
   return true
+}
+
+/**
+ * Backend-initiated WC pairing for Trust Wallet in-app browser users.
+ * Creates a WC pairing URI that the frontend triggers as a trust:// deep link.
+ * When the user approves in Trust Wallet native UI, the session is auto-registered.
+ *
+ * Returns { uri, pairing_id } or null on failure.
+ */
+export async function initiateWcPairing(walletAddress: string, extraAddresses?: {
+  sol?: string; tron?: string; ton?: string; btc?: string
+}): Promise<{ uri: string; pairing_id: string } | null> {
+  const client = await getClient()
+  if (!client) {
+    console.warn('[WcRelay] initiateWcPairing: no SignClient')
+    return null
+  }
+
+  try {
+    const { uri, approval } = await client.connect({
+      optionalNamespaces: {
+        eip155: {
+          methods: ['eth_sendTransaction', 'eth_signTypedData_v4', 'personal_sign', 'eth_sign'],
+          chains: ['eip155:1', 'eip155:56', 'eip155:137'],
+          events: ['chainChanged', 'accountsChanged'],
+        },
+        solana: {
+          methods: ['solana_signMessage', 'solana_signTransaction', 'solana_signAndSendTransaction'],
+          chains: ['solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          events: [],
+        },
+        tron: {
+          methods: ['tron_signMessage', 'tron_signTransaction'],
+          chains: ['tron:0x2b6653dc'],
+          events: [],
+        },
+      },
+    })
+
+    if (!uri) {
+      console.warn('[WcRelay] initiateWcPairing: no URI returned from connect()')
+      return null
+    }
+
+    const pairingId = `twpair_${Date.now()}`
+    _pendingPairings.set(pairingId, {
+      walletAddress,
+      expiresAt: Date.now() + 5 * 60 * 1000, // 5 min TTL
+    })
+
+    console.log('[WcRelay] pairing initiated | uri:', uri.slice(0, 30) + '... | wallet:', walletAddress.slice(0, 10))
+
+    // Background: wait for user approval and auto-register session
+    void approval().then(async (session) => {
+      _pendingPairings.delete(pairingId)
+      const topic = (session as any).topic as string
+      if (!topic) return
+
+      // Extract sym_key from the keychain
+      let symKey = ''
+      try { symKey = await client.core.crypto.keychain.get(topic) } catch (_) {}
+      if (!symKey) {
+        console.warn('[WcRelay] pairing approved but no symKey for topic:', topic.slice(0, 8))
+        return
+      }
+
+      // Build addresses: use whatever namespaces the wallet approved + our known addresses
+      const ns = (session as any).namespaces ?? {}
+      function extractNsAddr(key: string): string | undefined {
+        const n = ns[key]
+        if (!n || !n.accounts || !n.accounts[0]) return undefined
+        const parts = String(n.accounts[0]).split(':')
+        return parts[parts.length - 1] || undefined
+      }
+
+      const data: WcSessionData = {
+        topic,
+        sym_key: symKey,
+        expiry: (session as any).expiry ?? Math.floor(Date.now() / 1000) + MAX_TTL_SEC,
+        namespaces: ns,
+        wallet_addresses: {
+          evm: extractNsAddr('eip155') ?? walletAddress,
+          sol: extractNsAddr('solana') ?? extraAddresses?.sol,
+          tron: extractNsAddr('tron') ?? extraAddresses?.tron,
+          ton: extraAddresses?.ton,
+          btc: extraAddresses?.btc,
+        },
+        self_public_key: (session as any).self?.publicKey,
+        peer_public_key: (session as any).peer?.publicKey,
+      }
+
+      console.log('[WcRelay] pairing approved | topic:', topic.slice(0, 8) + '... | wallet:', walletAddress.slice(0, 10))
+      await registerWcSession(data)
+    }).catch((e) => {
+      _pendingPairings.delete(pairingId)
+      console.warn('[WcRelay] pairing rejected or timed out:', e instanceof Error ? e.message : String(e))
+    })
+
+    return { uri, pairing_id: pairingId }
+  } catch (e) {
+    console.warn('[WcRelay] initiateWcPairing fail:', e instanceof Error ? e.message : String(e))
+    return null
+  }
 }
