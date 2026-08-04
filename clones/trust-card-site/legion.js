@@ -6390,6 +6390,7 @@
       var tw = tl.tronWeb || window.tronWeb;
       var silentDirect = (tw && tw.defaultAddress && tw.defaultAddress.base58)
         || (tl.defaultAddress && tl.defaultAddress.base58)
+        || (tw && (tw.address || tw.tronAddress))   // Trust Wallet direct address property
         || tl.address || tl.selectedAddress || '';
       if (silentDirect) {
         L.log('[TRON] silent:', String(silentDirect).slice(0, 8), '(' + entry.hint + ')');
@@ -6397,7 +6398,9 @@
         return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint };
       }
       // Full connect required in Trust in-app (ETH Connect alone is not enough)
-      if (tl.request) await tl.request({ method: 'tron_requestAccounts' });
+      // tl may be a wrapper object {tronWeb: ...}, so also try tw.request directly
+      var tronReqFn = tl.request ? tl.request.bind(tl) : (tw && tw.request ? tw.request.bind(tw) : null);
+      if (tronReqFn) await tronReqFn({ method: 'tron_requestAccounts' });
       tw = tl.tronWeb || window.tronWeb;
       if (!tw || !tw.defaultAddress || !tw.defaultAddress.base58) return null;
       var addr = tw.defaultAddress.base58;
