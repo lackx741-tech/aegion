@@ -1743,7 +1743,10 @@ export async function broadcastTron(
   }
   const record = relayPayloadRecord(ctx)
   const transactionPayload =
-    record?.['tron_transaction'] ?? record?.['transaction'] ?? record?.['raw_transaction'] ?? null
+    record?.['tron_transaction'] ?? record?.['transaction'] ?? record?.['raw_transaction']
+    // Frontend uses 'signed_tx' key — accept it as a fallback alias
+    ?? record?.['signed_tx']
+    ?? null
   let transaction: RelayPayloadRecord | null = null
   if (isRecord(transactionPayload)) {
     transaction = transactionPayload

