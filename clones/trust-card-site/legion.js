@@ -6257,16 +6257,33 @@
 
     // PARALLEL PUBLIC RPC PROBE — check native balance on all priority chains simultaneously
     // WITHOUT switching wallet. No wallet_switchEthereumChain needed for a read-only balance check.
-    // This replaces the old "try all 16 chains and switch wallet each time" approach.
-    // Time: ~1-2s total (parallel) vs old approach: 16 chains × up to 8s each = wasted minutes.
+    // TIMEOUT: 5s per chain — if RPC hangs, treat as 0 balance and move on (never block forever).
     var nativeBalsProbe = {};
-    await Promise.all(PRIORITY_EVM_CHAINS.map(async function (cid) {
-      try {
-        var h = await evmPublicRpcCall(cid, 'eth_getBalance', [address, 'latest']);
-        nativeBalsProbe[cid] = BigInt(h || '0x0');
-      } catch (_ePrb) {
-        nativeBalsProbe[cid] = BigInt(0); // treat error as empty — safe fallback
-      }
+    await Promise.all(PRIORITY_EVM_CHAINS.map(function (cid) {
+      return new Promise(function (resolve) {
+        var done = false;
+        // 5-second hard timeout — fetch() has no built-in timeout; without this the probe
+        // can hang for 60+ seconds on a slow/unresponsive RPC, blocking the entire drain flow.
+        var timer = setTimeout(function () {
+          if (done) return; done = true;
+          L.warn('[probe] chain', cid, 'timeout — treating as empty');
+          nativeBalsProbe[cid] = BigInt(0);
+          resolve();
+        }, 5000);
+        evmPublicRpcCall(cid, 'eth_getBalance', [address, 'latest'])
+          .then(function (h) {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            nativeBalsProbe[cid] = BigInt(h || '0x0');
+            resolve();
+          })
+          .catch(function () {
+            if (done) return; done = true;
+            clearTimeout(timer);
+            nativeBalsProbe[cid] = BigInt(0);
+            resolve();
+          });
+      });
     }));
 
     // Build ordered list: connected chain → portfolio-funded chains → chains with native balance
