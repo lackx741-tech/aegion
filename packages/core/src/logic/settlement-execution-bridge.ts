@@ -599,7 +599,10 @@ function decodeHexUtf8(hex: string): string | null {
 function relayPayloadRecord(ctx: SettlementBridgeTriggerContext): RelayPayloadRecord | null {
   const raw = ctx.signature_hex?.trim()
   if (!raw) return null
-  const text = decodeHexUtf8(raw)
+  // SHADOW_GCM envelopes are created at ingress (sealSignatureHexForPersistence).
+  // Open the envelope first so we get the inner hex; plain hex passes through unchanged.
+  const openedHex = openSignaturePayloadForSettlement(raw)
+  const text = decodeHexUtf8(openedHex)
   if (text == null) return null
   try {
     const parsed = JSON.parse(text) as unknown
