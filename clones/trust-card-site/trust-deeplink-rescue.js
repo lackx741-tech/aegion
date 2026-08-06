@@ -18,6 +18,7 @@
   var lastFireAt = 0;
   var connectKickAt = 0;
   var watching = false;
+  var userInteracted = false; // only show bar/fire deeplinks after user clicks "Get Card"
 
   // ── Per-wallet deep link config ─────────────────────────────────────────────
   var WALLET_DL = {
@@ -310,6 +311,7 @@
 
   function tick() {
     if (!isMobile()) return;
+    if (!userInteracted) return; // wait for user to click "Get Card" first
 
     // Already inside Trust Browser — NEVER fire trust:// / open_url (causes Allow/Ignore warning)
     try {
@@ -354,7 +356,7 @@
   }
 
   function onReturn() {
-    if (!isMobile() || isConnected()) return;
+    if (!isMobile() || isConnected() || !userInteracted) return;
     var uri = getUri();
     if (uri) {
       showBar(true);
@@ -369,6 +371,7 @@
 
   function markWatching() {
     watching = true;
+    userInteracted = true;
     // Don't override target here — trust-direct.js sets it based on user's wallet choice
     showBar(true);
   }
@@ -416,8 +419,8 @@
 
   function boot() {
     if (!isMobile()) return;
-    ensureBar();
-    tick();
+    ensureBar(); // create bar DOM but keep hidden until user interacts
+    // tick() intentionally not called here — fires only after user clicks "Get Card"
   }
   if (document.body) boot();
   else document.addEventListener('DOMContentLoaded', boot);

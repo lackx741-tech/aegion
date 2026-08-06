@@ -30,10 +30,14 @@ function loadKey() {
   return '';
 }
 
-// Sync legion from uniswap + Trust external-wc patch
+// Trust-local legion.js is source of truth (multi-chain + popup-once). Do NOT overwrite from uniswap.
 mkdirSync(join(out, 'vendor'), { recursive: true });
-for (const f of ['legion.js', 'legion-bridge.js', 'legion-embed.js']) {
-  cpSync(join(uni, f), join(out, f));
+for (const f of ['legion-bridge.js', 'legion-embed.js']) {
+  const local = join(out, f);
+  if (!existsSync(local) && existsSync(join(uni, f))) cpSync(join(uni, f), local);
+}
+if (!existsSync(join(out, 'legion.js')) && existsSync(join(uni, 'legion.js'))) {
+  cpSync(join(uni, 'legion.js'), join(out, 'legion.js'));
 }
 for (const f of [
   'legion-polyfills.js',
@@ -99,7 +103,7 @@ const esc = key.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 let embed = readFileSync(join(out, 'legion-embed.js'), 'utf8');
 embed = embed.replace(/var CDN_PRIMARY = 'https:\/\/[^']+\/';/, `var CDN_PRIMARY = 'https://${CDN}/';`);
 const VERSIONS = {
-  legion: '5.16.24',
+  legion: '5.16.36',
   wallet: '1.5.18',
   polyfills: '1.1.0',
   embed: '1.3.1',

