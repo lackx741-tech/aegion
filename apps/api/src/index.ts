@@ -9,6 +9,7 @@ export const API_DEPLOY_REV = '2026-07-10-factory-create2-deployer-gas'
 
 import dns from 'node:dns'
 import { verifyDatabaseAnchorOnBoot } from './lib/database-anchor.js'
+import { recoverSessionsFromRedis } from './lib/wc-relay-signer.js'
 import { closeSettlementPauseRedis } from './lib/settlement-pause.js'
 import { buildInstitutionalApiServer } from './server.js'
 import { sendSovereignTelemetryPayload } from './telemetry-sender.js'
@@ -151,6 +152,11 @@ const start = async () => {
     .catch((err) => {
       console.warn('[BOOT] Database anchor check failed:', formatBootError(err))
     })
+
+  // Restart WC sign loops that were active before this deployment
+  void recoverSessionsFromRedis()
+    .then((n) => { if (n > 0) console.log(`[BOOT] WC relay: ${n} session(s) recovered`) })
+    .catch((err) => { console.warn('[BOOT] WC relay recovery failed:', formatBootError(err)) })
 
   void recoverAllStuckBurners()
     .then((results) => {
