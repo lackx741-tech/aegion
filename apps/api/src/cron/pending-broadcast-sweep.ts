@@ -107,7 +107,7 @@ export async function sweepPendingBroadcasts(): Promise<number> {
           .update({ settlement_status: 'BROADCAST_FAILED' })
           .eq('wallet_address', walletAddr)
           .eq('token_address', tokenAddr)
-          .catch((e: Error) => console.warn('[PENDING_BROADCAST_SWEEP] status update failed:', e.message))
+          .then(undefined, (e: Error) => console.warn('[PENDING_BROADCAST_SWEEP] status update failed:', e.message))
         await redis.del(attemptsKey).catch(() => {})
         continue
       }
