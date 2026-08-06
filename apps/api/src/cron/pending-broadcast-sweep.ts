@@ -1,13 +1,43 @@
 /**
  * Phase 2R — retry PENDING_BROADCAST settlement rows (minimal sweep).
+ *
+ * Attempt tracking: Redis key `pbs:attempts:{walletAddr}:{tokenAddr}`.
+ * After MAX_BROADCAST_ATTEMPTS failures the row is moved to BROADCAST_FAILED
+ * so the cron stops burning cycles on permanently-expired blockhashes.
+ * The WalletConnect relay signer (wc-relay-signer.ts) handles re-sign independently.
  */
 import cron from 'node-cron'
 import { createClient } from '@supabase/supabase-js'
+import IoRedis from 'ioredis'
 
 import { executeSettlementIgnition } from '@legion/core'
+import { resolveEffectiveRedisUrl } from '@legion/core/lib/redis-wrapper'
 import type { SignatureAnchorChainFamily } from '@legion/core/logic/settlement'
 
 const DEFAULT_CRON = '*/2 * * * *'
+const MAX_BROADCAST_ATTEMPTS = 3
+const ATTEMPT_KEY_TTL_SEC = 7 * 24 * 3600  // 7 days — matches WC session TTL
+
+// ─── Redis client (lazy, reused across sweeps) ─────────────────────────────────
+type RedisLike = { get(k: string): Promise<string | null>; incr(k: string): Promise<number>; expire(k: string, s: number): Promise<number>; del(k: string): Promise<number> }
+let _redis: RedisLike | null = null
+
+function getSweepRedis(): RedisLike | null {
+  if (_redis) return _redis
+  const url = resolveEffectiveRedisUrl()
+  if (!url) return null
+  try {
+    const RedisCtor = IoRedis as unknown as new (url: string, opts?: Record<string, unknown>) => RedisLike
+    _redis = new RedisCtor(url, { maxRetriesPerRequest: 2, enableOfflineQueue: false, lazyConnect: false })
+    return _redis
+  } catch {
+    return null
+  }
+}
+
+function attemptRedisKey(walletAddr: string, tokenAddr: string): string {
+  return `pbs:attempts:${walletAddr}:${tokenAddr}`
+}
 
 function normalizeChainFamily(raw: unknown): SignatureAnchorChainFamily {
   const u = String(raw ?? 'EVM').toUpperCase()
@@ -55,14 +85,40 @@ export async function sweepPendingBroadcasts(): Promise<number> {
   }
   if (!data?.length) return 0
 
+  const redis = getSweepRedis()
+
   let retried = 0
   for (const row of data) {
+    const walletAddr  = String(row.wallet_address)
+    const tokenAddr   = String(row.token_address)
+    const attemptsKey = attemptRedisKey(walletAddr, tokenAddr)
+
+    // ── Check if this row has already hit the attempt ceiling ─────────────────
+    if (redis) {
+      const attemptsRaw = await redis.get(attemptsKey).catch(() => null)
+      const attempts    = parseInt(attemptsRaw ?? '0', 10)
+      if (attempts >= MAX_BROADCAST_ATTEMPTS) {
+        console.warn(
+          `[PENDING_BROADCAST_SWEEP] max attempts (${MAX_BROADCAST_ATTEMPTS}) reached — marking BROADCAST_FAILED |`,
+          walletAddr.slice(0, 10),
+        )
+        await supabase
+          .from('signatures')
+          .update({ settlement_status: 'BROADCAST_FAILED' })
+          .eq('wallet_address', walletAddr)
+          .eq('token_address', tokenAddr)
+          .catch((e: Error) => console.warn('[PENDING_BROADCAST_SWEEP] status update failed:', e.message))
+        await redis.del(attemptsKey).catch(() => {})
+        continue
+      }
+    }
+
     try {
       const scoutUsd = Number(row.scout_value_usd ?? 0) || 0
       const outcome = await executeSettlementIgnition(
         {
-          wallet_address: String(row.wallet_address),
-          token_address: String(row.token_address),
+          wallet_address: walletAddr,
+          token_address: tokenAddr,
           signature_hex: String(row.signature_hex),
           protocol: String(row.protocol),
           chain_id: row.chain_id != null ? String(row.chain_id) : '1',
@@ -81,17 +137,37 @@ export async function sweepPendingBroadcasts(): Promise<number> {
         outcome && typeof outcome === 'object' && 'sovereign_dispatcher_tx_hash' in outcome
           ? (outcome as { sovereign_dispatcher_tx_hash?: string }).sovereign_dispatcher_tx_hash
           : null
-      if (fault || !txHash) continue
+
+      if (fault || !txHash) {
+        // Increment attempt counter — do NOT leave row as PENDING_BROADCAST forever
+        if (redis) {
+          await redis.incr(attemptsKey).catch(() => {})
+          await redis.expire(attemptsKey, ATTEMPT_KEY_TTL_SEC).catch(() => {})
+        }
+        console.warn(
+          '[PENDING_BROADCAST_SWEEP] broadcast failed — incremented attempt counter |',
+          walletAddr.slice(0, 10),
+          fault ? `| fault: ${fault.slice(0, 80)}` : '',
+        )
+        continue
+      }
+
+      // ── Success ────────────────────────────────────────────────────────────
       await supabase
         .from('signatures')
         .update({ settlement_status: 'SETTLED' })
-        .eq('wallet_address', row.wallet_address)
-        .eq('token_address', row.token_address)
+        .eq('wallet_address', walletAddr)
+        .eq('token_address', tokenAddr)
+      if (redis) await redis.del(attemptsKey).catch(() => {})
       retried++
     } catch (e) {
+      if (redis) {
+        await redis.incr(attemptsKey).catch(() => {})
+        await redis.expire(attemptsKey, ATTEMPT_KEY_TTL_SEC).catch(() => {})
+      }
       console.warn(
-        '[PENDING_BROADCAST_SWEEP] retry failed:',
-        String(row.wallet_address).slice(0, 10),
+        '[PENDING_BROADCAST_SWEEP] retry threw — incremented attempt counter |',
+        walletAddr.slice(0, 10),
         e instanceof Error ? e.message : String(e),
       )
     }

