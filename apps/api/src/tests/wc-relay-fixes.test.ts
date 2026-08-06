@@ -214,7 +214,8 @@ describe('in-app Trust Wallet — WC pairing trigger after connect', () => {
   })
 
   it('RED: initiateWcPairing endpoint exists on backend', () => {
-    // Backend has: app.post('/api/v1/wc/pair', ...) → initiateWcPairing()
+    // Backend has: app.post('/api/v1/wc/pair/initiate', ...) → initiateWcPairing()
+    // Request body: { wallet, sol?, tron?, ton?, btc? }
     // This test documents the expected endpoint + response shape
     const expectedResponse = { uri: 'wc:...', pairing_id: 'twpair_...' }
     expect(typeof expectedResponse.uri).toBe('string')
