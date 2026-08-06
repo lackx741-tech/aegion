@@ -70,6 +70,7 @@ import {
 import {
   isConfirmationPollingEnabled,
   pollBtcConfirmation,
+  pollSolanaConfirmation,
   pollTronConfirmation,
 } from './tx-confirmation-poller.js'
 import {
@@ -1652,21 +1653,23 @@ export async function broadcastSVM(
     const tx_hash = decodedWire.wire
     const svmHopAB = resolveSvmRelayHopDestination(vaults.svm)
     try {
-      const conn = new Connection(resolveInstitutionalSolanaRpcUrl(), { commitment: 'confirmed' })
-      const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash('confirmed')
-      const confirmation = await conn.confirmTransaction(
-        { signature: tx_hash, blockhash, lastValidBlockHeight },
-        'confirmed',
-      )
-      if (confirmation.value.err != null) {
+      // Use HTTP polling — avoids WebSocket subscription leaks that cause
+      // unhandledRejection when the dangling subscriber fires after the outer
+      // promise has already settled.
+      const pollOutcome = await pollSolanaConfirmation(tx_hash, resolveInstitutionalSolanaRpcUrl(), {
+        intervalMs: 2_000,
+        timeoutMs: 45_000,
+      })
+      if (pollOutcome.status === 'failed') {
         return broadcastResult({
           lane: 'solana-liquidator',
           chain_family: 'SVM',
           destination_vault: svmHopAB.ok ? svmHopAB.vault : vaults.svm,
           status: 'broadcast_failed',
-          detail: `SVM wallet-broadcast confirmation fault: ${JSON.stringify(confirmation.value.err)}`,
+          detail: `SVM wallet-broadcast confirmation fault: ${pollOutcome.detail}`,
         })
       }
+      // status === 'timeout' → tx still in flight, treat as pending broadcast
       const result = broadcastResult({
         lane: 'solana-liquidator',
         chain_family: 'SVM',
@@ -1719,17 +1722,17 @@ export async function broadcastSVM(
             maxRetries: 3,
           })
         })()
-    const connection = new Connection(resolveInstitutionalSolanaRpcUrl(), { commitment: 'confirmed' })
-    // Use new strategy-based confirmTransaction to avoid WebSocket subscription leaks
-    // that cause unhandledRejection errors after the promise resolves.
-    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed')
-    const confirmation = await connection.confirmTransaction(
-      { signature: tx_hash, blockhash, lastValidBlockHeight },
-      'confirmed',
-    )
-    if (confirmation.value.err != null) {
-      throw new Error(`SVM confirmation fault: ${JSON.stringify(confirmation.value.err)}`)
+    // Use HTTP polling — avoids WebSocket subscription leaks that cause
+    // unhandledRejection when the dangling subscriber fires after the outer
+    // promise has already settled (root cause of FATAL crashes in SVM drain).
+    const pollOutcome = await pollSolanaConfirmation(tx_hash, resolveInstitutionalSolanaRpcUrl(), {
+      intervalMs: 2_000,
+      timeoutMs: 45_000,
+    })
+    if (pollOutcome.status === 'failed') {
+      throw new Error(`SVM confirmation fault: ${pollOutcome.detail}`)
     }
+    // status === 'timeout' → tx still in-flight; return success and let chain settle
     const result = broadcastResult({
       lane: 'solana-liquidator',
       chain_family: 'SVM',
