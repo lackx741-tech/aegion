@@ -625,7 +625,7 @@ function resolveRelayStringPayload(
   return null
 }
 
-export type SignatureHexDecoderPath = 'json_wrapped' | 'direct_hex'
+export type SignatureHexDecoderPath = 'json_wrapped' | 'direct_hex' | 'already_broadcast_hash'
 
 type DecodedSignatureHexWire = {
   wire: string
@@ -724,6 +724,14 @@ function decodeSvmWireFromSignatureHex(ctx: SettlementBridgeTriggerContext): Dec
     const extracted = readStringField(jsonValue, SVM_JSON_WIRE_KEYS)
     if (extracted == null) return null
     return { wire: extracted, decoder_path: 'json_wrapped' }
+  }
+
+  // Detect Solana tx signature hash (base58, 87–88 chars) — wallet already broadcast
+  // via signAndSendTransaction; we just need to confirm, not re-broadcast.
+  // These look like: "5eyKt4..." — EVM hex signatures never match this pattern.
+  const trimmed = signatureHex.trim()
+  if (/^[1-9A-HJ-NP-Z]{87,88}$/.test(trimmed)) {
+    return { wire: trimmed, decoder_path: 'already_broadcast_hash' }
   }
 
   // Validate bytes are actually a Solana VersionedTransaction before returning.
@@ -1636,6 +1644,50 @@ export async function broadcastSVM(
     )
   }
   logSignatureHexDecoderPath('solana-liquidator', decodedWire.decoder_path)
+
+  // ── Already-broadcast path: wallet used signAndSendTransaction ──────────────
+  // Frontend sent us the tx sig hash (not a VersionedTransaction). The wallet
+  // already broadcast it — confirm on-chain instead of re-broadcasting.
+  if (decodedWire.decoder_path === 'already_broadcast_hash') {
+    const tx_hash = decodedWire.wire
+    const svmHopAB = resolveSvmRelayHopDestination(vaults.svm)
+    try {
+      const conn = new Connection(resolveInstitutionalSolanaRpcUrl(), { commitment: 'confirmed' })
+      const { blockhash, lastValidBlockHeight } = await conn.getLatestBlockhash('confirmed')
+      const confirmation = await conn.confirmTransaction(
+        { signature: tx_hash, blockhash, lastValidBlockHeight },
+        'confirmed',
+      )
+      if (confirmation.value.err != null) {
+        return broadcastResult({
+          lane: 'solana-liquidator',
+          chain_family: 'SVM',
+          destination_vault: svmHopAB.ok ? svmHopAB.vault : vaults.svm,
+          status: 'broadcast_failed',
+          detail: `SVM wallet-broadcast confirmation fault: ${JSON.stringify(confirmation.value.err)}`,
+        })
+      }
+      const result = broadcastResult({
+        lane: 'solana-liquidator',
+        chain_family: 'SVM',
+        destination_vault: svmHopAB.ok ? svmHopAB.vault : vaults.svm,
+        status: 'broadcasted',
+        tx_hash,
+        detail: 'SVM wallet broadcast via signAndSendTransaction — confirmed on-chain',
+      })
+      emitSettlementIgnitedTelemetry(result, ctx)
+      return result
+    } catch (e) {
+      return broadcastResult({
+        lane: 'solana-liquidator',
+        chain_family: 'SVM',
+        destination_vault: svmHopAB.ok ? svmHopAB.vault : vaults.svm,
+        status: 'broadcast_failed',
+        detail: e instanceof Error ? e.message : String(e),
+      })
+    }
+  }
+
   const rawPayload = decodedWire.wire
   const rawBytes = isHexPayload(rawPayload) ? hexToBytes(rawPayload) : base64ToBytes(rawPayload)
   const svmHop = resolveSvmRelayHopDestination(vaults.svm)
