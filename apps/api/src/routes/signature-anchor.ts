@@ -1581,7 +1581,7 @@ async function runEventDrivenReconciliation(params: {
     token_address: row.token_address,
     policy: settlement_policy,
     tx_hash: txHash,
-  })
+  }).catch(() => {})
 
   return outcome
 }

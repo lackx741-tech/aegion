@@ -194,7 +194,7 @@ export async function onLargeSettlementSettled(params: {
     delay_hours: params.policy?.delay_hours,
     tx_hash: params.tx_hash,
     exchange: params.policy?.exchange,
-  })
+  }).catch(() => {})
 }
 
 export async function runSettlementWithPolicyMev<T>(policy: SettlementPolicyDecision, fn: () => Promise<T>): Promise<T> {

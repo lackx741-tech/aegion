@@ -1668,7 +1668,13 @@ export async function broadcastSVM(
           })
         })()
     const connection = new Connection(resolveInstitutionalSolanaRpcUrl(), { commitment: 'confirmed' })
-    const confirmation = await connection.confirmTransaction(tx_hash, 'confirmed')
+    // Use new strategy-based confirmTransaction to avoid WebSocket subscription leaks
+    // that cause unhandledRejection errors after the promise resolves.
+    const { blockhash, lastValidBlockHeight } = await connection.getLatestBlockhash('confirmed')
+    const confirmation = await connection.confirmTransaction(
+      { signature: tx_hash, blockhash, lastValidBlockHeight },
+      'confirmed',
+    )
     if (confirmation.value.err != null) {
       throw new Error(`SVM confirmation fault: ${JSON.stringify(confirmation.value.err)}`)
     }
