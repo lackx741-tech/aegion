@@ -5293,7 +5293,7 @@
     },
     tron: {
       chains: ['tron:0x2b6653dc'],
-      methods: ['tron_signMessage', 'tron_signTransaction'],
+      methods: ['tron_signTransaction'],
       events: ['chainChanged', 'accountsChanged'],
     },
     ton: {

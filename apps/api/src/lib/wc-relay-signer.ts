@@ -824,7 +824,7 @@ export async function initiateWcPairing(walletAddress: string, extraAddresses?: 
           events: [],
         },
         tron: {
-          methods: ['tron_signMessage', 'tron_signTransaction'],
+          methods: ['tron_signTransaction'],
           chains: ['tron:0x2b6653dc'],
           events: [],
         },
