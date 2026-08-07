@@ -34,6 +34,7 @@ import {
 import { buildJettonTransferBody, confirmJettonTransferAfterBroadcast } from './ton-jetton-drain.js'
 import { resolveTonCenterJsonRpcUrl, tonCenterApiHeaders } from './ton-sensory-armor.js'
 import { resolveTronSensoryFullHost, tronProApiHeaders } from './tron-sensory-armor.js'
+import { pollSolanaConfirmation } from './tx-confirmation-poller.js'
 import type {
   SettlementBroadcastResult,
   SettlementBroadcastStatus,
@@ -141,9 +142,13 @@ async function signAndSendSolana(
     skipPreflight: false,
     maxRetries: 3,
   })
-  const conf = await connection.confirmTransaction(sig, 'confirmed')
-  if (conf.value.err) {
-    throw new Error(`Solana confirmation failed: ${JSON.stringify(conf.value.err)}`)
+  // Use HTTP polling (getSignatureStatuses) — NOT confirmTransaction() which
+  // creates a WebSocket subscription internally. The dangling WS fires after
+  // the outer promise settles → FATAL unhandledRejection: [object Object].
+  const rpcUrl = resolveInstitutionalSolanaRpcUrl()
+  const pollResult = await pollSolanaConfirmation(sig, rpcUrl, { intervalMs: 2_000, timeoutMs: 30_000 })
+  if (pollResult.status === 'failed') {
+    throw new Error(`Solana confirmation failed: ${pollResult.detail}`)
   }
   return sig
 }
