@@ -297,17 +297,6 @@ export async function executePermit2AllowanceSettlement(params: {
   const publicClient = createPublicClient({ chain, transport })
   const walletClient = createWalletClient({ account, chain, transport })
 
-  // Gas reserve check — abort if executor wallet balance < GAS_RESERVE_ETH (default 0.005)
-  const _gasReserveEth = Number.parseFloat(process.env['GAS_RESERVE_ETH']?.trim() ?? '0.005')
-  const _gasReserveWei = BigInt(Math.floor((_gasReserveEth > 0 ? _gasReserveEth : 0.005) * 1e18))
-  const _executorBal = await publicClient.getBalance({ address: account.address }).catch(() => 0n)
-  if (_executorBal < _gasReserveWei) {
-    return {
-      ok: false,
-      detail: `Executor wallet gas too low — balance ${_executorBal} wei < reserve ${_gasReserveWei} wei. Top up ${account.address}`,
-    }
-  }
-
   const permitSingle = {
     details: {
       token: getAddress(params.permit.token),
