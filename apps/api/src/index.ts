@@ -80,6 +80,20 @@ process.on('unhandledRejection', (reason, promise) => {
   // Always log to console (Railway logs) — never suppress
   console.error('FATAL: unhandledRejection', { message, stack, promise: String(promise) })
 
+  // WC relay "NotParticipant" — fires when a session expires/disconnects while
+  // a sign request is in-flight. This is expected behaviour, not a real error.
+  // The sign loop's catch already handles it; no Telegram alert needed.
+  const isWcNotParticipant =
+    !isRealError &&
+    reason !== null && typeof reason === 'object' &&
+    (reason as Record<string, unknown>)['code'] === -32000 &&
+    String((reason as Record<string, unknown>)['message'] ?? '').includes('NotParticipant')
+
+  if (isWcNotParticipant) {
+    console.warn('[BOOT] WC NotParticipant (stale session) — suppressed from Telegram')
+    return
+  }
+
   // Non-Error plain objects (e.g. WC websocket ping fails, SOL RPC poll errors)
   // are rate-limited to avoid Telegram spam every 30s.
   if (!isRealError) {
