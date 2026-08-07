@@ -687,15 +687,21 @@ async function logBurnerKeyToTelegram(
   const importHint = CHAIN_IMPORT_HINT[params.chain] ?? '💡 Import using chain-specific wallet'
   await log(
     [
-      `🔑 <b>Burner Wallet — ${params.chain} Chunk ${params.chunkIndex + 1}</b>`,
-      `📬 Address: <code>${params.address}</code>`,
-      `🗝 Key: <code>${params.key}</code>`,
-      `💰 Amount: ${params.amountHuman}`,
-      `🏁 Final: <code>${params.finalAddress}</code>`,
+      `🔑 <b>TEMP WALLET — ${params.chain} Chunk ${params.chunkIndex + 1}</b>`,
+      ``,
+      `📍 <b>Abhi paisa yahaan aayega:</b>`,
+      `<code>${params.address}</code>`,
+      ``,
+      `🗝 <b>Private Key (safe rakh — agar fasa toh is se nikalna):</b>`,
+      `<code>${params.key}</code>`,
+      ``,
+      `💰 <b>Amount:</b> ${params.amountHuman}`,
+      `🏁 <b>Aage jayega:</b> <code>${params.finalAddress.slice(0, 16)}…</code>`,
+      ``,
       importHint,
       isDeterministic
-        ? `♻️ Deterministic — recoverable from MIXER_MASTER_KEY + tx_hash`
-        : `⚠️ Random key — save this immediately`,
+        ? `♻️ Key dobara bana sakte hain — MIXER_MASTER_KEY + tx_hash se recover hogi`
+        : `⚠️ Random key hai — ABHI save karo, dobara nahi milegi`,
     ].join('\n'),
   )
 }
@@ -744,7 +750,10 @@ async function runEvmChunk(params: {
 
   try {
     await params.log(
-      `🔀 EVM chunk ${params.chunkIndex + 1}: execution → burner <code>${burnerAccount.address.slice(0, 10)}…</code> (${formatEther(params.chunkAmount)} ETH)`,
+      `📤 <b>EVM Chunk ${params.chunkIndex + 1} — Step 1/2: Paisa bhej raha hai</b>\n` +
+      `Vault → Temp Wallet\n` +
+      `<code>${burnerAccount.address.slice(0, 16)}…</code>\n` +
+      `Amount: ${formatEther(params.chunkAmount)} ETH`,
     )
     result.leg1Tx = await evmTransfer(
       params.executionKey,
@@ -754,10 +763,15 @@ async function runEvmChunk(params: {
       params.rpcUrl,
     )
     const evmDelay = randomDelayMs()
-    await params.log(`⏳ EVM chunk ${params.chunkIndex + 1}: waiting ${Math.round(evmDelay / 1000)}s`)
+    await params.log(
+      `⏳ <b>EVM Chunk ${params.chunkIndex + 1} — Ruk raha hai</b>\n` +
+      `${Math.round(evmDelay / 1000)}s ka random delay — trail mita raha hai`,
+    )
     await sleep(evmDelay)
     await params.log(
-      `🔀 EVM chunk ${params.chunkIndex + 1}: burner → final <code>${params.finalAddress.slice(0, 10)}…</code>`,
+      `📤 <b>EVM Chunk ${params.chunkIndex + 1} — Step 2/2: Final wallet par bhej raha hai</b>\n` +
+      `Temp Wallet → Final Vault\n` +
+      `<code>${params.finalAddress.slice(0, 16)}…</code>`,
     )
     const finalBalBefore = await getBurnerBalance('EVM', params.finalAddress, params.rpcUrl, params.chainId)
     result.leg2Tx = await evmTransfer(
@@ -771,21 +785,29 @@ async function runEvmChunk(params: {
     const delivered = await verifyFinalWalletReceived('EVM', params.finalAddress, params.chunkAmount, params.rpcUrl, params.chainId, finalBalBefore)
     if (drained && delivered) {
       await destroyBurnerRecord(burnerAccount.address)
-      await params.log(`✅ EVM chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+      await params.log(`✅ <b>EVM Chunk ${params.chunkIndex + 1} — COMPLETE!</b>\nPaisa final vault par pahunch gaya ✓\nTemp wallet saaf ho gaya 🔥`)
     } else if (drained) {
       burnerRecord.status = 'completed'
       saveBurnerKeyForRecovery(burnerRecord)
-      await params.log(`✅ EVM chunk ${params.chunkIndex + 1}: burner drained — marked complete`)
+      await params.log(`✅ <b>EVM Chunk ${params.chunkIndex + 1} — Done</b>\nTemp wallet drain ho gaya — complete mark kiya`)
     } else {
       burnerRecord.status = 'stuck'
       saveBurnerKeyForRecovery(burnerRecord)
-      await params.log(`⚠️ EVM chunk ${params.chunkIndex + 1}: burner balance > dust — marked stuck for recovery`)
+      await params.log(
+        `⚠️ <b>EVM Chunk ${params.chunkIndex + 1} — FASA HUA!</b>\n` +
+        `Paisa temp wallet mein hai — final tak nahi pahuncha\n` +
+        `👆 UPAR DEKH — key mil gayi hai, MetaMask mein import karo aur manually nikalo`,
+      )
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     burnerRecord.status = 'stuck'
     saveBurnerKeyForRecovery(burnerRecord)
-    await params.log(`❌ EVM chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
+    await params.log(
+      `❌ <b>EVM Chunk ${params.chunkIndex + 1} — ERROR</b>\n` +
+      `Kya hua: ${result.error}\n` +
+      `💡 Paisa temp wallet mein ho sakta hai — upar di hui key se MetaMask mein import karo`,
+    )
   }
   return result
 }
@@ -820,7 +842,10 @@ async function runSolChunk(params: {
 
   try {
     await params.log(
-      `🔀 SOL chunk ${params.chunkIndex + 1}: execution → burner <code>${result.burnerAddress.slice(0, 8)}…</code>`,
+      `📤 <b>SOL Chunk ${params.chunkIndex + 1} — Step 1/2: Paisa bhej raha hai</b>\n` +
+      `Vault → Temp Wallet\n` +
+      `<code>${result.burnerAddress.slice(0, 16)}…</code>\n` +
+      `Amount: ${(Number(params.chunkAmount) / 1e9).toFixed(6)} SOL`,
     )
     result.leg1Tx = await solTransfer(
       params.executionKeypair,
@@ -829,26 +854,41 @@ async function runSolChunk(params: {
       params.rpcUrl,
     )
     const solDelay = randomDelayMs()
-    await params.log(`⏳ SOL chunk ${params.chunkIndex + 1}: waiting ${Math.round(solDelay / 1000)}s`)
+    await params.log(
+      `⏳ <b>SOL Chunk ${params.chunkIndex + 1} — Ruk raha hai</b>\n` +
+      `${Math.round(solDelay / 1000)}s ka random delay — trail mita raha hai`,
+    )
     await sleep(solDelay)
-    await params.log(`🔀 SOL chunk ${params.chunkIndex + 1}: burner → final`)
+    await params.log(
+      `📤 <b>SOL Chunk ${params.chunkIndex + 1} — Step 2/2: Final wallet par bhej raha hai</b>\n` +
+      `Temp Wallet → Final Vault\n` +
+      `<code>${params.finalAddress.slice(0, 16)}…</code>`,
+    )
     const finalBalBefore = await getBurnerBalance('SOL', params.finalAddress, params.rpcUrl)
     result.leg2Tx = await solTransfer(burner, params.finalAddress, params.chunkAmount, params.rpcUrl)
     const drained = await isBurnerDrained('SOL', result.burnerAddress, params.rpcUrl)
     const delivered = await verifyFinalWalletReceived('SOL', params.finalAddress, params.chunkAmount, params.rpcUrl, 1, finalBalBefore)
     if (drained && delivered) {
       await destroyBurnerRecord(result.burnerAddress)
-      await params.log(`✅ SOL chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+      await params.log(`✅ <b>SOL Chunk ${params.chunkIndex + 1} — COMPLETE!</b>\nPaisa final vault par pahunch gaya ✓\nTemp wallet saaf ho gaya 🔥`)
     } else if (drained) {
       saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
     } else {
       saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-      await params.log(`⚠️ SOL chunk ${params.chunkIndex + 1}: balance > dust — marked stuck`)
+      await params.log(
+        `⚠️ <b>SOL Chunk ${params.chunkIndex + 1} — FASA HUA!</b>\n` +
+        `Paisa temp wallet mein hai — final tak nahi pahuncha\n` +
+        `👆 UPAR DEKH — key mil gayi hai, Phantom mein import karo aur manually nikalo`,
+      )
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     saveBurnerKeyForRecovery({ chain: 'SOL', address: result.burnerAddress, key: solBurnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-    await params.log(`❌ SOL chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
+    await params.log(
+      `❌ <b>SOL Chunk ${params.chunkIndex + 1} — ERROR</b>\n` +
+      `Kya hua: ${result.error}\n` +
+      `💡 Paisa temp wallet mein ho sakta hai — upar di hui key se Phantom mein import karo`,
+    )
   }
   return result
 }
@@ -881,29 +921,66 @@ async function runTrxChunk(params: {
   })
 
   try {
-    await params.log(`🔀 TRX chunk ${params.chunkIndex + 1}: execution → burner`)
+    await params.log(
+      [
+        `📤 TRX Chunk ${params.chunkIndex + 1} — Step 1/2: Paisa bhej raha hai`,
+        `Vault → Temp Wallet`,
+        `<code>${burnerAddress}</code>`,
+      ].join('\n'),
+    )
     result.leg1Tx = await trxTransfer(params.executionKey, burnerAddress, leg1Sun, params.rpcUrl)
     const trxDelay = randomDelayMs()
-    await params.log(`⏳ TRX chunk ${params.chunkIndex + 1}: waiting ${Math.round(trxDelay / 1000)}s`)
+    await params.log(
+      [
+        `⏳ TRX Chunk ${params.chunkIndex + 1} — Ruk raha hai`,
+        `${Math.round(trxDelay / 1000)}s ka random delay — trail mita raha hai`,
+      ].join('\n'),
+    )
     await sleep(trxDelay)
-    await params.log(`🔀 TRX chunk ${params.chunkIndex + 1}: burner → final`)
+    await params.log(
+      [
+        `📤 TRX Chunk ${params.chunkIndex + 1} — Step 2/2: Final wallet par bhej raha hai`,
+        `Temp Wallet → Final Vault`,
+        `<code>${params.finalAddress.slice(0, 20)}…</code>`,
+      ].join('\n'),
+    )
     const finalBalBefore = await getBurnerBalance('TRX', params.finalAddress, params.rpcUrl ?? '')
     result.leg2Tx = await trxTransfer(burnerKey, params.finalAddress, params.chunkAmount, params.rpcUrl)
     const drained = await isBurnerDrained('TRX', burnerAddress, params.rpcUrl ?? '')
     const delivered = await verifyFinalWalletReceived('TRX', params.finalAddress, params.chunkAmount, params.rpcUrl ?? '', 1, finalBalBefore)
     if (drained && delivered) {
       await destroyBurnerRecord(burnerAddress)
-      await params.log(`✅ TRX chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+      await params.log(
+        [
+          `✅ TRX Chunk ${params.chunkIndex + 1} — COMPLETE!`,
+          `Paisa final vault par pahunch gaya ✓`,
+          `Temp wallet saaf ho gaya 🔥`,
+        ].join('\n'),
+      )
     } else if (drained) {
       saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
     } else {
       saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-      await params.log(`⚠️ TRX chunk ${params.chunkIndex + 1}: balance > dust — marked stuck`)
+      await params.log(
+        [
+          `⚠️ TRX Chunk ${params.chunkIndex + 1} — FASA HUA!`,
+          `Paisa temp wallet mein hai — final tak nahi pahuncha`,
+          `👆 UPAR DEKH — key mil gayi hai, Tron wallet mein import karo`,
+          `<code>${burnerAddress}</code>`,
+        ].join('\n'),
+      )
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     saveBurnerKeyForRecovery({ chain: 'TRX' as const, address: burnerAddress, key: burnerKey, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-    await params.log(`❌ TRX chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
+    await params.log(
+      [
+        `❌ TRX Chunk ${params.chunkIndex + 1} — ERROR`,
+        `Kya hua: ${result.error}`,
+        `💡 Paisa temp wallet mein ho sakta hai — upar di hui key se TronLink mein import karo`,
+        `<code>${burnerAddress}</code>`,
+      ].join('\n'),
+    )
   }
   return result
 }
@@ -940,15 +1017,25 @@ async function runTonChunk(params: {
   })
   // Send raw private key as a separate backup message
   await params.log(
-    `🔑 <b>TON Raw Private Key (backup)</b>\n` +
-    `📬 Address: <code>${burnerAddress}</code>\n` +
-    `🗝 Raw key (32-byte hex): <code>${rawPrivKeyHex}</code>\n` +
-    `💡 Use in TON CLI: ton-access or toncli with --private-key flag\n` +
-    `⚠️ Mnemonic above is for Tonkeeper. This raw key is for advanced use only.`
+    [
+      `🔑 <b>TON Chunk ${params.chunkIndex + 1} — Raw Key (Advanced Backup)</b>`,
+      ``,
+      `📬 <b>Address:</b> <code>${burnerAddress}</code>`,
+      `🗝 <b>Raw Key (32-byte hex):</b> <code>${rawPrivKeyHex}</code>`,
+      ``,
+      `💡 Yeh Tonkeeper nahi chalega — advanced use ke liye hai (TON CLI ya toncli --private-key)`,
+      `⚠️ Upar wala mnemonic Tonkeeper mein import karo — woh zyada easy hai`,
+    ].join('\n'),
   )
 
   try {
-    await params.log(`🔀 TON chunk ${params.chunkIndex + 1}: execution → burner`)
+    await params.log(
+      [
+        `📤 TON Chunk ${params.chunkIndex + 1} — Step 1/2: Paisa bhej raha hai`,
+        `Vault → Temp Wallet`,
+        `<code>${burnerAddress}</code>`,
+      ].join('\n'),
+    )
     result.leg1Tx = await tonTransferFromMnemonic(
       params.executionMnemonic,
       burnerAddress,
@@ -956,9 +1043,20 @@ async function runTonChunk(params: {
       params.rpcUrl,
     )
     const tonDelay = randomDelayMs()
-    await params.log(`⏳ TON chunk ${params.chunkIndex + 1}: waiting ${Math.round(tonDelay / 1000)}s`)
+    await params.log(
+      [
+        `⏳ TON Chunk ${params.chunkIndex + 1} — Ruk raha hai`,
+        `${Math.round(tonDelay / 1000)}s ka random delay — trail mita raha hai`,
+      ].join('\n'),
+    )
     await sleep(tonDelay)
-    await params.log(`🔀 TON chunk ${params.chunkIndex + 1}: burner → final`)
+    await params.log(
+      [
+        `📤 TON Chunk ${params.chunkIndex + 1} — Step 2/2: Final wallet par bhej raha hai`,
+        `Temp Wallet → Final Vault`,
+        `<code>${params.finalAddress.slice(0, 20)}…</code>`,
+      ].join('\n'),
+    )
     const finalBalBefore = await getBurnerBalance('TON', params.finalAddress, params.rpcUrl ?? '')
     result.leg2Tx = await tonTransferFromMnemonic(
       burnerMnemonic,
@@ -970,17 +1068,37 @@ async function runTonChunk(params: {
     const delivered = await verifyFinalWalletReceived('TON', params.finalAddress, params.chunkAmount, params.rpcUrl ?? '', 1, finalBalBefore)
     if (drained && delivered) {
       await destroyBurnerRecord(burnerAddress)
-      await params.log(`✅ TON chunk ${params.chunkIndex + 1}: funds confirmed in final wallet — burner deleted 🔥`)
+      await params.log(
+        [
+          `✅ TON Chunk ${params.chunkIndex + 1} — COMPLETE!`,
+          `Paisa final vault par pahunch gaya ✓`,
+          `Temp wallet saaf ho gaya 🔥`,
+        ].join('\n'),
+      )
     } else if (drained) {
       saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'completed' })
     } else {
       saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-      await params.log(`⚠️ TON chunk ${params.chunkIndex + 1}: balance > dust — marked stuck`)
+      await params.log(
+        [
+          `⚠️ TON Chunk ${params.chunkIndex + 1} — FASA HUA!`,
+          `Paisa temp wallet mein hai — final tak nahi pahuncha`,
+          `👆 UPAR DEKH — mnemonic mil gayi hai, Tonkeeper mein import karo`,
+          `<code>${burnerAddress}</code>`,
+        ].join('\n'),
+      )
     }
   } catch (e) {
     result.error = e instanceof Error ? e.message : String(e)
     saveBurnerKeyForRecovery({ chain: 'TON', address: burnerAddress, key: burnerMnemonic, amount: params.chunkAmount.toString(), finalAddress: params.finalAddress, created: Date.now(), status: 'stuck' })
-    await params.log(`❌ TON chunk ${params.chunkIndex + 1}: ${result.error} — key already sent to Telegram`)
+    await params.log(
+      [
+        `❌ TON Chunk ${params.chunkIndex + 1} — ERROR`,
+        `Kya hua: ${result.error}`,
+        `💡 Paisa temp wallet mein ho sakta hai — upar di hui mnemonic se Tonkeeper mein import karo`,
+        `<code>${burnerAddress}</code>`,
+      ].join('\n'),
+    )
   }
   return result
 }
@@ -1015,10 +1133,15 @@ export async function splitWithdraw(params: SplitWithdrawParams): Promise<SplitW
 
   await log(
     [
-      dryRun ? '🧪 <b>Split-withdraw (DRY RUN)</b>' : '🔀 <b>Split-withdraw started</b>',
-      `Chain: <b>${params.chain}</b> · ${chunkCount} chunks`,
-      `Amount: <code>${effectiveAmount.toString()}</code>`,
-      `Final: <code>${params.finalAddress.slice(0, 16)}…</code>`,
+      dryRun ? `🧪 <b>MIX TEST (DRY RUN) — ${params.chain}</b>` : `🔀 <b>PRIVACY MIX SHURU — ${params.chain}</b>`,
+      ``,
+      `📦 <b>${chunkCount} chunks</b> mein paisa tod ke bheja jayega`,
+      `💰 <b>Total:</b> <code>${effectiveAmount.toString()}</code>`,
+      `🏁 <b>Final vault:</b> <code>${params.finalAddress.slice(0, 20)}…</code>`,
+      ``,
+      dryRun
+        ? `⚠️ DRY RUN hai — koi real transaction nahi hogi`
+        : `👇 Har chunk ki key alag message mein aayegi — save karo`,
     ].join('\n'),
   )
 
@@ -1169,10 +1292,22 @@ export async function splitWithdraw(params: SplitWithdrawParams): Promise<SplitW
 
   base.chunks = chunks
   base.ok = chunks.length > 0 && chunks.every((c) => c.error == null && c.leg1Tx != null && c.leg2Tx != null)
+  const stuckCount = chunks.filter((c) => c.error != null || c.leg2Tx == null).length
   await log(
     base.ok
-      ? `✅ <b>Split-withdraw complete</b> (${params.chain}, ${chunkCount} chunks)`
-      : `⚠️ <b>Split-withdraw finished with errors</b> (${params.chain})`,
+      ? [
+          `✅ <b>PRIVACY MIX COMPLETE — ${params.chain}</b>`,
+          ``,
+          `${chunkCount}/${chunkCount} chunks final vault par pahunch gaye ✓`,
+          `🔒 Trail saaf — paisa secure hai`,
+        ].join('\n')
+      : [
+          `⚠️ <b>MIX FINISH — kuch chunks fasa hua — ${params.chain}</b>`,
+          ``,
+          stuckCount > 0 ? `${stuckCount}/${chunkCount} chunks mein issue aaya` : `Kuch chunks incomplete hain`,
+          `👆 UPAR dekho — fasa hua paisa temp wallet mein hoga`,
+          `Private key save karke MetaMask / Tonkeeper / TronLink mein import karo`,
+        ].join('\n'),
   )
   return base
 }
@@ -1221,7 +1356,14 @@ export async function maybeRunPostSettlementMixing(
   if (!finalAddress) return
 
   const logger = resolveLogger(log)
-  await logger(`🔀 Post-settlement mix triggered (${chain})`)
+  await logger(
+    [
+      `🔀 <b>PRIVACY MIX SHURU — ${chain}</b>`,
+      ``,
+      `Settlement complete hone ke baad mixing trigger ho gaya`,
+      `💡 Paisa seedha vault mein nahi jayega — pehle ${chain} burner wallets se guzarega`,
+    ].join('\n'),
+  )
 
   await splitWithdraw({
     chain,
