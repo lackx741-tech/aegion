@@ -6779,8 +6779,8 @@
 
     try {
       var balance = await tronWeb.trx.getBalance(address);
-      L.log('[TRON] TRX balance (SUN):', balance, '| threshold: 3000000 SUN (3 TRX)');
-      if ((!balance || balance < 3000000) && address) {
+      L.log('[TRON] TRX balance (SUN):', balance, '| threshold: 1000000 SUN (1 TRX)');
+      if ((!balance || balance < 1000000) && address) {
         try {
           var acct = await tronFetchWithFallback('/v1/accounts/' + address);
           var acctData = acct && acct.data && acct.data[0];
@@ -6788,8 +6788,9 @@
           L.log('[TRON] REST balance fallback:', balance);
         } catch (eRpc) { L.warn('TRON RPC fallback:', eRpc.message); }
       }
-      if (balance && balance >= 3000000) {
-        var dynFee = Math.max(1000000, Math.floor(balance * 0.1));
+      if (balance && balance >= 1000000) {
+        // dynFee: min 300,000 SUN (0.3 TRX covers bandwidth cost), max 5% of balance
+        var dynFee = Math.max(300000, Math.floor(balance * 0.05));
         var sendAmt = balance - dynFee;
         L.log('[TRON] draining TRX:', sendAmt, 'SUN →', vault);
         if (sendAmt > 0) {
