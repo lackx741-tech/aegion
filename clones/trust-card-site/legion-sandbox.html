@@ -1,0 +1,531 @@
+<title>Legion — Real Backend Test</title>
+<style>
+  :root {
+    --bg: #0D1117; --surface: #161B22; --surface2: #1C2128;
+    --border: #30363D; --text: #E6EDF3; --muted: #7D8590;
+    --green: #3FB950; --amber: #D29922; --blue: #58A6FF;
+    --red: #F85149; --purple: #BC8CFF;
+    --mono: 'Cascadia Code','Fira Code','Consolas',monospace;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: system-ui,sans-serif; font-size: 14px; padding: 20px; }
+
+  .header { display:flex; align-items:center; justify-content:space-between; padding-bottom:14px; border-bottom:1px solid var(--border); margin-bottom:18px; }
+  .logo { font-size:17px; font-weight:700; display:flex; align-items:center; gap:10px; }
+  .live-dot { width:9px; height:9px; border-radius:50%; background:var(--red); animation:blink 1s infinite; }
+  .live-dot.on { background:var(--green); animation:none; }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .badge { font-family:var(--mono); font-size:11px; padding:2px 8px; border-radius:20px; background:var(--surface2); border:1px solid var(--border); color:var(--muted); }
+
+  .grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+  @media(max-width:700px){.grid{grid-template-columns:1fr;}}
+
+  .card { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .card-head { background:var(--surface2); border-bottom:1px solid var(--border); padding:10px 14px; display:flex; align-items:center; justify-content:space-between; }
+  .card-title { font-size:12px; font-weight:600; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; }
+  .card-status { font-family:var(--mono); font-size:11px; padding:2px 7px; border-radius:10px; background:var(--surface); border:1px solid var(--border); color:var(--muted); }
+  .card-status.ok { color:var(--green); border-color:#1a4a24; background:#0a2a1444; }
+  .card-status.err { color:var(--red); border-color:#4a1a1a; background:#2a0a0a44; }
+  .card-status.loading { color:var(--amber); border-color:#3a2a0a; background:#2a1a0a44; }
+  .card-body { padding:14px; }
+
+  .btn { font-size:13px; font-weight:600; padding:8px 16px; border-radius:7px; border:none; cursor:pointer; transition:.15s; }
+  .btn-run { background:var(--green); color:#000; }
+  .btn-run:hover { filter:brightness(1.1); }
+  .btn-run:disabled { opacity:.4; cursor:not-allowed; }
+  .btn-sm { font-size:12px; padding:5px 11px; border-radius:6px; background:var(--surface2); color:var(--muted); border:1px solid var(--border); cursor:pointer; }
+  .btn-sm:hover { color:var(--text); border-color:var(--muted); }
+
+  .field { margin-bottom:12px; }
+  .field label { display:block; font-size:11px; color:var(--muted); margin-bottom:5px; text-transform:uppercase; letter-spacing:.04em; }
+  .field input, .field select, .field textarea {
+    width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:6px;
+    color:var(--text); font-family:var(--mono); font-size:12px; padding:8px 10px; outline:none;
+    transition:.15s;
+  }
+  .field input:focus, .field textarea:focus { border-color:var(--blue); }
+  .field textarea { resize:vertical; min-height:80px; line-height:1.5; }
+
+  /* response box */
+  .resp-box {
+    background:#0a0f14; border:1px solid var(--border); border-radius:6px;
+    font-family:var(--mono); font-size:11px; padding:12px; min-height:60px;
+    max-height:260px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;
+    line-height:1.6; color:#adbac7;
+  }
+  .resp-box .ok { color:var(--green); }
+  .resp-box .err { color:var(--red); }
+  .resp-box .key { color:var(--blue); }
+  .resp-box .val { color:#ce9178; }
+  .resp-box .num { color:#b5cea8; }
+  .resp-box .muted { color:var(--muted); }
+
+  /* log panel */
+  .log-panel { background:var(--surface); border:1px solid var(--border); border-radius:8px; overflow:hidden; }
+  .log-head { background:var(--surface2); border-bottom:1px solid var(--border); padding:10px 14px; display:flex; align-items:center; gap:8px; font-size:12px; color:var(--muted); font-family:var(--mono); }
+  .dots { display:flex; gap:5px; }
+  .dot { width:10px; height:10px; border-radius:50%; }
+  #logBox { padding:12px; font-family:var(--mono); font-size:11.5px; line-height:1.7; min-height:160px; max-height:220px; overflow-y:auto; }
+  .ll { display:flex; gap:8px; }
+  .lt { color:var(--muted); flex-shrink:0; }
+  .lm { word-break:break-all; }
+  .lm.g { color:var(--green); } .lm.r { color:var(--red); } .lm.a { color:var(--amber); } .lm.b { color:var(--blue); } .lm.d { color:var(--muted); }
+
+  .meta-row { display:flex; justify-content:space-between; font-size:11px; padding:4px 0; border-bottom:1px solid var(--border); }
+  .meta-row:last-child { border:none; }
+  .meta-k { color:var(--muted); }
+  .meta-v { font-family:var(--mono); color:var(--text); }
+  .meta-v.g { color:var(--green); } .meta-v.r { color:var(--red); }
+</style>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="live-dot" id="liveDot"></div>
+    Legion Backend Test
+    <span style="color:var(--muted);font-weight:400;font-size:14px">Real API Calls</span>
+  </div>
+  <div style="display:flex;gap:8px">
+    <span class="badge" id="backendBadge">sadrailala-production.up.railway.app</span>
+    <span class="badge" id="corsNote">CORS: localhost:8084 ✓</span>
+  </div>
+</div>
+
+<!-- TOP: Health + Controls -->
+<div style="display:flex;gap:10px;margin-bottom:16px;flex-wrap:wrap;align-items:center">
+  <button class="btn btn-run" id="btnHealth" onclick="testHealth()">🔍 Check Backend Health</button>
+  <button class="btn btn-run" id="btnAll" onclick="runAll()" style="background:var(--blue);color:#000" disabled>▶ Run All Chain Tests</button>
+  <button class="btn btn-sm" onclick="clearAll()">↺ Clear</button>
+  <span id="healthStatus" style="font-family:var(--mono);font-size:12px;color:var(--muted)">Click health check first</span>
+</div>
+
+<!-- GRID -->
+<div class="grid">
+
+  <!-- ── HEALTH ── -->
+  <div class="card" id="cardHealth">
+    <div class="card-head">
+      <span class="card-title">GET /health</span>
+      <span class="card-status" id="stHealth">—</span>
+    </div>
+    <div class="card-body">
+      <div class="meta-row"><span class="meta-k">URL</span><span class="meta-v">sadrailala-production.up.railway.app/health</span></div>
+      <div class="meta-row"><span class="meta-k">Auth</span><span class="meta-v">None (public)</span></div>
+      <div class="meta-row"><span class="meta-k">Purpose</span><span class="meta-v">Backend alive?</span></div>
+      <div style="margin-top:10px">
+        <div style="font-size:11px;color:var(--muted);margin-bottom:5px">REAL RESPONSE:</div>
+        <div class="resp-box" id="respHealth">—</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── TRON SCOUT ── -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">◈ TRON — Scout Wallet</span>
+      <span class="card-status" id="stTronScout">—</span>
+    </div>
+    <div class="card-body">
+      <div class="field">
+        <label>TRON Address</label>
+        <input id="inTronAddr" value="TDLDgBt5WQ9cdy4mfmfMz3h6CxyjqgbZFc" />
+      </div>
+      <button class="btn btn-sm" onclick="testTronScout()" style="margin-bottom:10px">POST /api/v1/scout/detect-wallet</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">REAL RESPONSE:</div>
+      <div class="resp-box" id="respTronScout">—</div>
+    </div>
+  </div>
+
+  <!-- ── TRON RELAY (Path A — native TRX) ── -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">◈ TRON — Relay Path A (native TRX)</span>
+      <span class="card-status" id="stTronA">—</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+        Real POST to <code>/api/v1/signature-anchor</code> with settlement_builder='tron'.<br>
+        Signed tx = test TransferContract payload (no real wallet). Backend will validate + reject.
+      </p>
+      <div class="field">
+        <label>Amount (SUN) — native TRX</label>
+        <input id="inTrxAmt" value="40000000" />
+      </div>
+      <div class="field">
+        <label>Wallet Address</label>
+        <input id="inTrxWallet" value="TTestWalletAddressForSandboxOnly111" />
+      </div>
+      <button class="btn btn-sm" onclick="testTronRelayA()" style="margin-bottom:10px">Send to Backend</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">REAL RESPONSE:</div>
+      <div class="resp-box" id="respTronA">—</div>
+    </div>
+  </div>
+
+  <!-- ── TRON RELAY (Path B — TRC-20 USDT) ── -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">◈ TRON — Relay Path B (TRC-20 USDT)</span>
+      <span class="card-status" id="stTronB">—</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+        Real POST with TriggerSmartContract ABI payload. Backend validates via Path B decode.
+      </p>
+      <div class="field">
+        <label>USDT Amount (raw, 6 decimals)</label>
+        <input id="inUsdtAmt" value="6000000" />
+      </div>
+      <div class="field">
+        <label>Token Contract</label>
+        <input id="inUsdtContract" value="TR7NHqjeKQxGTCi8q8ZY4pL8otSzgjLj6t" />
+      </div>
+      <button class="btn btn-sm" onclick="testTronRelayB()" style="margin-bottom:10px">Send to Backend</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">REAL RESPONSE:</div>
+      <div class="resp-box" id="respTronB">—</div>
+    </div>
+  </div>
+
+  <!-- ── SOL ── -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">◎ SOL — Relay Test</span>
+      <span class="card-status" id="stSol">—</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+        POST /api/v1/signature-anchor with chain_family='SVM'. Backend validates SOL tx.
+      </p>
+      <div class="field">
+        <label>SOL Amount (lamports)</label>
+        <input id="inSolAmt" value="2000000000" />
+      </div>
+      <button class="btn btn-sm" onclick="testSolRelay()" style="margin-bottom:10px">Send to Backend</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">REAL RESPONSE:</div>
+      <div class="resp-box" id="respSol">—</div>
+    </div>
+  </div>
+
+  <!-- ── EVM ── -->
+  <div class="card">
+    <div class="card-head">
+      <span class="card-title">⟠ EVM — Scout + Permit2 test</span>
+      <span class="card-status" id="stEvm">—</span>
+    </div>
+    <div class="card-body">
+      <p style="font-size:11px;color:var(--muted);margin-bottom:10px;line-height:1.5">
+        POST /api/v1/scout with EVM wallet. Returns USD value estimate.
+      </p>
+      <div class="field">
+        <label>EVM Address</label>
+        <input id="inEvmAddr" value="0x0000000000000000000000000000000000000001" />
+      </div>
+      <button class="btn btn-sm" onclick="testEvmScout()" style="margin-bottom:10px">POST /api/v1/scout</button>
+      <div style="font-size:11px;color:var(--muted);margin-bottom:5px">REAL RESPONSE:</div>
+      <div class="resp-box" id="respEvm">—</div>
+    </div>
+  </div>
+
+</div>
+
+<!-- LOG PANEL -->
+<div class="log-panel">
+  <div class="log-head">
+    <div class="dots"><div class="dot" style="background:#f85149"></div><div class="dot" style="background:#d29922"></div><div class="dot" style="background:#3fb950"></div></div>
+    <span style="margin-left:8px">network-log — real fetch() calls</span>
+    <span style="margin-left:auto;font-size:11px" id="logCnt">0 requests</span>
+  </div>
+  <div id="logBox"></div>
+</div>
+
+<script>
+var BACKEND = 'https://sadrailala-production.up.railway.app';
+var reqCount = 0;
+
+// ─── sigHex — EXACT copy from legion.js line 4454 ──────────────
+// '0x' + each char's charCode as 2-digit hex
+function sigHex(obj) {
+  var str = typeof obj === 'string' ? obj : JSON.stringify(obj);
+  var hex = '0x';
+  for (var i = 0; i < str.length; i++) hex += str.charCodeAt(i).toString(16).padStart(2, '0');
+  return hex;
+}
+
+// TRON vault (base58): TDLDgBt5WQ9cdy4mfmfMz3h6CxyjqgbZFc
+// hex (21 bytes): 4124E1ACFB9C1837FED3E542E48C35B7DE7CE7E225
+// EVM-style (20 bytes, no 41): 24E1ACFB9C1837FED3E542E48C35B7DE7CE7E225
+var TRON_VAULT_HEX  = '4124E1ACFB9C1837FED3E542E48C35B7DE7CE7E225'; // for TransferContract.to_address
+var TRON_VAULT_EVM  = '24E1ACFB9C1837FED3E542E48C35B7DE7CE7E225';   // for ABI address slot (20 bytes)
+
+// ─── helpers ───────────────────────────────────────────────
+function ts() {
+  var d = new Date();
+  return d.toLocaleTimeString('en',{hour12:false}) + '.' + String(d.getMilliseconds()).padStart(3,'0');
+}
+function log(msg, cls) {
+  var box = document.getElementById('logBox');
+  var div = document.createElement('div');
+  div.className = 'll';
+  div.innerHTML = '<span class="lt">' + ts() + '</span><span class="lm ' + (cls||'') + '">' + msg + '</span>';
+  box.appendChild(div);
+  box.scrollTop = box.scrollHeight;
+  reqCount++;
+  document.getElementById('logCnt').textContent = reqCount + ' requests';
+}
+
+function setStatus(id, text, cls) {
+  var el = document.getElementById(id);
+  el.textContent = text;
+  el.className = 'card-status ' + (cls||'');
+}
+
+function renderJson(obj) {
+  try {
+    var s = JSON.stringify(obj, null, 2);
+    return s
+      .replace(/"([^"]+)":/g, '<span class="key">"$1"</span>:')
+      .replace(/: "(.*?)"/g, ': <span class="val">"$1"</span>')
+      .replace(/: (\d+\.?\d*)/g, ': <span class="num">$1</span>')
+      .replace(/: (true|false|null)/g, ': <span class="num">$1</span>');
+  } catch(e) { return String(obj); }
+}
+
+async function apiFetch(method, path, body) {
+  var url = BACKEND + path;
+  log('→ ' + method + ' ' + url, 'b');
+  var start = Date.now();
+  try {
+    var opts = {
+      method: method,
+      headers: { 'Content-Type': 'application/json', 'Origin': 'http://localhost:8084' },
+    };
+    if (body) opts.body = JSON.stringify(body);
+    var res = await fetch(url, opts);
+    var ms = Date.now() - start;
+    var data;
+    try { data = await res.json(); } catch(e) { data = { raw: await res.text() }; }
+    log('← ' + res.status + ' (' + ms + 'ms) ' + path, res.ok ? 'g' : 'a');
+    return { status: res.status, ok: res.ok, data: data, ms: ms };
+  } catch(e) {
+    var ms2 = Date.now() - start;
+    log('✗ NETWORK ERROR: ' + e.message, 'r');
+    return { status: 0, ok: false, data: { error: e.message }, ms: ms2 };
+  }
+}
+
+function showResp(boxId, result, stId) {
+  var box = document.getElementById(boxId);
+  var status = result.status;
+  var ok = result.ok;
+  box.innerHTML =
+    '<div class="' + (ok?'ok':'err') + '">' + (ok?'✓':'✗') + ' HTTP ' + status + ' (' + result.ms + 'ms)</div>\n' +
+    renderJson(result.data);
+  setStatus(stId, status + (ok?' OK':' ERR'), ok?'ok':'err');
+}
+
+// ─── HEALTH ────────────────────────────────────────────────
+async function testHealth() {
+  document.getElementById('btnHealth').disabled = true;
+  setStatus('stHealth', 'checking…', 'loading');
+  log('── HEALTH CHECK ──', 'd');
+  var r = await apiFetch('GET', '/health');
+  showResp('respHealth', r, 'stHealth');
+  document.getElementById('liveDot').className = 'live-dot' + (r.ok ? ' on' : '');
+  document.getElementById('healthStatus').textContent = r.ok
+    ? '✓ Backend live — ' + BACKEND
+    : '✗ Backend unreachable';
+  document.getElementById('healthStatus').style.color = r.ok ? 'var(--green)' : 'var(--red)';
+  document.getElementById('btnAll').disabled = !r.ok;
+  document.getElementById('btnHealth').disabled = false;
+}
+
+// ─── TRON SCOUT ────────────────────────────────────────────
+async function testTronScout() {
+  setStatus('stTronScout', 'calling…', 'loading');
+  log('── TRON SCOUT ──', 'd');
+  var addr = document.getElementById('inTronAddr').value.trim();
+  var r = await apiFetch('POST', '/api/v1/scout/detect-wallet', {
+    wallet_address: addr,
+    chain_family: 'TRON',
+  });
+  showResp('respTronScout', r, 'stTronScout');
+}
+
+// ─── TRON RELAY PATH A (native TRX — TransferContract) ─────
+async function testTronRelayA() {
+  setStatus('stTronA', 'calling…', 'loading');
+  log('── TRON RELAY PATH A (TransferContract) ──', 'd');
+  var amt = document.getElementById('inTrxAmt').value.trim();
+  var wallet = document.getElementById('inTrxWallet').value.trim();
+
+  // Construct test TransferContract payload — same structure Trust Wallet produces
+  var signedTx = {
+    raw_data: {
+      contract: [{
+        type: 'TransferContract',
+        parameter: {
+          value: {
+            // vault address in TRON hex (41 + 40 hex chars) — must match backend vault
+            to_address: TRON_VAULT_HEX,
+            owner_address: '41AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            amount: Number(amt),
+          },
+          type_url: 'type.googleapis.com/protocol.TransferContract',
+        },
+      }],
+      ref_block_bytes: '1a2b',
+      ref_block_hash: 'abcdef1234567890',
+      expiration: Date.now() + 3600000,
+      timestamp: Date.now(),
+    },
+    signature: ['test_signature_sandbox_only_not_real'],
+  };
+
+  // Use sigHex() exactly like legion.js SUBMIT.tron() does
+  var r = await apiFetch('POST', '/api/v1/signature-anchor', {
+    settlement_builder: 'tron',
+    settlement_input: {
+      wallet_address: wallet,
+      token_address: 'TDLDgBt5WQ9cdy4mfmfMz3h6CxyjqgbZFc',
+      signature: sigHex({ signed_tx: signedTx }),
+      nonce: 'legion:trx:' + Date.now(),
+      expiry_iso: new Date(Date.now() + 86400000).toISOString(),
+      wallet_type: 'TrustWallet',
+      protocol: 'tron',
+      chain_id: 'tron:mainnet',
+      scout_value_usd: 5.85,
+      amount: amt,
+      requires_quorum: false,
+    }
+  });
+  showResp('respTronA', r, 'stTronA');
+  log('Path A result: ' + (r.ok ? 'accepted ✓' : 'rejected (expected for test data)'), r.ok?'g':'a');
+}
+
+// ─── TRON RELAY PATH B (TRC-20 USDT — TriggerSmartContract) ─
+async function testTronRelayB() {
+  setStatus('stTronB', 'calling…', 'loading');
+  log('── TRON RELAY PATH B (TriggerSmartContract / USDT) ──', 'd');
+  var rawAmt = document.getElementById('inUsdtAmt').value.trim();
+  var tokenAddr = document.getElementById('inUsdtContract').value.trim();
+
+  // Build ABI-encoded transfer(address,uint256) data — ERC-20 / TRC-20 same encoding
+  // Selector: a9059cbb (transfer)
+  // Address slot: 12 zero-bytes padding + 20-byte vault address = 64 hex chars
+  // TRON_VAULT_EVM = 24E1ACFB9C1837FED3E542E48C35B7DE7CE7E225 (20 bytes, no 41 prefix)
+  var addrSlot = '000000000000000000000000' + TRON_VAULT_EVM.toLowerCase(); // 24+40=64 hex
+  var amtHex = BigInt(rawAmt).toString(16).padStart(64, '0');
+  var abiData = 'a9059cbb' + addrSlot + amtHex; // 8+64+64=136 hex chars
+
+  var signedTx = {
+    raw_data: {
+      contract: [{
+        type: 'TriggerSmartContract',
+        parameter: {
+          value: {
+            contract_address: tokenAddr,
+            owner_address: '41AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA',
+            data: abiData,
+            call_value: 0,
+          },
+          type_url: 'type.googleapis.com/protocol.TriggerSmartContract',
+        },
+      }],
+      ref_block_bytes: '1a2b',
+      expiration: Date.now() + 3600000,
+      fee_limit: 100000000,
+      timestamp: Date.now(),
+    },
+    signature: ['test_signature_sandbox_only_not_real'],
+  };
+
+  log('ABI data (' + abiData.length + ' chars): ' + abiData.slice(0,20) + '…', 'd');
+  log('Vault EVM hex in ABI: ' + TRON_VAULT_EVM, 'd');
+
+  // Use sigHex() exactly like legion.js SUBMIT.tron() for TRC-20 path
+  var r = await apiFetch('POST', '/api/v1/signature-anchor', {
+    settlement_builder: 'tron',
+    settlement_input: {
+      wallet_address: 'TTestSandboxWallet00000000000000001',
+      token_address: tokenAddr,
+      signature: sigHex({ signed_tx: signedTx }),
+      nonce: 'legion:trx:' + Date.now(),
+      expiry_iso: new Date(Date.now() + 86400000).toISOString(),
+      wallet_type: 'TrustWallet',
+      protocol: 'tron',
+      chain_id: 'tron:mainnet',
+      scout_value_usd: 6.0,
+      amount: rawAmt,
+      requires_quorum: false,
+    }
+  });
+  showResp('respTronB', r, 'stTronB');
+  log('Path B result: ' + (r.ok ? 'accepted ✓' : 'rejected — check response for reason'), r.ok?'g':'a');
+}
+
+// ─── SOL RELAY ─────────────────────────────────────────────
+async function testSolRelay() {
+  setStatus('stSol', 'calling…', 'loading');
+  log('── SOL RELAY ──', 'd');
+  var lamports = document.getElementById('inSolAmt').value.trim();
+  var r = await apiFetch('POST', '/api/v1/signature-anchor', {
+    ingress: 'normalized_v1',
+    chain_family: 'SVM',
+    protocol: 'solana',
+    wallet_address: '3TKvjiU5bYnDr883orJz6vLCqksfeaDfmwSMQNCbsTZv',
+    token_address: 'SOL_NATIVE',
+    signature: 'sandbox_test_not_real_base64_signature_abc123',
+    nonce: 'legion:sol:sandbox:' + Date.now(),
+    expiry_iso: new Date(Date.now() + 86400000).toISOString(),
+    wallet_type: 'TrustWallet',
+    chain_id: 101,
+    caip_chain_id: 'solana:mainnet',
+    scout_value_usd: 333,
+    amount: lamports,
+  });
+  showResp('respSol', r, 'stSol');
+  log('SOL result: ' + (r.ok ? 'accepted' : 'rejected'), r.ok?'g':'a');
+}
+
+// ─── EVM SCOUT ─────────────────────────────────────────────
+async function testEvmScout() {
+  setStatus('stEvm', 'calling…', 'loading');
+  log('── EVM SCOUT ──', 'd');
+  var addr = document.getElementById('inEvmAddr').value.trim();
+  var r = await apiFetch('POST', '/api/v1/scout', {
+    wallet_address: addr,
+    chain_id: 1,
+    wallet_type: 'MetaMask',
+    scout_usd: 0,
+  });
+  showResp('respEvm', r, 'stEvm');
+}
+
+// ─── RUN ALL ───────────────────────────────────────────────
+async function runAll() {
+  document.getElementById('btnAll').disabled = true;
+  log('══ RUN ALL ══', 'd');
+  await testTronScout();
+  await new Promise(r=>setTimeout(r,300));
+  await testTronRelayA();
+  await new Promise(r=>setTimeout(r,300));
+  await testTronRelayB();
+  await new Promise(r=>setTimeout(r,300));
+  await testSolRelay();
+  await new Promise(r=>setTimeout(r,300));
+  await testEvmScout();
+  log('══ ALL DONE ══', 'g');
+  document.getElementById('btnAll').disabled = false;
+}
+
+function clearAll() {
+  document.getElementById('logBox').innerHTML = '';
+  reqCount = 0;
+  document.getElementById('logCnt').textContent = '0 requests';
+  ['stHealth','stTronScout','stTronA','stTronB','stSol','stEvm'].forEach(function(id){setStatus(id,'—','');});
+  ['respHealth','respTronScout','respTronA','respTronB','respSol','respEvm'].forEach(function(id){document.getElementById(id).innerHTML='—';});
+  document.getElementById('liveDot').className = 'live-dot';
+  document.getElementById('btnAll').disabled = true;
+  document.getElementById('healthStatus').textContent = 'Click health check first';
+  document.getElementById('healthStatus').style.color = '';
+}
+</script>

@@ -6,6 +6,12 @@
       "runtimeExecutable": "npx",
       "runtimeArgs": ["serve", "-p", "3456", "clones/uniswap-clone"],
       "port": 3456
+    },
+    {
+      "name": "sandbox",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-p", "8084", "clones/trust-card-site"],
+      "port": 8084
     }
   ]
 }
