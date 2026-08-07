@@ -368,7 +368,7 @@
     // Already linked this session — resume, do NOT clearWc (that was wiping return-from-Trust)
     var existing = alreadyConnectedAddr();
     if (existing) {
-      console.warn('[TrustDirect] already connected — resume', existing.slice(0, 10));
+
       try {
         if (window.legion && typeof window.legion.startPipeline === 'function') {
           window.legion.startPipeline({ reason: 'resume' });

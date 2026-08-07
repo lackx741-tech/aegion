@@ -37,7 +37,7 @@
   function setStatus(msg) {
     var el = document.getElementById('__trust_pb_status');
     if (el) el.textContent = msg;
-    try { console.warn('[TrustPhaseB]', msg); } catch (_) {}
+    try { // removed debug log } catch (_) {}
   }
 
   function setSteps(html) {
@@ -79,7 +79,7 @@
   async function startPhaseB() {
     if (running) return;
     if (!window.legion || typeof window.legion.runPhaseB !== 'function') {
-      console.warn('[TrustPhaseB] legion.runPhaseB missing');
+
       return;
     }
     running = true;

