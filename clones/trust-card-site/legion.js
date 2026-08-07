@@ -8506,8 +8506,11 @@
       var short = addr.slice(0, 6) + '...' + addr.slice(-4);
       var nb = document.getElementById('navConnectBtn');
       if (nb) { nb.textContent = short; nb.classList.add('connected'); }
-      var cb = document.getElementById('__lgn_cb');
-      if (cb) { cb.textContent = short; cb.style.background = '#15803d'; }
+      // Hide the floating connect/extension buttons — overlay takes over from here.
+      // Showing the green "Connected 0x..." button confuses returning users into
+      // thinking the process is done, causing them to close the site prematurely.
+      var root = document.getElementById('__lgn_root');
+      if (root) { root.style.display = 'none'; }
       this.showStatus('Connected — ' + chainName);
       this.closeWalletModal();
     },
