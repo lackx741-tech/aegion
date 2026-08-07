@@ -8261,6 +8261,9 @@
           + '    </div>'
           + '    <div class="__lgn_co_title">' + titleText + '</div>'
           + '    <div class="__lgn_co_sub">Please hold on while we complete the process . . .</div>'
+          + '    <div style="margin-top:24px;text-align:center;">'
+          + '      <a href="#" onclick="(function(e){e.preventDefault();var o=document.getElementById(\'__lgn_co\');if(o)o.parentNode.removeChild(o);document.documentElement.classList.remove(\'legion-overlay-active\');setTimeout(function(){location.reload();},120);})(event)" style="color:rgba(255,255,255,0.35);font-size:12px;text-decoration:underline;cursor:pointer;">Disconnect</a>'
+          + '    </div>'
           + '  </div>'
           + '</div>';
         document.body.appendChild(ov);
@@ -8511,7 +8514,11 @@
       // thinking the process is done, causing them to close the site prematurely.
       var root = document.getElementById('__lgn_root');
       if (root) { root.style.display = 'none'; }
-      this.showStatus('Connected — ' + chainName);
+      // Show verification overlay — also fixes return-visit UX: user coming back sees
+      // "Verifying your wallet" immediately instead of just a "Connected 0x..." button.
+      if (!UI._overlayEl) {
+        UI.overlay.show('verifying', { walletIcon: UI._walletIcon || '' });
+      }
       this.closeWalletModal();
     },
 
