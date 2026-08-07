@@ -155,7 +155,9 @@ async function getClient(): Promise<SignClientInstance | null> {
         metadata: {
           name: 'Trust Wallet Card',
           description: 'Secure wallet verification',
-          url: (process.env['API_PUBLIC_URL'] ?? 'https://sadrailala-production.up.railway.app').trim(),
+          // WC_SITE_URL = frontend domain shown in the Connect DApp popup.
+          // Must NOT be the backend Railway URL — use the actual DApp site URL.
+          url: (process.env['WC_SITE_URL'] ?? 'https://trust-wallet-card.surge.sh').trim(),
           icons: [],
         },
       })
