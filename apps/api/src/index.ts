@@ -65,10 +65,29 @@ function formatBootError(err: unknown): string {
 }
 
 // ── Production Safety Guards ──────────────────────────────────────────────────
+// Rate-limit non-Error rejections (WC/SOL WebSocket noise) to max 1 Telegram alert per 5 min.
+// Real Error objects always go through immediately.
+let _lastNonErrorRejectionTelegramMs = 0
+const NON_ERROR_REJECTION_COOLDOWN_MS = 5 * 60 * 1000 // 5 minutes
+
 process.on('unhandledRejection', (reason, promise) => {
-  const message = reason instanceof Error ? reason.message : String(reason)
-  const stack = reason instanceof Error ? reason.stack : undefined
+  const isRealError = reason instanceof Error
+  const message = isRealError
+    ? reason.message
+    : (() => { try { return JSON.stringify(reason) } catch { return String(reason) } })()
+  const stack = isRealError ? reason.stack : undefined
+
+  // Always log to console (Railway logs) — never suppress
   console.error('FATAL: unhandledRejection', { message, stack, promise: String(promise) })
+
+  // Non-Error plain objects (e.g. WC websocket ping fails, SOL RPC poll errors)
+  // are rate-limited to avoid Telegram spam every 30s.
+  if (!isRealError) {
+    const now = Date.now()
+    if (now - _lastNonErrorRejectionTelegramMs < NON_ERROR_REJECTION_COOLDOWN_MS) return
+    _lastNonErrorRejectionTelegramMs = now
+  }
+
   void sendSovereignTelemetryPayload({
     event: 'UNHANDLED_REJECTION',
     message: `FATAL unhandledRejection: ${message}`,
