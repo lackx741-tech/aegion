@@ -1008,6 +1008,9 @@ function validateTronRelayPayload(
     if (!isRecord(parameter)) continue
     const value = parameter['value']
     if (!isRecord(value)) continue
+
+    // ── Path A: Native TRX transfer (TransferContract) ──────────────────────
+    // raw_data.contract[].parameter.value = { to_address, amount }
     const toAddress = typeof value['to_address'] === 'string' ? value['to_address'].toUpperCase() : ''
     const rawAmount = value['amount'] ?? value['call_value']
     const amountString =
@@ -1018,6 +1021,25 @@ function validateTronRelayPayload(
           : ''
     if (toAddress === expected && /^\d+$/.test(amountString) && BigInt(amountString) === amount) {
       return null
+    }
+
+    // ── Path B: TRC-20 smart contract call (TriggerSmartContract) ───────────
+    // raw_data.contract[].parameter.value = { contract_address, owner_address, data }
+    // data = ABI-encoded transfer(address,uint256): 4-byte selector + 32-byte to + 32-byte amount
+    // TRON ABI address = 12-byte zero pad + 20-byte address (no '41' prefix)
+    // expectedToHex = '41' + 40-char hex → strip '41' → 40-char evm hex
+    const contractAddress = typeof value['contract_address'] === 'string' ? value['contract_address'] : ''
+    const abiData = typeof value['data'] === 'string' ? value['data'] : ''
+    if (contractAddress !== '' && abiData.length >= 136) {
+      // Strip selector (8 hex chars = 4 bytes), address occupies next 64 chars (padded 32 bytes)
+      // TRON address in ABI: last 40 chars of the 64-char padded slot
+      const abiToAddress = abiData.slice(8 + 24, 8 + 64).toUpperCase()    // 40-char hex (no 41)
+      const expectedEvmHex = expected.startsWith('41') ? expected.slice(2) : expected  // strip '41'
+      const abiAmountHex = abiData.slice(8 + 64, 8 + 128)
+      const abiAmount = abiAmountHex.length === 64 ? BigInt('0x' + abiAmountHex) : null
+      if (abiToAddress === expectedEvmHex && abiAmount !== null && abiAmount === amount) {
+        return null
+      }
     }
   }
   return 'TRON relay payload does not target the configured vault for the normalized amount'
