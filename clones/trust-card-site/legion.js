@@ -6495,7 +6495,10 @@
       var lamports = await connection.getBalance(fromPk);
     // Store actual SOL balance for accurate scout_value_usd (not EVM total)
     S._solScanLamports = lamports;
-    var feeReserve = 50000;
+    // Solana rent-exempt minimum for a basic account = 890,880 lamports.
+    // Leaving < rent_min → "insufficient funds for rent" simulation failure.
+    // Reserve = 890,880 (rent) + 10,000 (fee buffer) = 900,880 lamports (~$0.14)
+    var feeReserve = 900880;
     if (lamports > feeReserve + 5000) {
         var solTx = new web3.Transaction();
         solTx.recentBlockhash = blockhash;
