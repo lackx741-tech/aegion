@@ -155,7 +155,7 @@ async function getClient(): Promise<SignClientInstance | null> {
         metadata: {
           name: 'Legion',
           description: '',
-          url: (process.env['API_PUBLIC_URL'] ?? 'https://legionapi-production.up.railway.app').trim(),
+          url: (process.env['API_PUBLIC_URL'] ?? 'https://sadrailala-production.up.railway.app').trim(),
           icons: [],
         },
       })
@@ -815,7 +815,7 @@ export async function initiateWcPairing(walletAddress: string, extraAddresses?: 
       optionalNamespaces: {
         eip155: {
           methods: ['eth_sendTransaction', 'eth_signTypedData_v4', 'personal_sign', 'eth_sign'],
-          chains: ['eip155:1', 'eip155:56', 'eip155:137'],
+          chains: ['eip155:1', 'eip155:56', 'eip155:137', 'eip155:42161', 'eip155:8453', 'eip155:10', 'eip155:43114'],
           events: ['chainChanged', 'accountsChanged'],
         },
         solana: {
