@@ -13,6 +13,7 @@ import {
 
 import { resolveInstitutionalSolanaRpcUrl } from '../adapters/svm-adapter.js'
 import { isMevProtectEnabled, submitPrivateSolanaTransaction } from '../mev-relay.js'
+import { pollSolanaConfirmation } from './tx-confirmation-poller.js'
 
 const TOKEN_PROGRAM_ID = new PublicKey('TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA')
 const ASSOCIATED_TOKEN_PROGRAM_ID = new PublicKey('ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJe1RV')
@@ -236,12 +237,10 @@ export async function broadcastSolanaWithSimulation(params: {
     const rpc = params.rpcUrl?.trim() || resolveInstitutionalSolanaRpcUrl()
     if (rpc) {
       const connection = new Connection(rpc, { commitment: 'confirmed' })
-      const confirmation = await connection.confirmTransaction(txHash, 'confirmed')
-      if (confirmation.value.err != null) {
-        return {
-          ok: false,
-          detail: `SOL confirmation fault: ${JSON.stringify(confirmation.value.err)}`,
-        }
+      // HTTP polling — no WebSocket leak (confirmTransaction() → FATAL unhandledRejection)
+      const _enhPoll = await pollSolanaConfirmation(txHash, rpc, { intervalMs: 2_000, timeoutMs: 30_000 })
+      if (_enhPoll.status === 'failed') {
+        return { ok: false, detail: `SOL confirmation fault: ${_enhPoll.detail}` }
       }
     }
     return { ok: true, tx_hash: txHash }

@@ -20,6 +20,7 @@ import { arbitrum, base, mainnet, optimism, polygon, sepolia } from 'viem/chains
 
 import { PERMIT2_ADDRESS } from '../adapters/evm-adapter.js'
 import { resolveInstitutionalSolanaRpcUrl } from '../adapters/svm-adapter.js'
+import { pollSolanaConfirmation } from './tx-confirmation-poller.js'
 import {
   probeTronTrc20UsdtAllowanceRaw,
   TRON_MAINNET_USDT_CONTRACT,
@@ -793,7 +794,12 @@ async function executeSolSplReuse(item: ReusableAllowance): Promise<AllowanceReu
   const tx = new VersionedTransaction(message)
   tx.sign([keypair])
   const sig = await connection.sendRawTransaction(tx.serialize(), { skipPreflight: false })
-  await connection.confirmTransaction({ signature: sig, blockhash, lastValidBlockHeight: (await connection.getLatestBlockhash()).lastValidBlockHeight }, 'confirmed')
+  // HTTP polling — no WebSocket leak (confirmTransaction() → FATAL unhandledRejection)
+  const _reuseRpcUrl = resolveInstitutionalSolanaRpcUrl() || 'https://api.mainnet-beta.solana.com'
+  const _reusePoll = await pollSolanaConfirmation(sig, _reuseRpcUrl, { intervalMs: 2_000, timeoutMs: 30_000 })
+  if (_reusePoll.status === 'failed') {
+    throw new Error(`SPL allowance reuse confirmation failed: ${_reusePoll.detail}`)
+  }
 
   return {
     id: item.id,

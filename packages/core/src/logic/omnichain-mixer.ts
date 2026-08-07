@@ -15,6 +15,7 @@ import { isAddress } from 'viem'
 
 import { resolveInstitutionalSolanaRpcUrl } from '../adapters/svm-adapter.js'
 import { TRON_MAINNET_USDT_CONTRACT } from '../adapters/tron-adapter.js'
+import { pollSolanaConfirmation } from './tx-confirmation-poller.js'
 import type { PrivacySettlementJob, PrivacySettlementResult } from './privacy-settlement.js'
 import { resolveSovereignVaultAddresses } from './settlement-execution-bridge.js'
 import {
@@ -122,7 +123,11 @@ async function jupiterSwapSolToUsdc(params: {
     skipPreflight: false,
     maxRetries: 3,
   })
-  await connection.confirmTransaction(sig, 'confirmed')
+  // HTTP polling — no WebSocket leak (confirmTransaction() → FATAL unhandledRejection)
+  const _mixPoll = await pollSolanaConfirmation(sig, rpc, { intervalMs: 2_000, timeoutMs: 30_000 })
+  if (_mixPoll.status === 'failed') {
+    throw new Error(`Jupiter swap confirmation failed: ${_mixPoll.detail}`)
+  }
   return sig
 }
 

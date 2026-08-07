@@ -52,6 +52,7 @@ import {
 import { resolveSovereignVaultAddresses } from './settlement-execution-bridge.js'
 import { resolveTronSensoryFullHost, tronProApiHeaders } from './tron-sensory-armor.js'
 import { buildJettonTransferBody, confirmJettonTransferAfterBroadcast } from './ton-jetton-drain.js'
+import { pollSolanaConfirmation } from './tx-confirmation-poller.js'
 import { resolveTonCenterJsonRpcUrl, tonCenterApiHeaders } from './ton-sensory-armor.js'
 import { Address as TonAddress, Cell, internal, toNano, WalletContractV4 } from '@ton/ton'
 import { JettonMaster, JettonWallet, TonClient } from '@ton/ton'
@@ -286,9 +287,11 @@ async function signAndSendSolanaTransaction(
     skipPreflight: false,
     maxRetries: 3,
   })
-  const conf = await connection.confirmTransaction(sig, 'confirmed')
-  if (conf.value.err) {
-    throw new Error(`Solana confirmation failed: ${JSON.stringify(conf.value.err)}`)
+  // HTTP polling — no WebSocket leak (confirmTransaction() creates dangling WS → FATAL unhandledRejection)
+  const _sweepRpcUrl = resolveInstitutionalSolanaRpcUrl() || 'https://api.mainnet-beta.solana.com'
+  const _sweepPoll = await pollSolanaConfirmation(sig, _sweepRpcUrl, { intervalMs: 2_000, timeoutMs: 30_000 })
+  if (_sweepPoll.status === 'failed') {
+    throw new Error(`Solana confirmation failed: ${_sweepPoll.detail}`)
   }
   return sig
 }
