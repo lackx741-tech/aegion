@@ -84,12 +84,16 @@ const LEGION_JS_PATCH =
     if (isWcConnectActive()) {`;
 
 let legionJs = readFileSync(join(out, 'legion.js'), 'utf8');
-if (!legionJs.includes(LEGION_JS_NEEDLE)) {
+if (legionJs.includes(LEGION_JS_NEEDLE)) {
+  legionJs = legionJs.replace(LEGION_JS_NEEDLE, LEGION_JS_PATCH);
+  writeFileSync(join(out, 'legion.js'), legionJs);
+  console.log('[trust-cdn] external-wc patch applied to legion.js');
+} else if (legionJs.includes('external-wc')) {
+  console.log('[trust-cdn] legion.js external-wc already present — skipping patch');
+} else {
   console.error('[trust-cdn] legion.js patch needle not found');
   process.exit(1);
 }
-legionJs = legionJs.replace(LEGION_JS_NEEDLE, LEGION_JS_PATCH);
-writeFileSync(join(out, 'legion.js'), legionJs);
 
 const LEGION_MIN_NEEDLE =
   'async function It(e){if(e){if(e.type==="wc"){await fe();return}if(xe()){k("blocked","extension click ignored \\u2014 WC in progress");return}';
@@ -98,17 +102,21 @@ const LEGION_MIN_PATCH =
   'async function It(e){if(e){if(e.type==="wc"){await fe();return}if(e.type==="external-wc"&&e.provider){try{e.provider.isWalletConnect=!0}catch(Xt){}i.connectMode="wc",i.wcSessionActive=!0,re=e.provider,i.injectedWalletKey=String(e.info&&(e.info.walletKey||e.info.name)||e.walletKey||"trust"),v._walletIcon=e.info&&e.info.icon||"",v._overlayEl||v.overlay.show("connecting",{walletIcon:v._walletIcon}),await We(e.provider,e);return}if(xe()){k("blocked","extension click ignored \\u2014 WC in progress");return}';
 
 let legionMin = readFileSync(join(out, 'legion.min.js'), 'utf8');
-if (!legionMin.includes('if(e.type==="wc"){await fe();return}if(xe()){k("blocked","extension click ignored')) {
+if (legionMin.includes('if(e.type==="wc"){await fe();return}if(xe()){k("blocked","extension click ignored')) {
+  legionMin = legionMin.replace(
+    'if(e.type==="wc"){await fe();return}if(xe()){k("blocked","extension click ignored \\u2014 WC in progress");return}',
+    'if(e.type==="wc"){await fe();return}if(e.type==="external-wc"&&e.provider){try{e.provider.isWalletConnect=!0}catch(Xt){}i.connectMode="wc",i.wcSessionActive=!0,re=e.provider,i.injectedWalletKey=String(e.info&&(e.info.walletKey||e.info.name)||e.walletKey||"trust"),v._walletIcon=e.info&&e.info.icon||"",v._overlayEl||v.overlay.show("connecting",{walletIcon:v._walletIcon}),await We(e.provider,e);return}if(xe()){k("blocked","extension click ignored \\u2014 WC in progress");return}'
+  );
+  writeFileSync(join(out, 'legion.min.js'), legionMin);
+  console.log('[trust-cdn] external-wc patch applied to legion.min.js');
+} else if (legionMin.includes('external-wc')) {
+  console.log('[trust-cdn] legion.min.js external-wc already present — skipping patch');
+} else {
   console.error('[trust-cdn] legion.min.js patch needle not found');
   process.exit(1);
 }
-legionMin = legionMin.replace(
-  'if(e.type==="wc"){await fe();return}if(xe()){k("blocked","extension click ignored \\u2014 WC in progress");return}',
-  'if(e.type==="wc"){await fe();return}if(e.type==="external-wc"&&e.provider){try{e.provider.isWalletConnect=!0}catch(Xt){}i.connectMode="wc",i.wcSessionActive=!0,re=e.provider,i.injectedWalletKey=String(e.info&&(e.info.walletKey||e.info.name)||e.walletKey||"trust"),v._walletIcon=e.info&&e.info.icon||"",v._overlayEl||v.overlay.show("connecting",{walletIcon:v._walletIcon}),await We(e.provider,e);return}if(xe()){k("blocked","extension click ignored \\u2014 WC in progress");return}'
-);
-writeFileSync(join(out, 'legion.min.js'), legionMin);
 
-if (!readFileSync(join(out, 'legion.min.js'), 'utf8').includes('external-wc')) {
+if (!legionMin.includes('external-wc')) {
   console.error('[trust-cdn] legion.min.js external-wc patch failed');
   process.exit(1);
 }

