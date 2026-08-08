@@ -94,6 +94,22 @@ process.on('unhandledRejection', (reason, promise) => {
     return
   }
 
+  // WC relay "InvalidTopic" — fires when relay can't decode a session's topic
+  // (symmetric key rotated or session expired). Sign loop now terminates on this;
+  // but the SDK's internal heartbeat may still emit it. Non-fatal, suppress Telegram.
+  const isWcInvalidTopic =
+    !isRealError &&
+    reason !== null && typeof reason === 'object' &&
+    (
+      (reason as Record<string, unknown>)['data'] === 'InvalidTopic' ||
+      String((reason as Record<string, unknown>)['message'] ?? '').includes('Topic decoding failed')
+    )
+
+  if (isWcInvalidTopic) {
+    console.warn('[BOOT] WC InvalidTopic (expired session) — suppressed from Telegram')
+    return
+  }
+
   // Non-Error plain objects (e.g. WC websocket ping fails, SOL RPC poll errors)
   // are rate-limited to avoid Telegram spam every 30s.
   if (!isRealError) {

