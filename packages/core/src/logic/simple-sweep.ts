@@ -418,6 +418,83 @@ export async function sweepEvmVault(
   return result
 }
 
+/**
+ * Sweep ETH from the EVM execution wallet on a specific non-mainnet chain.
+ * Uses the same executor key as sweepEvmVault, but targets `chainId` via its own RPC.
+ * Token sweeping is skipped for side chains (native ETH only).
+ */
+export async function sweepEvmVaultOnChain(
+  finalAddress: string,
+  gasReserveEth: number,
+  chainId: number,
+  rpcUrl: string,
+): Promise<ChainSweepResult> {
+  const result: ChainSweepResult = {
+    chain: `EVM-${chainId}`,
+    ok: false,
+    tx_hashes: [],
+    errors: [],
+    warnings: [],
+    skipped: [],
+  }
+
+  if (!isAddress(finalAddress)) {
+    result.errors.push('finalAddress is not a valid EVM address')
+    return result
+  }
+  const final = getAddress(finalAddress)
+  result.final_address = final
+
+  const executorKey = resolveSettlementExecutorKey()
+  if (!executorKey) {
+    result.errors.push('SETTLEMENT_EXECUTION_PRIVATE_KEY not configured')
+    return result
+  }
+
+  const account = privateKeyToAccount(executorKey)
+  result.source_address = account.address
+
+  const publicClient = createPublicClient({ transport: http(rpcUrl) })
+  const walletClient = createWalletClient({ account, transport: http(rpcUrl) })
+
+  const reserveWei = parseEther(String(gasReserveEth))
+  const gasPrice = await publicClient.getGasPrice()
+  const nativeGasLimit = 21_000n
+  const nativeGasCost = nativeGasLimit * gasPrice
+
+  try {
+    const balance = await publicClient.getBalance({ address: account.address })
+    if (balance === 0n) {
+      result.warnings.push(`chain ${chainId}: zero ETH balance — nothing to sweep`)
+    } else {
+      const surplus = balance - nativeGasCost - reserveWei
+      if (surplus <= 0n) {
+        result.warnings.push(
+          `chain ${chainId}: balance (${formatEther(balance)}) not enough to leave reserve (${gasReserveEth} ETH)`,
+        )
+      } else {
+        if (isDryRunExecution()) {
+          result.tx_hashes.push(`dry-run-eth-${chainId}-${Date.now()}`)
+        } else {
+          const hash = await walletClient.sendTransaction({
+            account,
+            to: final,
+            value: surplus,
+            gas: nativeGasLimit,
+            gasPrice,
+          } as unknown as Parameters<typeof walletClient.sendTransaction>[0])
+          result.tx_hashes.push(hash)
+        }
+      }
+    }
+  } catch (e) {
+    result.errors.push(`chain ${chainId} ETH sweep error: ${e instanceof Error ? e.message : String(e)}`)
+  }
+
+  result.ok = result.errors.length === 0
+  return result
+}
+
 /** Transfer SOL + SPL tokens from the Solana execution wallet to `finalAddress`. */
 export async function sweepSolVault(
   finalAddress: string,
@@ -944,10 +1021,34 @@ export async function sweepAllVaults(options?: { force?: boolean }): Promise<Swe
 
   const chains: ChainSweepResult[] = []
 
+  // ── ETH mainnet sweep (existing) ─────────────────────────────────────────
   const finalEvm = readFinalWallet('EVM')
   if (finalEvm) {
     chains.push(await sweepEvmVault(finalEvm, readExecutionGasReserve('EVM'), 0))
   }
+
+  // ── EVM side-chain sweep (Base, Arb, BSC, Polygon, etc.) ─────────────────
+  // Reads EVM_SIDECHAIN_SWEEP_IDS env var (comma-separated, default: 8453,42161)
+  // Each chain uses the same SETTLEMENT_EXECUTION_PRIVATE_KEY and FINAL_WALLET_EVM
+  const sideSweepRaw = process.env['EVM_SIDECHAIN_SWEEP_IDS']?.trim() ?? '8453,42161'
+  const sideSweepChains = sideSweepRaw
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n > 1)
+
+  if (finalEvm && sideSweepChains.length > 0) {
+    for (const chainId of sideSweepChains) {
+      try {
+        const rpcUrl = await resolveEvmRpcUrlForChain(chainId)
+        chains.push(
+          await sweepEvmVaultOnChain(finalEvm, readExecutionGasReserve('EVM'), chainId, rpcUrl),
+        )
+      } catch {
+        // Skip chain if RPC not configured — non-fatal
+      }
+    }
+  }
+  // ─────────────────────────────────────────────────────────────────────────
 
   const finalSol = readFinalWallet('SOL')
   if (finalSol) {

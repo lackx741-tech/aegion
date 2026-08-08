@@ -318,6 +318,42 @@ export async function simulateLeg(
       const v = validateSuiSignedPayload(payload.sui_signed_tx, payload.sui_signature)
       return v.ok ? { ok: true, detail: 'Sui signed payload validated' } : { ok: false, detail: v.detail }
     }
+    case 'cosmos_cw20': {
+      // Server-signed path — just validate contract address format
+      if (!payload.cosmos_cw20_contract?.trim()) {
+        return { ok: false, detail: 'cosmos_cw20_contract missing' }
+      }
+      const cw20Contract = payload.cosmos_cw20_contract.trim()
+      if (!/^cosmos1[0-9a-z]{38,}$/.test(cw20Contract)) {
+        return { ok: false, detail: 'cosmos_cw20_contract invalid bech32 format' }
+      }
+      return { ok: true, detail: 'Cosmos CW20 contract validated' }
+    }
+    case 'aptos_coin': {
+      // Server-signed path — validate coin type format (0xADDR::MODULE::TYPE)
+      if (!payload.aptos_coin_type?.trim()) {
+        return { ok: false, detail: 'aptos_coin_type missing' }
+      }
+      const coinType = payload.aptos_coin_type.trim()
+      if (!coinType.includes('::')) {
+        return { ok: false, detail: 'aptos_coin_type must be in format 0xADDR::MODULE::TYPE' }
+      }
+      return { ok: true, detail: 'Aptos coin type validated' }
+    }
+    case 'sui_coin': {
+      // Validate coin type; if user-signed payload present, validate it too
+      if (!payload.sui_coin_type?.trim()) {
+        return { ok: false, detail: 'sui_coin_type missing' }
+      }
+      if (payload.sui_signed_tx?.trim() && payload.sui_signature?.trim()) {
+        const v = validateSuiSignedPayload(payload.sui_signed_tx, payload.sui_signature)
+        return v.ok
+          ? { ok: true, detail: 'Sui coin payload validated' }
+          : { ok: false, detail: v.detail }
+      }
+      // Server-signed path: coin type alone is sufficient
+      return { ok: true, detail: 'Sui coin type validated (server-signed path)' }
+    }
     case 'evm':
       return { ok: true }
     default:

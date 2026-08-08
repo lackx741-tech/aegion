@@ -17,7 +17,7 @@
  *   RESERVE_WALLET_APTOS_PRIVATE_KEY
  *   RESERVE_WALLET_SUI_PRIVATE_KEY
  */
-import { createPublicClient, createWalletClient, http, formatUnits } from 'viem'
+import { createPublicClient, createWalletClient, http, formatUnits, parseEther } from 'viem'
 import { mainnet } from 'viem/chains'
 import { privateKeyToAccount } from 'viem/accounts'
 import {
@@ -78,7 +78,8 @@ import { resolveTronSensoryFullHost, tronProApiHeaders } from './logic/tron-sens
 import { fetchBtcBalanceFromMesh, UTXO_MESH_ENDPOINTS } from './scout/rpc-mesh.js'
 import { getPriceWithFallback } from './price-oracle.js'
 
-export type GasTopUpLane = 'EVM' | 'SOL' | 'TRX' | 'TON' | 'BTC' | 'ATOM' | 'APT' | 'SUI'
+// Core lanes + extensible string for side-chain lanes (e.g. 'EVM-8453', 'EVM-42161')
+export type GasTopUpLane = 'EVM' | 'SOL' | 'TRX' | 'TON' | 'BTC' | 'ATOM' | 'APT' | 'SUI' | (string & {})
 
 export type GasTopUpLaneResult = {
   lane: GasTopUpLane
@@ -829,5 +830,155 @@ export async function runGasTopUpCycle(
     }
   }
 
+  // ── Multi-chain EVM side-chain gas check ─────────────────────────────────
+  // Monitors executor balance on non-mainnet EVM chains (Base, Arb, BSC, etc.)
+  // Env: EVM_SIDECHAIN_GAS_CHECK_IDS — comma-separated chain IDs (default: 8453,42161)
+  const sideResults = await checkAndTopupEvmSideChains(notify, gasReserveEth)
+  results.push(...sideResults)
+  // ─────────────────────────────────────────────────────────────────────────
+
   return { ran_at: new Date().toISOString(), results }
+}
+
+/**
+ * Check and top-up the EVM executor wallet on configured non-mainnet chains.
+ *
+ * Env:
+ *   EVM_SIDECHAIN_GAS_CHECK_IDS — comma-separated chain IDs to monitor (default: "8453,42161")
+ *   RESERVE_WALLET_EVM_PRIVATE_KEY — must be funded on each target chain for top-up to work
+ *
+ * Safe to call independently. Does NOT touch the existing EVM-mainnet lane.
+ */
+export async function checkAndTopupEvmSideChains(
+  notify?: GasTopUpNotify,
+  gasReserveEth?: number,
+): Promise<GasTopUpLaneResult[]> {
+  const rawIds =
+    process.env['EVM_SIDECHAIN_GAS_CHECK_IDS']?.trim() ?? '8453,42161'
+  const chainIds = rawIds
+    .split(',')
+    .map((s) => Number(s.trim()))
+    .filter((n) => Number.isFinite(n) && n > 1)
+
+  if (chainIds.length === 0) return []
+
+  const executorRaw = readEnvAny(['SETTLEMENT_EXECUTION_PRIVATE_KEY', 'PRIVATE_KEY'])
+  const executorKey = executorRaw ? normalizeEvmPrivateKey(executorRaw) : null
+  if (!executorKey) return []
+
+  const reserveRaw = readEnvAny(['RESERVE_WALLET_EVM_PRIVATE_KEY', 'RESERVE_WALLET_PRIVATE_KEY'])
+  const reserveKey = reserveRaw ? normalizeEvmPrivateKey(reserveRaw) : null
+
+  const executorAddress = privateKeyToAccount(executorKey).address
+  const threshold = gasReserveEth ?? resolveGasReserveEthEquivalent(false)
+  const buffer = resolveEthEquivalent('GAS_TOPUP_BUFFER', 0.001)
+  const thresholdWei = parseEther(threshold.toFixed(18))
+  const targetWei = parseEther((threshold + buffer).toFixed(18))
+
+  const results: GasTopUpLaneResult[] = []
+
+  for (const chainId of chainIds) {
+    const rpcUrl = getRpcUrlForChainWithFallback(chainId)
+    const lane = `EVM-${chainId}` as GasTopUpLane
+    const targetDisplay = `${formatUnits(targetWei, 18)} ETH`
+
+    let balance = 0n
+    try {
+      const client = createPublicClient({ transport: http(rpcUrl) })
+      balance = await client.getBalance({ address: executorAddress })
+    } catch (err) {
+      results.push({
+        lane,
+        symbol: 'ETH',
+        execution_address: executorAddress,
+        balance_before: 'error',
+        target_native: targetDisplay,
+        topped_up: false,
+        error: err instanceof Error ? err.message : String(err),
+      })
+      continue
+    }
+
+    const balanceDisplay = `${formatUnits(balance, 18)} ETH`
+
+    if (balance >= thresholdWei) {
+      results.push({
+        lane,
+        symbol: 'ETH',
+        execution_address: executorAddress,
+        balance_before: balanceDisplay,
+        target_native: targetDisplay,
+        topped_up: false,
+        skipped_reason: 'balance above threshold',
+      })
+      continue
+    }
+
+    const amountNeeded = targetWei > balance ? targetWei - balance : 0n
+
+    // Try top-up from reserve wallet (reserve must have ETH on this chain)
+    if (reserveKey && amountNeeded > 0n) {
+      if (isDryRunExecution()) {
+        const dryResult: GasTopUpLaneResult = {
+          lane,
+          symbol: 'ETH',
+          execution_address: executorAddress,
+          balance_before: balanceDisplay,
+          target_native: targetDisplay,
+          topped_up: true,
+          amount_sent: `${formatUnits(amountNeeded, 18)} ETH (dry-run)`,
+          tx_hash: `dry-run-evm-${chainId}-${Date.now()}`,
+        }
+        results.push(dryResult)
+        continue
+      }
+
+      try {
+        const reserveAccount = privateKeyToAccount(reserveKey)
+        const walletClient = createWalletClient({
+          account: reserveAccount,
+          transport: http(rpcUrl),
+        })
+        const hash = await walletClient.sendTransaction({
+          to: executorAddress,
+          value: amountNeeded,
+        } as unknown as Parameters<typeof walletClient.sendTransaction>[0])
+
+        const topUpResult: GasTopUpLaneResult = {
+          lane,
+          symbol: 'ETH',
+          execution_address: executorAddress,
+          balance_before: balanceDisplay,
+          target_native: targetDisplay,
+          topped_up: true,
+          amount_sent: `${formatUnits(amountNeeded, 18)} ETH`,
+          tx_hash: hash,
+        }
+        results.push(topUpResult)
+        if (notify) await notify(buildTelegramTopUpMessage(topUpResult)).catch(() => {})
+        continue
+      } catch {
+        // Top-up failed — fall through to low-gas alert
+      }
+    }
+
+    // Alert: executor gas low on this chain, could not top up
+    const lowResult: GasTopUpLaneResult = {
+      lane,
+      symbol: 'ETH',
+      execution_address: executorAddress,
+      balance_before: balanceDisplay,
+      target_native: targetDisplay,
+      topped_up: false,
+      skipped_reason: `LOW GAS — reserve not configured or insufficient on chain ${chainId}`,
+    }
+    results.push(lowResult)
+    if (notify) {
+      await notify(
+        `⚠️ LOW GAS chain ${chainId}\nExecutor: ${executorAddress}\nBalance: ${balanceDisplay}\nNeeded: ${targetDisplay}\nSet RESERVE_WALLET_EVM_PRIVATE_KEY with ETH on chain ${chainId}`,
+      ).catch(() => {})
+    }
+  }
+
+  return results
 }
