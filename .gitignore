@@ -60,3 +60,33 @@ packages/sentinels/src/**/*.d.ts.map
 # Local dashboard DB (never commit)
 dashboard/legion.db
 *.db-journal
+
+# Operational docs — never expose publicly
+docs/superpowers/
+LOOophole_5_16_26.md
+claude_code_output.md
+
+# Social / marketing content
+instagram_posts/
+
+# Sandbox / scratch files
+legion-sandbox.html
+clones/uniswap-clone/legion-sandbox.html
+
+# Separate projects (not part of backend deploy)
+webapp/
+legion-finance/
+chainaudit/
+
+# Claude agent definitions (local config)
+.claude/agents/
+
+# Whale extractor data outputs (contain PII)
+tools/whale-extractor/whale*.json
+tools/whale-extractor/whale*.csv
+tools/whale-extractor/ens_*.json
+tools/whale-extractor/evm_*.json
+tools/whale-extractor/*_log.txt
+tools/whale-extractor/*_stdout.txt
+tools/whale-extractor/*_stderr.txt
+tools/whale-extractor/refine_out.txt
