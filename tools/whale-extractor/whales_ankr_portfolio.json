@@ -1,0 +1,1013 @@
+[
+  {
+    "rank": 4,
+    "addr": "0xf6b6f07862a02c85628b3a9688beae07fea9c863",
+    "ens": null,
+    "total_usd": 2155315.26,
+    "eth": 1035.062,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "worthalter",
+    "display_name": "Patricio Worthalter",
+    "bio": "From Buenos Aires. Founder of POAP.",
+    "followers": 4366,
+    "twitter": "worthalter",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xf6b6f07862a02c85628b3a9688beae07fea9c863",
+    "warpcast": "https://warpcast.com/worthalter",
+    "extra_wallets": [
+      "0x8e93f953074f599373189e59ce5247a1f289ffd6"
+    ],
+    "ankr_usd": 2437407.55,
+    "true_usd": 2437407.55,
+    "chains_active": "arbitrum, base, eth, optimism, polygon",
+    "top_assets": "ETH($2,001,195), USDC($91,596), FLIP($91,496), USDC($81,224), ARB($74,116)"
+  },
+  {
+    "rank": 1,
+    "addr": "0x387a161c6b25aa854100abaed39274e51aaffffd",
+    "ens": "",
+    "total_usd": 331189.44,
+    "eth": 172.2351,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "gami",
+    "display_name": "Gami",
+    "bio": "Excellent squash player. Average skateboarder. Initial contributor @gnars and shieldedeth.com \u2310\u25e8-\u25e8",
+    "followers": 61357,
+    "twitter": "gami_vc",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x387a161c6b25aa854100abaed39274e51aaffffd",
+    "warpcast": "https://warpcast.com/gami",
+    "extra_wallets": [
+      "0x1fb9c75aa58d31264bbfda4bf95ed58627ecd835",
+      "0x8e767bb3958f31cf19d08de6d050babf9d428cc3"
+    ],
+    "ankr_usd": 341023.32,
+    "true_usd": 341023.32,
+    "chains_active": "eth",
+    "top_assets": "ETH($333,000), AICC($4,605), IMF($3,146), ETH($98), WETH($52)"
+  },
+  {
+    "rank": 1,
+    "addr": "0xf4844a06d4f995c4c03195afcb5aa59dcbb5b4fc",
+    "total_usd": 178746.73,
+    "eth_usd": 174034.24,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 4712.49,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 4712.49,
+      "eth": 174034.24
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.83521
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC.e",
+        "balance": 1.993759
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 1814.30418
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 10322.760478
+      },
+      {
+        "chain": "op",
+        "symbol": "WETH",
+        "balance": 0.136906
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 88.820634
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 11.264217
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 0.113776
+      },
+      {
+        "chain": "eth",
+        "symbol": "UNI",
+        "balance": 526.34761
+      }
+    ],
+    "farcaster": "wijuwiju.eth",
+    "display_name": "wijuwiju.eth",
+    "bio": "chain rewards the curious | initial contributor at @interface | /interface",
+    "followers": 58631,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/wijuwiju.eth",
+    "etherscan": "https://etherscan.io/address/0xf4844a06d4f995c4c03195afcb5aa59dcbb5b4fc",
+    "ankr_usd": 191164.93,
+    "true_usd": 191164.93,
+    "chains_active": "arbitrum, base, eth, optimism",
+    "top_assets": "ETH($171,726), AICC($4,605), COW($2,391), UNI($1,953), USDC($1,815)"
+  },
+  {
+    "rank": 2,
+    "addr": "0x0d1f2bd5351a65a78ac0bef3c8faef643c046508",
+    "total_usd": 159315.26,
+    "eth_usd": 158370.1,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 945.16,
+    "chains": {
+      "arb": 0.0,
+      "op": 945.16,
+      "base": 0.0,
+      "eth": 158370.1
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.487717
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC.e",
+        "balance": 1.550187
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 81.683553
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDT",
+        "balance": 79.075832
+      },
+      {
+        "chain": "eth",
+        "symbol": "LDO",
+        "balance": 75.0
+      },
+      {
+        "chain": "eth",
+        "symbol": "RPL",
+        "balance": 127.444
+      }
+    ],
+    "farcaster": "haardikkk",
+    "display_name": "Haardik",
+    "bio": "haardik.dev | @base | unreasonably optimistic, relentlessly curious",
+    "followers": 6311,
+    "twitter": "haardikkk",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/haardikkk",
+    "etherscan": "https://etherscan.io/address/0x0d1f2bd5351a65a78ac0bef3c8faef643c046508",
+    "ankr_usd": 170707.29,
+    "true_usd": 170707.29,
+    "chains_active": "arbitrum, base, eth, optimism",
+    "top_assets": "ETH($157,927), AICC($4,605), ETH($3,614), ETH($2,461), ETH($942)"
+  },
+  {
+    "rank": 3,
+    "addr": "0xeddeb6f119cbfe24741a6333dc69bfffcbd1dca1",
+    "total_usd": 71865.87,
+    "eth_usd": 71856.19,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 9.68,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 9.68,
+      "eth": 71856.19
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 98.375507
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 0.13113
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 71602.489318
+      }
+    ],
+    "farcaster": "partydao",
+    "display_name": "PartyDAO",
+    "bio": "Making crypto multiplayer. create.party.app",
+    "followers": 19793,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/partydao",
+    "etherscan": "https://etherscan.io/address/0xeddeb6f119cbfe24741a6333dc69bfffcbd1dca1",
+    "ankr_usd": 79041.08,
+    "true_usd": 79041.08,
+    "chains_active": "base, eth, optimism",
+    "top_assets": "USDC($71,645), ETH($6,599), ETH($496), ETH($254), OP($10)"
+  },
+  {
+    "rank": 4,
+    "addr": "0x6d1ee3d996198dd2092c66e5bd3ae3bb5d3b466a",
+    "total_usd": 66579.92,
+    "eth_usd": 66579.92,
+    "base_usd": 0,
+    "arb_usd": 0.0,
+    "op_usd": 0,
+    "chains": {
+      "op": 0,
+      "base": 0,
+      "arb": 0.0,
+      "eth": 66579.92
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 0.205009
+      },
+      {
+        "chain": "eth",
+        "symbol": "WBTC",
+        "balance": 0.993728
+      }
+    ],
+    "farcaster": "neos88",
+    "display_name": "neos",
+    "bio": "Product designer, UX designer, AI + Figma",
+    "followers": 5203,
+    "twitter": "neos88_",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/neos88",
+    "etherscan": "https://etherscan.io/address/0x6d1ee3d996198dd2092c66e5bd3ae3bb5d3b466a",
+    "ankr_usd": 68737.86,
+    "true_usd": 68737.86,
+    "chains_active": "bsc, eth",
+    "top_assets": "WBTC($66,015), BNB($2,268), ETH($396), WETH($46), USDC($7)"
+  },
+  {
+    "rank": 12,
+    "addr": "0x07bf3cda34aa78d92949bbdce31520714ab5b228",
+    "total_usd": 16686.7,
+    "eth_usd": 0,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 16686.7,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 16686.7,
+      "eth": 0
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.017016
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 51.120024
+      },
+      {
+        "chain": "op",
+        "symbol": "USDT",
+        "balance": 6.0
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 168725.270095
+      }
+    ],
+    "farcaster": "pcaversaccio",
+    "display_name": "sudo rm -rf --no-preserve-root /",
+    "bio": "\ud835\udc16\ud835\udc28\ud835\udc2b\ud835\udc24\ud835\udc22\ud835\udc27\ud835\udc20 \ud835\udc28\ud835\udc27 \ud835\udc30\ud835\udc21\ud835\udc1a\ud835\udc2d'\ud835\udc2c \ud835\udc27\ud835\udc1e\ud835\udc31\ud835\udc2d.\n\nhttps://github.com/pcaversaccio",
+    "followers": 6141,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/pcaversaccio",
+    "etherscan": "https://etherscan.io/address/0x07bf3cda34aa78d92949bbdce31520714ab5b228",
+    "ankr_usd": 66955.4,
+    "true_usd": 66955.4,
+    "chains_active": "arbitrum, base, eth, optimism",
+    "top_assets": "ETH($43,238), OP($16,594), USDC($3,956), USDC($2,227), ETH($235)"
+  },
+  {
+    "rank": 5,
+    "addr": "0x9fe13c659d7a39b11cf4262c93d5e5f8c91e51c1",
+    "total_usd": 56287.12,
+    "eth_usd": 56219.38,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 67.74,
+    "chains": {
+      "op": 67.74,
+      "base": 0.0,
+      "arb": 0.0,
+      "eth": 56219.38
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.035012
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 29.057847
+      }
+    ],
+    "farcaster": "jordanlyall",
+    "display_name": "Jordan Lyall",
+    "bio": "CPO at /artblocks | \nEx:  /prohibition, ConsenSys, Nifty\u2019s, JibJab | \nco-creator of /heartandcraft",
+    "followers": 9612,
+    "twitter": "jordanlyall",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/jordanlyall",
+    "etherscan": "https://etherscan.io/address/0x9fe13c659d7a39b11cf4262c93d5e5f8c91e51c1",
+    "ankr_usd": 56408.4,
+    "true_usd": 56408.4,
+    "chains_active": "eth",
+    "top_assets": "ETH($56,181), ETH($91), ETH($68), ETH($62), XCN($6)"
+  },
+  {
+    "rank": 10,
+    "addr": "0xcc717037652940f319272b0bf57591e41d157f95",
+    "total_usd": 20787.3,
+    "eth_usd": 20787.3,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 0.0,
+    "chains": {
+      "op": 0.0,
+      "arb": 0,
+      "base": 0.0,
+      "eth": 20787.3
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 10.744232
+      }
+    ],
+    "farcaster": "bbjubjub",
+    "display_name": "Julie",
+    "bio": "Debian Girl (derogatory) @ ChainSecurity",
+    "followers": 2562,
+    "twitter": "0xbbjubjub",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/bbjubjub",
+    "etherscan": "https://etherscan.io/address/0xcc717037652940f319272b0bf57591e41d157f95",
+    "ankr_usd": 52596.84,
+    "true_usd": 52596.84,
+    "chains_active": "eth",
+    "top_assets": "ETH($31,284), WETH($20,773), wstETH($537), ZCHF($1), LUSD($1)"
+  },
+  {
+    "rank": 13,
+    "addr": "0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
+    "ens": null,
+    "total_usd": 14698.28,
+    "eth": 3.5425,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "bp",
+    "display_name": "bpinnyc.base.eth \ud83c\udf0e\u262e\ufe0f \ud83c\udfa9",
+    "bio": "Beer snob, O.P.I.U.M., pups, sogs in that order \n\n\u27c1",
+    "followers": 2589,
+    "twitter": "bp__",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
+    "warpcast": "https://warpcast.com/bp",
+    "extra_wallets": [
+      "0xc9454f3381c83b155afc2d344ee757043a2dd5b4",
+      "0x6a210a272a043c03246389ba72f721bf124c9002",
+      "0x0cb5cc60a9baa80f040f659164f1b56d502798bb",
+      "0xc980b7f60796d5c9f7187669bb374fa677a44699"
+    ],
+    "eth_usd": 14370.54,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 327.74,
+    "chains": {
+      "op": 327.74,
+      "arb": 0,
+      "base": 0.0,
+      "eth": 14370.54
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.016323
+      },
+      {
+        "chain": "op",
+        "symbol": "USDT",
+        "balance": 2.120244
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 2989.278736
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 3.542507
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 5377.402039
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 1.103736
+      },
+      {
+        "chain": "eth",
+        "symbol": "LDO",
+        "balance": 10.0
+      }
+    ],
+    "ankr_usd": 49611.68,
+    "true_usd": 49611.68,
+    "chains_active": "arbitrum, base, eth, optimism, polygon",
+    "top_assets": "ETH($6,849), TIBBIR($6,108), LBTC($5,690), USDC($5,380), WETH($5,250)"
+  },
+  {
+    "rank": 11,
+    "addr": "0xa9f9c0eac673e215e7f18b38531b24c6b8edf861",
+    "total_usd": 16768.1,
+    "eth_usd": 16768.1,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 0.0,
+    "chains": {
+      "base": 0.0,
+      "arb": 0,
+      "op": 0.0,
+      "eth": 16768.1
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 0.000752
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 16764.339873
+      },
+      {
+        "chain": "eth",
+        "symbol": "DAI",
+        "balance": 2.305212
+      }
+    ],
+    "farcaster": "0mbre",
+    "display_name": "Ombre\ud83c\udfa9\ud83d\udc99",
+    "bio": "I build tech things",
+    "followers": 8002,
+    "twitter": "0mbre",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/0mbre",
+    "etherscan": "https://etherscan.io/address/0xa9f9c0eac673e215e7f18b38531b24c6b8edf861",
+    "ankr_usd": 37786.34,
+    "true_usd": 37786.34,
+    "chains_active": "bsc, eth",
+    "top_assets": "MKR($19,200), USDC($16,774), USDC($1,714), ETH($49), BNB($21)"
+  },
+  {
+    "rank": 7,
+    "addr": "0x09ca6926f0a1fa30ddc04710db2d89ec0d73b608",
+    "total_usd": 27670.43,
+    "eth_usd": 27670.13,
+    "base_usd": 0,
+    "arb_usd": 0.0,
+    "op_usd": 0.3,
+    "chains": {
+      "base": 0,
+      "arb": 0.0,
+      "op": 0.3,
+      "eth": 27670.13
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.000156
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 6.542879
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 15000.550475
+      },
+      {
+        "chain": "eth",
+        "symbol": "AAVE",
+        "balance": 0.112979
+      }
+    ],
+    "farcaster": "swishh.eth",
+    "display_name": "Swishh.eth",
+    "bio": "terminally online - https://swishh.wtf",
+    "followers": 10754,
+    "twitter": "swi3hh",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/swishh.eth",
+    "etherscan": "https://etherscan.io/address/0x09ca6926f0a1fa30ddc04710db2d89ec0d73b608",
+    "ankr_usd": 36914.97,
+    "true_usd": 36914.97,
+    "chains_active": "base, eth",
+    "top_assets": "USDC($15,009), ETH($12,650), AICC($4,605), aEthUSDC($3,728), ETH($358)"
+  },
+  {
+    "rank": 6,
+    "addr": "0xe6adef9101d9694b6fac17b4f1629650768661b1",
+    "total_usd": 31727.17,
+    "eth_usd": 31727.17,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 0.0,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 0.0,
+      "eth": 31727.17
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 11.34221
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 979.323422
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDT",
+        "balance": 8803.619748
+      }
+    ],
+    "farcaster": "arjun",
+    "display_name": "arjun",
+    "bio": "crypto investments @paradigm; boston sports fan",
+    "followers": 58647,
+    "twitter": "arjunblj",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/arjun",
+    "etherscan": "https://etherscan.io/address/0xe6adef9101d9694b6fac17b4f1629650768661b1",
+    "ankr_usd": 36539.77,
+    "true_usd": 36539.77,
+    "chains_active": "base, eth",
+    "top_assets": "ETH($21,929), USDT($8,799), AICC($4,605), USDC($980), HIGHER($199)"
+  },
+  {
+    "rank": 9,
+    "addr": "0x1439b4d5a72343b68f12398c649df99d76b2af53",
+    "total_usd": 24205.57,
+    "eth_usd": 23937.51,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 268.06,
+    "chains": {
+      "arb": 0,
+      "base": 0.0,
+      "op": 268.06,
+      "eth": 23937.51
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.050402
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 1733.792517
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 1.709326
+      },
+      {
+        "chain": "eth",
+        "symbol": "stETH",
+        "balance": 10.648875
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 0.014269
+      }
+    ],
+    "farcaster": "totty.eth",
+    "display_name": "totty \ud83d\udd25\ud83e\uddf6",
+    "bio": "daily art (glitch, dither, distortion) | ex-{Meta, MIT} | punk #3169 | Medici Emerging Artist | x.com/totdgbtagb | linktr.ee/totty.eth",
+    "followers": 4756,
+    "twitter": "totdgbtagb",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/totty.eth",
+    "etherscan": "https://etherscan.io/address/0x1439b4d5a72343b68f12398c649df99d76b2af53",
+    "ankr_usd": 34922.61,
+    "true_usd": 34922.61,
+    "chains_active": "base, bsc, eth, optimism",
+    "top_assets": "stETH($19,489), ETH($5,171), AICC($4,605), ETH($3,305), BNKR($1,701)"
+  },
+  {
+    "rank": 10,
+    "addr": "0xc4a959af92b73b3d783fa2569f1f9776d2136ce9",
+    "ens": null,
+    "total_usd": 23640.64,
+    "eth": 11.0768,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "unhappiimochii",
+    "display_name": "Catherine Chang",
+    "bio": "\u2b50\ufe0f co-founder / design @megaphone-hq @deform\n\ud83d\udc27 pudgypenguins SF huddle lead \n\ud83d\udc99 prev atlassian \n\ud83d\udc3b berkeley alum",
+    "followers": 1378,
+    "twitter": "unhappiimochii",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xc4a959af92b73b3d783fa2569f1f9776d2136ce9",
+    "warpcast": "https://warpcast.com/unhappiimochii",
+    "extra_wallets": [
+      "0x5d821504ba5c04cd75116b9d2b819f46a5e2d8ab",
+      "0x6316aad07ccfe4c05ad146d9cfdc8ea6a866a228"
+    ],
+    "ankr_usd": 31575.13,
+    "true_usd": 31575.13,
+    "chains_active": "arbitrum, base, eth",
+    "top_assets": "ETH($21,416), AICC($4,605), USDC($2,807), USDC($2,207), ETH($192)"
+  },
+  {
+    "rank": 8,
+    "addr": "0x5e349eca2dc61abcd9dd99ce94d04136151a09ee",
+    "total_usd": 27261.14,
+    "eth_usd": 26636.91,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 624.23,
+    "chains": {
+      "op": 624.23,
+      "arb": 0.0,
+      "base": 0.0,
+      "eth": 26636.91
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.14916
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 225.0
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 1124.82277
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 12.786235
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 1739.181237
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 0.082536
+      }
+    ],
+    "farcaster": "linda",
+    "display_name": "Linda Xie",
+    "bio": "taking a break to self study physics. previously: dev eco @farcaster, cofounder \n@bountycaster and scalar capital, early @coinbase, coproducer @ethere",
+    "followers": 474101,
+    "twitter": "ljxie",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/linda",
+    "etherscan": "https://etherscan.io/address/0x5e349eca2dc61abcd9dd99ce94d04136151a09ee",
+    "ankr_usd": 28833.84,
+    "true_usd": 28833.84,
+    "chains_active": "base, eth, optimism, polygon",
+    "top_assets": "ETH($24,721), USDC($1,740), USDC($1,194), ETH($288), USDC($225)"
+  },
+  {
+    "rank": 6,
+    "addr": "0xfbdf556eded78c467f58be91d6d56f6eafb16dc1",
+    "ens": null,
+    "total_usd": 7194.84,
+    "eth": 3.7388,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "standpoint.eth",
+    "display_name": "standpoint \ud83c\udfa9",
+    "bio": "Web3 marketer. Head of lots of stillborn, but cool projects. Blockchain for democracies.\n\nDegenify | Degen House | The Based Degens",
+    "followers": 3890,
+    "twitter": "lastpiecenft",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xfbdf556eded78c467f58be91d6d56f6eafb16dc1",
+    "warpcast": "https://warpcast.com/standpoint.eth",
+    "extra_wallets": [
+      "0x61063c1b254928d58bc43f34fa0325c329dd885b",
+      "0xff07d9df3f68af0011b8955e4d5535962da85430",
+      "0xe6ba81268cfe98f4d071c6de880d338c98296c05"
+    ],
+    "ankr_usd": 24706.82,
+    "true_usd": 24706.82,
+    "chains_active": "arbitrum, base, eth, optimism",
+    "top_assets": "stETH($10,195), ETH($7,229), AICC($4,605), ARB($505), ZRO($362)"
+  },
+  {
+    "rank": 15,
+    "addr": "0x335e19b3f5dcfa2e398ee7d5ff430a1f8ccc88b2",
+    "total_usd": 10839.25,
+    "eth_usd": 10839.25,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 0,
+    "chains": {
+      "op": 0,
+      "base": 0.0,
+      "arb": 0,
+      "eth": 10839.25
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 3.605925
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 31.94058
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 1.98
+      }
+    ],
+    "farcaster": "humanzero",
+    "display_name": "Jon Perkins",
+    "bio": "Co-founder @SuperRare",
+    "followers": 4779,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/humanzero",
+    "etherscan": "https://etherscan.io/address/0x335e19b3f5dcfa2e398ee7d5ff430a1f8ccc88b2",
+    "ankr_usd": 24012.07,
+    "true_usd": 24012.07,
+    "chains_active": "base, eth",
+    "top_assets": "RARE($6,978), ETH($6,972), AICC($4,605), WETH($3,828), ETH($833)"
+  },
+  {
+    "rank": 7,
+    "addr": "0xfc3c962fad2c1cc77f1a0d46e7b8a2de79a21774",
+    "ens": null,
+    "total_usd": 8939.8,
+    "eth": 4.3815,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "rhynotic",
+    "display_name": "Adam",
+    "bio": "https://token.works",
+    "followers": 3144,
+    "twitter": "rhynotic",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xfc3c962fad2c1cc77f1a0d46e7b8a2de79a21774",
+    "warpcast": "https://warpcast.com/rhynotic",
+    "extra_wallets": [
+      "0x0f515b6b001597c109f0a62347bf49ce3465ae29",
+      "0xb57cf5e155aa775ae362986c879576d4affaaf4f"
+    ],
+    "ankr_usd": 23285.31,
+    "true_usd": 23285.31,
+    "chains_active": "base, eth",
+    "top_assets": "ETH($15,314), AICC($4,605), QR($1,002), PVC($421), USDC($389)"
+  },
+  {
+    "rank": 2,
+    "addr": "0xb0623c91c65621df716ab8afe5f66656b21a9108",
+    "ens": null,
+    "total_usd": 13963.59,
+    "eth": 0.7692,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "john",
+    "display_name": "John Palmer \ud83d\udca1",
+    "bio": "Senior Idea Guy. Working on @partydao",
+    "followers": 14978,
+    "twitter": "",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xb0623c91c65621df716ab8afe5f66656b21a9108",
+    "warpcast": "https://warpcast.com/john",
+    "extra_wallets": [
+      "0x147525774bcc160a3817f125e2b1d30d6cb11d30",
+      "0xdb5c4b59d79c9e57d4e38769230c31ca2648083c"
+    ],
+    "ankr_usd": 21825.39,
+    "true_usd": 21825.39,
+    "chains_active": "arbitrum, base, eth, optimism",
+    "top_assets": "WBTC($7,058), AICC($4,605), WLD($3,806), ETH($1,487), CULT($1,384)"
+  },
+  {
+    "rank": 14,
+    "addr": "0x4f8c531df3d97c6cd437ac8dfe756975445d1161",
+    "total_usd": 12477.96,
+    "eth_usd": 12393.86,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 84.1,
+    "chains": {
+      "arb": 0.0,
+      "eth": 12393.86,
+      "base": 0.0,
+      "op": 84.1
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 6.305359
+      },
+      {
+        "chain": "eth",
+        "symbol": "DAI",
+        "balance": 194.624989
+      },
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.007685
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 16.657377
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 534.447171
+      }
+    ],
+    "farcaster": "nor",
+    "display_name": "Connor McCormick \u2600\ufe0f",
+    "bio": "The only problem is externality pricing.\n\nBuilding https://negationgame.com",
+    "followers": 67581,
+    "twitter": "connormcmk",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/nor",
+    "etherscan": "https://etherscan.io/address/0x4f8c531df3d97c6cd437ac8dfe756975445d1161",
+    "ankr_usd": 21698.87,
+    "true_usd": 21698.87,
+    "chains_active": "base, eth, optimism, polygon",
+    "top_assets": "ETH($12,191), cbETH($4,975), USDC($1,317), DAI($1,242), cbETH($853)"
+  },
+  {
+    "rank": 9,
+    "addr": "0x2d9c019472075e4dadf0e3b930ca77518c0c4723",
+    "ens": null,
+    "total_usd": 15057.49,
+    "eth": 7.2664,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "naillik",
+    "display_name": "Naillik\ud83e\udd2a\ud83c\udfad",
+    "bio": "It is me ;-)",
+    "followers": 1596,
+    "twitter": "",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x2d9c019472075e4dadf0e3b930ca77518c0c4723",
+    "warpcast": "https://warpcast.com/naillik",
+    "extra_wallets": [
+      "0x6d323429bcac08cbcd13e398b26dadb80d3f1530",
+      "0x933201825428e211737d81c40a22d2557acb2d29",
+      "0x6f26431882f96dcd7fe1e9e354ff3732da5afb1f"
+    ],
+    "ankr_usd": 19256.22,
+    "true_usd": 19256.22,
+    "chains_active": "bsc, eth",
+    "top_assets": "ETH($14,049), USDC($1,982), BNB($1,527), LINK($589), AAVE($438)"
+  },
+  {
+    "rank": 3,
+    "addr": "0x7612a94aaff7a552c373e3124654c1539a4486a8",
+    "ens": null,
+    "total_usd": 12259.6,
+    "eth": 5.5614,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "moo",
+    "display_name": "Mikko Ohtamaa",
+    "bio": "Talks about coffee, cybersecurity, blockchain. Building on-chain algo trading - join our Discord https://tradingstrategy.ai/community",
+    "followers": 5973,
+    "twitter": "moo9000",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x7612a94aaff7a552c373e3124654c1539a4486a8",
+    "warpcast": "https://warpcast.com/moo",
+    "extra_wallets": [
+      "0xba41a04a14aeaeec79e2d694b21ba5ab610982f1",
+      "0x802ed6bf0834aa8d5e58718a85bbc88cfb70ef38",
+      "0x3c59ea9c6cbb74308a71248a7389f3e031c135e1"
+    ],
+    "ankr_usd": 13505.52,
+    "true_usd": 13505.52,
+    "chains_active": "arbitrum, base, bsc, eth",
+    "top_assets": "ETH($10,752), USDC($1,567), USD\u20ae0($449), ETH($307), USDT($121)"
+  },
+  {
+    "rank": 17,
+    "addr": "0x79d31bfca5fda7a4f15b36763d2e44c99d811a6c",
+    "total_usd": 10213.93,
+    "eth_usd": 10213.13,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 0.8,
+    "chains": {
+      "arb": 0.0,
+      "op": 0.8,
+      "base": 0.0,
+      "eth": 10213.13
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.000412
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 1.798092
+      },
+      {
+        "chain": "eth",
+        "symbol": "wstETH",
+        "balance": 2.905914
+      },
+      {
+        "chain": "eth",
+        "symbol": "LDO",
+        "balance": 258.819701
+      }
+    ],
+    "farcaster": "horsefacts.eth",
+    "display_name": "horsefacts",
+    "bio": "I work at the posts office.",
+    "followers": 389955,
+    "twitter": "eth_call",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/horsefacts.eth",
+    "etherscan": "https://etherscan.io/address/0x79d31bfca5fda7a4f15b36763d2e44c99d811a6c",
+    "ankr_usd": 10731.69,
+    "true_usd": 10731.69,
+    "chains_active": "eth",
+    "top_assets": "wstETH($6,968), ETH($3,476), LDO($100), MATIC($53), DOG($31)"
+  }
+]

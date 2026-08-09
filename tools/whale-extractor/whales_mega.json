@@ -1,0 +1,767 @@
+[
+  {
+    "rank": 1,
+    "addr": "0xf4844a06d4f995c4c03195afcb5aa59dcbb5b4fc",
+    "total_usd": 178746.73,
+    "eth_usd": 174034.24,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 4712.49,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 4712.49,
+      "eth": 174034.24
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.83521
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC.e",
+        "balance": 1.993759
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 1814.30418
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 10322.760478
+      },
+      {
+        "chain": "op",
+        "symbol": "WETH",
+        "balance": 0.136906
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 88.820634
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 11.264217
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 0.113776
+      },
+      {
+        "chain": "eth",
+        "symbol": "UNI",
+        "balance": 526.34761
+      }
+    ],
+    "farcaster": "wijuwiju.eth",
+    "display_name": "wijuwiju.eth",
+    "bio": "chain rewards the curious | initial contributor at @interface | /interface",
+    "followers": 58631,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/wijuwiju.eth",
+    "etherscan": "https://etherscan.io/address/0xf4844a06d4f995c4c03195afcb5aa59dcbb5b4fc"
+  },
+  {
+    "rank": 2,
+    "addr": "0x0d1f2bd5351a65a78ac0bef3c8faef643c046508",
+    "total_usd": 159315.26,
+    "eth_usd": 158370.1,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 945.16,
+    "chains": {
+      "arb": 0.0,
+      "op": 945.16,
+      "base": 0.0,
+      "eth": 158370.1
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.487717
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC.e",
+        "balance": 1.550187
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 81.683553
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDT",
+        "balance": 79.075832
+      },
+      {
+        "chain": "eth",
+        "symbol": "LDO",
+        "balance": 75.0
+      },
+      {
+        "chain": "eth",
+        "symbol": "RPL",
+        "balance": 127.444
+      }
+    ],
+    "farcaster": "haardikkk",
+    "display_name": "Haardik",
+    "bio": "haardik.dev | @base | unreasonably optimistic, relentlessly curious",
+    "followers": 6311,
+    "twitter": "haardikkk",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/haardikkk",
+    "etherscan": "https://etherscan.io/address/0x0d1f2bd5351a65a78ac0bef3c8faef643c046508"
+  },
+  {
+    "rank": 3,
+    "addr": "0xeddeb6f119cbfe24741a6333dc69bfffcbd1dca1",
+    "total_usd": 71865.87,
+    "eth_usd": 71856.19,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 9.68,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 9.68,
+      "eth": 71856.19
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 98.375507
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 0.13113
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 71602.489318
+      }
+    ],
+    "farcaster": "partydao",
+    "display_name": "PartyDAO",
+    "bio": "Making crypto multiplayer. create.party.app",
+    "followers": 19793,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/partydao",
+    "etherscan": "https://etherscan.io/address/0xeddeb6f119cbfe24741a6333dc69bfffcbd1dca1"
+  },
+  {
+    "rank": 4,
+    "addr": "0x6d1ee3d996198dd2092c66e5bd3ae3bb5d3b466a",
+    "total_usd": 66579.92,
+    "eth_usd": 66579.92,
+    "base_usd": 0,
+    "arb_usd": 0.0,
+    "op_usd": 0,
+    "chains": {
+      "op": 0,
+      "base": 0,
+      "arb": 0.0,
+      "eth": 66579.92
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 0.205009
+      },
+      {
+        "chain": "eth",
+        "symbol": "WBTC",
+        "balance": 0.993728
+      }
+    ],
+    "farcaster": "neos88",
+    "display_name": "neos",
+    "bio": "Product designer, UX designer, AI + Figma",
+    "followers": 5203,
+    "twitter": "neos88_",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/neos88",
+    "etherscan": "https://etherscan.io/address/0x6d1ee3d996198dd2092c66e5bd3ae3bb5d3b466a"
+  },
+  {
+    "rank": 5,
+    "addr": "0x9fe13c659d7a39b11cf4262c93d5e5f8c91e51c1",
+    "total_usd": 56287.12,
+    "eth_usd": 56219.38,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 67.74,
+    "chains": {
+      "op": 67.74,
+      "base": 0.0,
+      "arb": 0.0,
+      "eth": 56219.38
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.035012
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 29.057847
+      }
+    ],
+    "farcaster": "jordanlyall",
+    "display_name": "Jordan Lyall",
+    "bio": "CPO at /artblocks | \nEx:  /prohibition, ConsenSys, Nifty\u2019s, JibJab | \nco-creator of /heartandcraft",
+    "followers": 9612,
+    "twitter": "jordanlyall",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/jordanlyall",
+    "etherscan": "https://etherscan.io/address/0x9fe13c659d7a39b11cf4262c93d5e5f8c91e51c1"
+  },
+  {
+    "rank": 6,
+    "addr": "0xe6adef9101d9694b6fac17b4f1629650768661b1",
+    "total_usd": 31727.17,
+    "eth_usd": 31727.17,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 0.0,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 0.0,
+      "eth": 31727.17
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 11.34221
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 979.323422
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDT",
+        "balance": 8803.619748
+      }
+    ],
+    "farcaster": "arjun",
+    "display_name": "arjun",
+    "bio": "crypto investments @paradigm; boston sports fan",
+    "followers": 58647,
+    "twitter": "arjunblj",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/arjun",
+    "etherscan": "https://etherscan.io/address/0xe6adef9101d9694b6fac17b4f1629650768661b1"
+  },
+  {
+    "rank": 7,
+    "addr": "0x09ca6926f0a1fa30ddc04710db2d89ec0d73b608",
+    "total_usd": 27670.43,
+    "eth_usd": 27670.13,
+    "base_usd": 0,
+    "arb_usd": 0.0,
+    "op_usd": 0.3,
+    "chains": {
+      "base": 0,
+      "arb": 0.0,
+      "op": 0.3,
+      "eth": 27670.13
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.000156
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 6.542879
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 15000.550475
+      },
+      {
+        "chain": "eth",
+        "symbol": "AAVE",
+        "balance": 0.112979
+      }
+    ],
+    "farcaster": "swishh.eth",
+    "display_name": "Swishh.eth",
+    "bio": "terminally online - https://swishh.wtf",
+    "followers": 10754,
+    "twitter": "swi3hh",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/swishh.eth",
+    "etherscan": "https://etherscan.io/address/0x09ca6926f0a1fa30ddc04710db2d89ec0d73b608"
+  },
+  {
+    "rank": 8,
+    "addr": "0x5e349eca2dc61abcd9dd99ce94d04136151a09ee",
+    "total_usd": 27261.14,
+    "eth_usd": 26636.91,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 624.23,
+    "chains": {
+      "op": 624.23,
+      "arb": 0.0,
+      "base": 0.0,
+      "eth": 26636.91
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.14916
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 225.0
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 1124.82277
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 12.786235
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 1739.181237
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 0.082536
+      }
+    ],
+    "farcaster": "linda",
+    "display_name": "Linda Xie",
+    "bio": "taking a break to self study physics. previously: dev eco @farcaster, cofounder \n@bountycaster and scalar capital, early @coinbase, coproducer @ethere",
+    "followers": 474101,
+    "twitter": "ljxie",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/linda",
+    "etherscan": "https://etherscan.io/address/0x5e349eca2dc61abcd9dd99ce94d04136151a09ee"
+  },
+  {
+    "rank": 9,
+    "addr": "0x1439b4d5a72343b68f12398c649df99d76b2af53",
+    "total_usd": 24205.57,
+    "eth_usd": 23937.51,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 268.06,
+    "chains": {
+      "arb": 0,
+      "base": 0.0,
+      "op": 268.06,
+      "eth": 23937.51
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.050402
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 1733.792517
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 1.709326
+      },
+      {
+        "chain": "eth",
+        "symbol": "stETH",
+        "balance": 10.648875
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 0.014269
+      }
+    ],
+    "farcaster": "totty.eth",
+    "display_name": "totty \ud83d\udd25\ud83e\uddf6",
+    "bio": "daily art (glitch, dither, distortion) | ex-{Meta, MIT} | punk #3169 | Medici Emerging Artist | x.com/totdgbtagb | linktr.ee/totty.eth",
+    "followers": 4756,
+    "twitter": "totdgbtagb",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/totty.eth",
+    "etherscan": "https://etherscan.io/address/0x1439b4d5a72343b68f12398c649df99d76b2af53"
+  },
+  {
+    "rank": 10,
+    "addr": "0xcc717037652940f319272b0bf57591e41d157f95",
+    "total_usd": 20787.3,
+    "eth_usd": 20787.3,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 0.0,
+    "chains": {
+      "op": 0.0,
+      "arb": 0,
+      "base": 0.0,
+      "eth": 20787.3
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 10.744232
+      }
+    ],
+    "farcaster": "bbjubjub",
+    "display_name": "Julie",
+    "bio": "Debian Girl (derogatory) @ ChainSecurity",
+    "followers": 2562,
+    "twitter": "0xbbjubjub",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/bbjubjub",
+    "etherscan": "https://etherscan.io/address/0xcc717037652940f319272b0bf57591e41d157f95"
+  },
+  {
+    "rank": 11,
+    "addr": "0xa9f9c0eac673e215e7f18b38531b24c6b8edf861",
+    "total_usd": 16768.1,
+    "eth_usd": 16768.1,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 0.0,
+    "chains": {
+      "base": 0.0,
+      "arb": 0,
+      "op": 0.0,
+      "eth": 16768.1
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 0.000752
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 16764.339873
+      },
+      {
+        "chain": "eth",
+        "symbol": "DAI",
+        "balance": 2.305212
+      }
+    ],
+    "farcaster": "0mbre",
+    "display_name": "Ombre\ud83c\udfa9\ud83d\udc99",
+    "bio": "I build tech things",
+    "followers": 8002,
+    "twitter": "0mbre",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/0mbre",
+    "etherscan": "https://etherscan.io/address/0xa9f9c0eac673e215e7f18b38531b24c6b8edf861"
+  },
+  {
+    "rank": 12,
+    "addr": "0x07bf3cda34aa78d92949bbdce31520714ab5b228",
+    "total_usd": 16686.7,
+    "eth_usd": 0,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 16686.7,
+    "chains": {
+      "arb": 0.0,
+      "base": 0.0,
+      "op": 16686.7,
+      "eth": 0
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.017016
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 51.120024
+      },
+      {
+        "chain": "op",
+        "symbol": "USDT",
+        "balance": 6.0
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 168725.270095
+      }
+    ],
+    "farcaster": "pcaversaccio",
+    "display_name": "sudo rm -rf --no-preserve-root /",
+    "bio": "\ud835\udc16\ud835\udc28\ud835\udc2b\ud835\udc24\ud835\udc22\ud835\udc27\ud835\udc20 \ud835\udc28\ud835\udc27 \ud835\udc30\ud835\udc21\ud835\udc1a\ud835\udc2d'\ud835\udc2c \ud835\udc27\ud835\udc1e\ud835\udc31\ud835\udc2d.\n\nhttps://github.com/pcaversaccio",
+    "followers": 6141,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/pcaversaccio",
+    "etherscan": "https://etherscan.io/address/0x07bf3cda34aa78d92949bbdce31520714ab5b228"
+  },
+  {
+    "rank": 13,
+    "addr": "0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
+    "total_usd": 14698.28,
+    "eth_usd": 14370.54,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 327.74,
+    "chains": {
+      "op": 327.74,
+      "arb": 0,
+      "base": 0.0,
+      "eth": 14370.54
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.016323
+      },
+      {
+        "chain": "op",
+        "symbol": "USDT",
+        "balance": 2.120244
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 2989.278736
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 3.542507
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 5377.402039
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 1.103736
+      },
+      {
+        "chain": "eth",
+        "symbol": "LDO",
+        "balance": 10.0
+      }
+    ],
+    "farcaster": "bp",
+    "display_name": "bpinnyc.base.eth \ud83c\udf0e\u262e\ufe0f \ud83c\udfa9",
+    "bio": "Beer snob, O.P.I.U.M., pups, sogs in that order \n\n\u27c1",
+    "followers": 2589,
+    "twitter": "bp__",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/bp",
+    "etherscan": "https://etherscan.io/address/0x1341df844780b66af4ccc98ae0f34be87eabe1d5"
+  },
+  {
+    "rank": 14,
+    "addr": "0x4f8c531df3d97c6cd437ac8dfe756975445d1161",
+    "total_usd": 12477.96,
+    "eth_usd": 12393.86,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 84.1,
+    "chains": {
+      "arb": 0.0,
+      "eth": 12393.86,
+      "base": 0.0,
+      "op": 84.1
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 6.305359
+      },
+      {
+        "chain": "eth",
+        "symbol": "DAI",
+        "balance": 194.624989
+      },
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.007685
+      },
+      {
+        "chain": "op",
+        "symbol": "USDC",
+        "balance": 16.657377
+      },
+      {
+        "chain": "op",
+        "symbol": "OP",
+        "balance": 534.447171
+      }
+    ],
+    "farcaster": "nor",
+    "display_name": "Connor McCormick \u2600\ufe0f",
+    "bio": "The only problem is externality pricing.\n\nBuilding https://negationgame.com",
+    "followers": 67581,
+    "twitter": "connormcmk",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/nor",
+    "etherscan": "https://etherscan.io/address/0x4f8c531df3d97c6cd437ac8dfe756975445d1161"
+  },
+  {
+    "rank": 15,
+    "addr": "0x335e19b3f5dcfa2e398ee7d5ff430a1f8ccc88b2",
+    "total_usd": 10839.25,
+    "eth_usd": 10839.25,
+    "base_usd": 0.0,
+    "arb_usd": 0,
+    "op_usd": 0,
+    "chains": {
+      "op": 0,
+      "base": 0.0,
+      "arb": 0,
+      "eth": 10839.25
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 3.605925
+      },
+      {
+        "chain": "eth",
+        "symbol": "USDC",
+        "balance": 31.94058
+      },
+      {
+        "chain": "eth",
+        "symbol": "WETH",
+        "balance": 1.98
+      }
+    ],
+    "farcaster": "humanzero",
+    "display_name": "Jon Perkins",
+    "bio": "Co-founder @SuperRare",
+    "followers": 4779,
+    "twitter": "",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/humanzero",
+    "etherscan": "https://etherscan.io/address/0x335e19b3f5dcfa2e398ee7d5ff430a1f8ccc88b2"
+  },
+  {
+    "rank": 16,
+    "addr": "0x7612a94aaff7a552c373e3124654c1539a4486a8",
+    "total_usd": 10759.86,
+    "eth_usd": 10759.86,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 0.0,
+    "chains": {
+      "arb": 0.0,
+      "op": 0.0,
+      "base": 0.0,
+      "eth": 10759.86
+    },
+    "top_tokens": [
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 5.561399
+      }
+    ],
+    "farcaster": "moo",
+    "display_name": "Mikko Ohtamaa",
+    "bio": "Talks about coffee, cybersecurity, blockchain. Building on-chain algo trading - join our Discord https://tradingstrategy.ai/community",
+    "followers": 5973,
+    "twitter": "moo9000",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/moo",
+    "etherscan": "https://etherscan.io/address/0x7612a94aaff7a552c373e3124654c1539a4486a8"
+  },
+  {
+    "rank": 17,
+    "addr": "0x79d31bfca5fda7a4f15b36763d2e44c99d811a6c",
+    "total_usd": 10213.93,
+    "eth_usd": 10213.13,
+    "base_usd": 0.0,
+    "arb_usd": 0.0,
+    "op_usd": 0.8,
+    "chains": {
+      "arb": 0.0,
+      "op": 0.8,
+      "base": 0.0,
+      "eth": 10213.13
+    },
+    "top_tokens": [
+      {
+        "chain": "op",
+        "symbol": "ETH",
+        "balance": 0.000412
+      },
+      {
+        "chain": "eth",
+        "symbol": "ETH",
+        "balance": 1.798092
+      },
+      {
+        "chain": "eth",
+        "symbol": "wstETH",
+        "balance": 2.905914
+      },
+      {
+        "chain": "eth",
+        "symbol": "LDO",
+        "balance": 258.819701
+      }
+    ],
+    "farcaster": "horsefacts.eth",
+    "display_name": "horsefacts",
+    "bio": "I work at the posts office.",
+    "followers": 389955,
+    "twitter": "eth_call",
+    "pfp": "",
+    "warpcast": "https://warpcast.com/horsefacts.eth",
+    "etherscan": "https://etherscan.io/address/0x79d31bfca5fda7a4f15b36763d2e44c99d811a6c"
+  }
+]

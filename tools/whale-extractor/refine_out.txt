@@ -1,0 +1,525 @@
+﻿Refining 500 wallets...
+
+======================================================================
+Refining with primary-chain TX history...
+======================================================================
+  [  1/500] ✓ $   1109K | Crypto Salary          | chain=bsc      idle=   1mo tx90=1  
+  [  2/500] ✓ $   2603K | Recent Windfall        | chain=eth      idle=   0mo tx90=2  
+  [  3/500] ✓ $   1235K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=3  
+  [  4/500] ✓ $   4930K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [  5/500] ✓ $   4905K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [  6/500] ✓ $   4756K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [  7/500] ✓ $   4691K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [  8/500] ✓ $   4792K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [  9/500] ✓ $   4579K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 10/500] ✓ $   4671K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 11/500] ✓ $   4446K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 12/500] ✓ $   4438K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 13/500] ✓ $   4426K | Stablecoin Hoarder     | chain=eth      idle=   5mo tx90=0  
+  [ 14/500] ✓ $   4281K | Bull FOMO Trader       | chain=eth      idle=   5mo tx90=0  
+  [ 15/500] ✓ $   4184K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 16/500] ✓ $   4271K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 17/500] ✓ $   4147K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 18/500] ✓ $   4124K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 19/500] ✓ $   4009K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 20/500] ✓ $   4011K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 21/500] ✓ $   3866K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 22/500] ✓ $   3943K | Active Trader          | chain=eth      idle=   1mo tx90=100
+  [ 23/500] ✓ $   3757K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 24/500] ✓ $   3738K | Active Trader          | chain=eth      idle=   0mo tx90=32 
+  [ 25/500] ✓ $   3630K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 26/500] ✓ $   3704K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 27/500] ✓ $   3543K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 28/500] ✓ $   3595K | Active Trader          | chain=eth      idle=   1mo tx90=100
+  [ 29/500] ✓ $   3528K | Stablecoin Hoarder     | chain=eth      idle=   3mo tx90=0  
+  [ 30/500] ✓ $   3504K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [ 31/500] ✓ $   3462K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 32/500] ✓ $   3504K | Silent Accumulator     | chain=eth      idle=   6mo tx90=0  
+  [ 33/500] ✓ $   3443K | Stablecoin Hoarder     | chain=eth      idle=   4mo tx90=0  
+  [ 34/500] ✓ $   3451K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 35/500] ✓ $   3441K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 36/500] ✓ $   3418K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 37/500] ✓ $   3416K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 38/500] ✓ $   3384K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 39/500] ✓ $   3396K | Active Trader          | chain=eth      idle=   0mo tx90=64 
+  [ 40/500] ✓ $   3322K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [ 41/500] ✓ $   3293K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 42/500] ✓ $   3285K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 43/500] ✓ $   3282K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 44/500] ✓ $   3241K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [ 45/500] ✓ $   3186K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 46/500] ✓ $   3170K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [ 47/500] ✓ $   3183K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 48/500] ✓ $   3159K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=3  
+  [ 49/500] ✓ $   3116K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 50/500] ✓ $   3047K | Silent Accumulator     | chain=eth      idle=   6mo tx90=0  
+  [ 51/500] ✓ $   3057K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 52/500] ✓ $   3033K | Bull FOMO Trader       | chain=eth      idle=   5mo tx90=0  
+  [ 53/500] ✓ $   3025K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 54/500] ✓ $   3016K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 55/500] ✓ $   2974K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 56/500] ✓ $   3021K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 57/500] ✓ $   2959K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 58/500] ✓ $   2959K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 59/500] ✓ $   2959K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 60/500] ✓ $   2959K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 61/500] ✓ $   2933K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [ 62/500] ✓ $   2873K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 63/500] ✓ $   2901K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 64/500] ✓ $   2878K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [ 65/500] ✓ $   2850K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [ 66/500] ✓ $   2808K | Bull FOMO Trader       | chain=eth      idle=  51mo tx90=0  
+  [ 67/500] ✓ $   2841K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 68/500] ✓ $   2839K | Yield Seeker           | chain=eth      idle=   1mo tx90=48 
+  [ 69/500] ✓ $   2763K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 70/500] ✓ $   2712K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 71/500] ✓ $   2751K | Bull FOMO Trader       | chain=eth      idle=  18mo tx90=0  
+  [ 72/500] ✓ $   2697K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 73/500] ✓ $   2696K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 74/500] ✓ $   2657K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 75/500] ✓ $   2692K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 76/500] ✓ $   2658K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [ 77/500] ✓ $   2646K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 78/500] ✓ $   2642K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 79/500] ✓ $   2629K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 80/500] ✓ $   2645K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 81/500] ✓ $   2618K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=3  
+  [ 82/500] ✓ $   2587K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 83/500] ✓ $   2607K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=6  
+  [ 84/500] ✓ $   2591K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 85/500] ✓ $   2581K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 86/500] ✓ $   2557K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 87/500] ✓ $   2557K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 88/500] ✓ $   2556K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [ 89/500] ✓ $   2545K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 90/500] ✓ $   2544K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 91/500] ✓ $   2543K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 92/500] ✓ $   2541K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 93/500] ✓ $   2537K | Active Trader          | chain=eth      idle=   2mo tx90=54 
+  [ 94/500] ✓ $   2517K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [ 95/500] ✓ $   2534K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 96/500] ✓ $   2514K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=5  
+  [ 97/500] ✓ $   2512K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 98/500] ✓ $   2511K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [ 99/500] ✓ $   2510K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [100/500] ✓ $   2507K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [101/500] ✓ $   2506K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [102/500] ✓ $   2503K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [103/500] ✓ $   2501K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [104/500] ✓ $   2501K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [105/500] ✓ $   2498K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [106/500] ✓ $   2481K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [107/500] ✓ $   2477K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [108/500] ✓ $   2488K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [109/500] ✓ $   2475K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [110/500] ✓ $   2475K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [111/500] ✓ $   2466K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [112/500] ✓ $   2472K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [113/500] ✓ $   2462K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [114/500] ✓ $   2462K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=3  
+  [115/500] ✓ $   2451K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [116/500] ✓ $   2448K | Recent Windfall        | chain=eth      idle=   1mo tx90=6  
+  [117/500] ✓ $   2446K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [118/500] ✓ $   2436K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [119/500] ✓ $   2432K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [120/500] ✓ $   2431K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [121/500] ✓ $   2427K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [122/500] ✓ $   2422K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [123/500] ✓ $   2420K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [124/500] ✓ $   2420K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=9  
+  [125/500] ✓ $   2419K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [126/500] ✓ $   2417K | Bull FOMO Trader       | chain=eth      idle=  12mo tx90=0  
+  [127/500] ✓ $   2416K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [128/500] ✓ $   2413K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [129/500] ✓ $   2401K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [130/500] ✓ $   2408K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [131/500] ✓ $   2411K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [132/500] ✓ $   2398K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [133/500] ✓ $   2365K | Silent Accumulator     | chain=eth      idle=  10mo tx90=0  
+  [134/500] ✓ $   2379K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [135/500] ✓ $   2365K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [136/500] ✓ $   2397K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [137/500] ✓ $   2363K | Stablecoin Hoarder     | chain=eth      idle=   3mo tx90=0  
+  [138/500] ✓ $   2353K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [139/500] ✓ $   2336K | Active Trader          | chain=eth      idle=   1mo tx90=30 
+  [140/500] ✓ $   2335K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [141/500] ✓ $   2316K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [142/500] ✓ $   2333K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [143/500] ✓ $   2312K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [144/500] ✓ $   2315K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [145/500] ✓ $   2300K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [146/500] ✓ $   2312K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [147/500] ✓ $   2295K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [148/500] ✓ $   2295K | Active Trader          | chain=eth      idle=   0mo tx90=31 
+  [149/500] ✓ $   2290K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [150/500] ✓ $   2291K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [151/500] ✓ $   2289K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=3  
+  [152/500] ✓ $   2285K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [153/500] ✓ $   2271K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [154/500] ✓ $   2273K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [155/500] ✓ $   2268K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [156/500] ✓ $   2265K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [157/500] ✓ $   2247K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [158/500] ✓ $   2247K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [159/500] ✓ $   2243K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [160/500] ✓ $   2236K | Bull FOMO Trader       | chain=eth      idle=   4mo tx90=0  
+  [161/500] ✓ $   2222K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [162/500] ✓ $   2225K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [163/500] ✓ $   2218K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [164/500] ✓ $   2211K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [165/500] ✓ $   2199K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [166/500] ✓ $   2211K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [167/500] ✓ $   2194K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [168/500] ✓ $   2189K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [169/500] ✓ $   2179K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [170/500] ✓ $   2179K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [171/500] ✓ $   2178K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [172/500] ✓ $   2167K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [173/500] ✓ $   2143K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [174/500] ✓ $   2162K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [175/500] ✓ $   2129K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [176/500] ✓ $   2126K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [177/500] ✓ $   2126K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [178/500] ✓ $   2122K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [179/500] ✓ $   2118K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=6  
+  [180/500] ✓ $   2116K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [181/500] ✓ $   2114K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [182/500] ✓ $   2116K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [183/500] ✓ $   2108K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [184/500] ✓ $   2092K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=1  
+  [185/500] ✓ $   2090K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [186/500] ✓ $   2085K | Crypto Salary          | chain=eth      idle=   2mo tx90=1  
+  [187/500] ✓ $   2077K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [188/500] ✓ $   2075K | Bull FOMO Trader       | chain=eth      idle=  10mo tx90=0  
+  [189/500] ✓ $   2070K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [190/500] ✓ $   2073K | Active Trader          | chain=eth      idle=   1mo tx90=100
+  [191/500] ✓ $   2068K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [192/500] ✓ $   2066K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [193/500] ✓ $   2060K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [194/500] ✓ $   2054K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [195/500] ✓ $   2053K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [196/500] ✓ $   2050K | Active Trader          | chain=eth      idle=   0mo tx90=67 
+  [197/500] ✓ $   2049K | Bull FOMO Trader       | chain=eth      idle=   7mo tx90=0  
+  [198/500] ✓ $   2041K | Active Trader          | chain=eth      idle=   0mo tx90=53 
+  [199/500] ✓ $   2036K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [200/500] ✓ $   2032K | Silent Accumulator     | chain=eth      idle=   5mo tx90=0  
+  [201/500] ✓ $   2024K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [202/500] ✓ $   2029K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [203/500] ✓ $   2022K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [204/500] ✓ $   2024K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [205/500] ✓ $   2009K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [206/500] ✓ $   2004K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [207/500] ✓ $   2007K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [208/500] ✓ $   2001K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [209/500] ✓ $   2001K | Single Token Max       | chain=eth      idle=   2mo tx90=1  
+  [210/500] ✓ $   2000K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=1  
+  [211/500] ✓ $   2000K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [212/500] ✓ $   2000K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=6  
+  [213/500] ✓ $   1999K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=3  
+  [214/500] ✓ $   1999K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [215/500] ✓ $   1999K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [216/500] ✓ $   1999K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [217/500] ✓ $   1992K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [218/500] ✓ $   1988K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [219/500] ✓ $   1993K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [220/500] ✓ $   1987K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [221/500] ✓ $   1482K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [222/500] ✓ $   1974K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [223/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [224/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [225/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [226/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [227/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [228/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [229/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [230/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [231/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [232/500] ✓ $   1972K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [233/500] ✓ $   1973K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [234/500] ✓ $   1954K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [235/500] ✓ $   1961K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=7  
+  [236/500] ✓ $   1935K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [237/500] ✓ $   1949K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [238/500] ✓ $   1924K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [239/500] ✓ $   1932K | Active Trader          | chain=eth      idle=  -0mo tx90=100
+  [240/500] ✓ $   1912K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [241/500] ✓ $   1920K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [242/500] ✓ $   1895K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [243/500] ✓ $   1898K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [244/500] ✓ $   1895K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [245/500] ✓ $   1891K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [246/500] ✓ $   1875K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [247/500] ✓ $   1877K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=4  
+  [248/500] ✓ $   1889K | Single Token Max       | chain=eth      idle=  -0mo tx90=100
+  [249/500] ✓ $   1859K | Silent Accumulator     | chain=eth      idle=   2mo tx90=1  
+  [250/500] ✓ $   1858K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [251/500] ✓ $   1852K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [252/500] ✓ $   1856K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=4  
+  [253/500] ✓ $   1852K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [254/500] ✓ $   1851K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [255/500] ✓ $   1833K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [256/500] ✓ $   1818K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [257/500] ✓ $   1830K | Active Trader          | chain=eth      idle=   0mo tx90=26 
+  [258/500] ✓ $   1813K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [259/500] ✓ $   1809K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [260/500] ✓ $   1802K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [261/500] ✓ $   1811K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=7  
+  [262/500] ✓ $   1801K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [263/500] ✓ $   1794K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [264/500] ✓ $   1789K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [265/500] ✓ $   1786K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [266/500] ✓ $   1785K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [267/500] ✓ $   1775K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [268/500] ✓ $   1776K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [269/500] ✓ $   1780K | Bull FOMO Trader       | chain=eth      idle=   4mo tx90=0  
+  [270/500] ✓ $   1774K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [271/500] ✓ $   1757K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [272/500] ✓ $   1771K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [273/500] ✓ $   1756K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [274/500] ✓ $   1749K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [275/500] ✓ $   1739K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [276/500] ✓ $   1730K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [277/500] ✓ $   1728K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [278/500] ✓ $   1725K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [279/500] ✓ $   1722K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [280/500] ✓ $   1719K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [281/500] ✓ $   1724K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [282/500] ✓ $   1714K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [283/500] ✓ $   1721K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [284/500] ✓ $   1705K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [285/500] ✓ $   1710K | Silent Accumulator     | chain=eth      idle=   2mo tx90=1  
+  [286/500] ✓ $   1704K | Active Trader          | chain=eth      idle=   2mo tx90=50 
+  [287/500] ✓ $   1703K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [288/500] ✓ $   1699K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [289/500] ✓ $   1703K | Crypto Salary          | chain=eth      idle=   2mo tx90=1  
+  [290/500] ✓ $   1691K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [291/500] ✓ $   1686K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=2  
+  [292/500] ✓ $   1679K | Stablecoin Hoarder     | chain=eth      idle=   4mo tx90=0  
+  [293/500] ✓ $   1685K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [294/500] ✓ $   1677K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [295/500] ✓ $   1675K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [296/500] ✓ $   1674K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [297/500] ✓ $   1668K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [298/500] ✓ $   1662K | Bull FOMO Trader       | chain=eth      idle=  13mo tx90=0  
+  [299/500] ✓ $   1661K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [300/500] ✓ $   1650K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [301/500] ✓ $   1658K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [302/500] ✓ $   1636K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=2  
+  [303/500] ✓ $   1635K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [304/500] ✓ $   1627K | Active Trader          | chain=eth      idle=   1mo tx90=27 
+  [305/500] ✓ $   1627K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=4  
+  [306/500] ✓ $   1618K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [307/500] ✓ $   1616K | Silent Accumulator     | chain=eth      idle=   2mo tx90=1  
+  [308/500] ✓ $   1626K | Active Trader          | chain=eth      idle=  -0mo tx90=100
+  [309/500] ✓ $   1616K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [310/500] ✓ $   1601K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [311/500] ✓ $   1601K | Single Token Max       | chain=eth      idle=   2mo tx90=1  
+  [312/500] ✓ $   1597K | Active Trader          | chain=eth      idle=  -0mo tx90=100
+  [313/500] ✓ $   1597K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [314/500] ✓ $   1575K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [315/500] ✓ $   1566K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [316/500] ✓ $   1557K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [317/500] ✓ $   1588K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [318/500] ✓ $   1535K | Active Trader          | chain=eth      idle=   2mo tx90=15 
+  [319/500] ✓ $   1530K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [320/500] ✓ $   1528K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [321/500] ✓ $   1521K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [322/500] ✓ $   1508K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [323/500] ✓ $   1505K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [324/500] ✓ $   1503K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [325/500] ✓ $   1501K | Active Trader          | chain=eth      idle=  -0mo tx90=100
+  [326/500] ✓ $   1501K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [327/500] ✓ $   1500K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=1  
+  [328/500] ✓ $   1499K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [329/500] ✓ $   1496K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [330/500] ✓ $   1491K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=4  
+  [331/500] ✓ $   1491K | Active Trader          | chain=eth      idle=  -0mo tx90=100
+  [332/500] ✓ $   1488K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [333/500] ✓ $   1487K | Active Trader          | chain=eth      idle=   0mo tx90=21 
+  [334/500] ✓ $   1482K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=6  
+  [335/500] ✓ $   1459K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [336/500] ✓ $   1479K | Active Trader          | chain=eth      idle=   2mo tx90=32 
+  [337/500] ✓ $   1439K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=2  
+  [338/500] ✓ $   1456K | Bull FOMO Trader       | chain=eth      idle=  47mo tx90=0  
+  [339/500] ✓ $   1420K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [340/500] ✓ $   1432K | Bull FOMO Trader       | chain=eth      idle=  46mo tx90=0  
+  [341/500] ✓ $   1362K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [342/500] ✓ $   1416K | Stablecoin Hoarder     | chain=eth      idle=   2mo tx90=1  
+  [343/500] ✓ $   1333K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [344/500] ✓ $   1299K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [345/500] ✓ $   1256K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [346/500] ✓ $   1258K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [347/500] ✓ $   1230K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [348/500] ✓ $   1171K | Bull FOMO Trader       | chain=eth      idle=  15mo tx90=0  
+  [349/500] ✓ $   1144K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [350/500] ✓ $   1158K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [351/500] ✓ $   1135K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [352/500] ✓ $   1129K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [353/500] ✓ $   1119K | Bull FOMO Trader       | chain=eth      idle=  40mo tx90=0  
+  [354/500] ✓ $   1120K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [355/500] ✓ $   1119K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [356/500] ✓ $   1119K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [357/500] ✓ $   1119K | Bull FOMO Trader       | chain=eth      idle=  16mo tx90=0  
+  [358/500] ✓ $   1119K | Bull FOMO Trader       | chain=eth      idle=  23mo tx90=0  
+  [359/500] ✓ $   1119K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [360/500] ✓ $   1119K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=5  
+  [361/500] ✓ $   1097K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [362/500] ✓ $   1096K | Active Trader          | chain=eth      idle=   1mo tx90=20 
+  [363/500] ✓ $   1091K | Bull FOMO Trader       | chain=eth      idle=  16mo tx90=0  
+  [364/500] ✓ $   1087K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=2  
+  [365/500] ✓ $   1075K | Stablecoin Hoarder     | chain=eth      idle=   5mo tx90=0  
+  [366/500] ✓ $   1081K | Bull FOMO Trader       | chain=eth      idle=   9mo tx90=0  
+  [367/500] ✓ $   1054K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [368/500] ✓ $   1021K | Active Trader          | chain=eth      idle=   0mo tx90=17 
+  [369/500] ✓ $   1013K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [370/500] ✓ $    991K | Active Trader          | chain=eth      idle=   1mo tx90=21 
+  [371/500] ✓ $    985K | Silent Accumulator     | chain=eth      idle=   8mo tx90=0  
+  [372/500] ✓ $    941K | Stablecoin Hoarder     | chain=eth      idle=   4mo tx90=0  
+  [373/500] ✓ $    937K | Bull FOMO Trader       | chain=eth      idle=  46mo tx90=0  
+  [374/500] ✓ $    897K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=8  
+  [375/500] ✓ $    932K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [376/500] ✓ $    896K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [377/500] ✓ $    895K | Bull FOMO Trader       | chain=eth      idle=  14mo tx90=0  
+  [378/500] ✓ $    886K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [379/500] ✓ $    882K | Bull FOMO Trader       | chain=eth      idle=  11mo tx90=0  
+  [380/500] ✓ $    869K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [381/500] ✓ $    860K | Bull FOMO Trader       | chain=eth      idle=   6mo tx90=0  
+  [382/500] ✓ $    853K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [383/500] ✓ $    830K | Active Trader          | chain=eth      idle=   0mo tx90=100
+  [384/500] ✓ $    809K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [385/500] ✓ $    782K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [386/500] ✓ $    782K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [387/500] ✓ $    764K | Bull FOMO Trader       | chain=eth      idle=  22mo tx90=0  
+  [388/500] ✓ $    757K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [389/500] ✓ $    761K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [390/500] ✓ $    734K | Bull FOMO Trader       | chain=eth      idle=  13mo tx90=0  
+  [391/500] ✓ $    723K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [392/500] ✓ $    700K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [393/500] ✓ $    717K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [394/500] ✓ $    679K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [395/500] ✓ $    678K | Silent Accumulator     | chain=eth      idle=  26mo tx90=0  
+  [396/500] ✓ $    679K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [397/500] ✓ $    690K | Bull FOMO Trader       | chain=eth      idle=  60mo tx90=0  
+  [398/500] ✓ $    653K | Bull FOMO Trader       | chain=eth      idle=  46mo tx90=0  
+  [399/500] ✓ $    671K | Bull FOMO Trader       | chain=eth      idle=  23mo tx90=0  
+  [400/500] ✓ $    671K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [401/500] ✓ $    637K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [402/500] ✓ $    641K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [403/500] ✓ $    630K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [404/500] ✓ $    634K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [405/500] ✓ $    635K | Silent Accumulator     | chain=eth      idle=   5mo tx90=0  
+  [406/500] ✓ $    607K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [407/500] ✓ $    585K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [408/500] ✓ $    591K | Bull FOMO Trader       | chain=eth      idle=  30mo tx90=0  
+  [409/500] ✓ $    586K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=2  
+  [410/500] ✓ $    585K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [411/500] ✓ $    583K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [412/500] ✓ $    574K | Bull FOMO Trader       | chain=eth      idle=  17mo tx90=0  
+  [413/500] ✓ $    575K | Bull FOMO Trader       | chain=eth      idle=   3mo tx90=0  
+  [414/500] ✓ $    574K | Crypto Salary          | chain=bsc      idle=   6mo tx90=0  
+  [415/500] ✓ $    533K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [416/500] ✓ $    556K | Bull FOMO Trader       | chain=eth      idle=  72mo tx90=0  
+  [417/500] ✓ $    539K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [418/500] ✓ $    536K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [419/500] ✓ $    528K | Bull FOMO Trader       | chain=eth      idle=  47mo tx90=0  
+  [420/500] ✓ $    503K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [421/500] ✓ $    503K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [422/500] ✓ $    500K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [423/500] ✓ $    494K | Single Token Max       | chain=polygon  idle=  99mo tx90=0  
+  [424/500] ✓ $    497K | Gas Paralyzed          | chain=polygon  idle=  99mo tx90=0  
+  [425/500] ✓ $    496K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [426/500] ✓ $    481K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [427/500] ✓ $    481K | Gas Paralyzed          | chain=bsc      idle=   7mo tx90=0  
+  [428/500] ✓ $    472K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [429/500] ✓ $    469K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=3  
+  [430/500] ✓ $    470K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [431/500] ✓ $    475K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [432/500] ✓ $    467K | Gas Paralyzed          | chain=polygon  idle=  99mo tx90=0  
+  [433/500] ✓ $    463K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [434/500] ✓ $    461K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [435/500] ✓ $    465K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=1  
+  [436/500] ✓ $    453K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [437/500] ✓ $    451K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [438/500] ✓ $    447K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [439/500] ✓ $    446K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [440/500] ✓ $    446K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [441/500] ✓ $    446K | Single Token Max       | chain=bsc      idle=   1mo tx90=1  
+  [442/500] ✓ $    443K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [443/500] ✓ $    437K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [444/500] ✓ $    436K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [445/500] ✓ $    434K | Bull FOMO Trader       | chain=eth      idle=  14mo tx90=0  
+  [446/500] ✓ $    436K | Silent Accumulator     | chain=eth      idle=  29mo tx90=0  
+  [447/500] ✓ $    428K | Bull FOMO Trader       | chain=eth      idle=  43mo tx90=0  
+  [448/500] ✓ $    425K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [449/500] ✓ $    413K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [450/500] ✓ $    418K | Active Trader          | chain=eth      idle=   1mo tx90=59 
+  [451/500] ✓ $    411K | Gas Paralyzed          | chain=polygon  idle=  99mo tx90=0  
+  [452/500] ✓ $    403K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [453/500] ✓ $    397K | Gas Paralyzed          | chain=polygon  idle=  99mo tx90=0  
+  [454/500] ✓ $    394K | Bull FOMO Trader       | chain=eth      idle=  14mo tx90=0  
+  [455/500] ✓ $    393K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [456/500] ✓ $    392K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [457/500] ✓ $    392K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [458/500] ✓ $    391K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [459/500] ✓ $    392K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [460/500] ✓ $    391K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [461/500] ✓ $    390K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [462/500] ✓ $    388K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [463/500] ✓ $    387K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [464/500] ✓ $    386K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [465/500] ✓ $    377K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [466/500] ✓ $    367K | Active Trader          | chain=eth      idle=   0mo tx90=25 
+  [467/500] ✓ $    369K | Gas Paralyzed          | chain=polygon  idle=  99mo tx90=0  
+  [468/500] ✓ $    366K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [469/500] ✓ $    365K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [470/500] ✓ $    365K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [471/500] ✓ $    365K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [472/500] ✓ $    357K | Bull FOMO Trader       | chain=eth      idle=  46mo tx90=0  
+  [473/500] ✓ $    360K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [474/500] ✓ $    363K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [475/500] ✓ $    356K | Bull FOMO Trader       | chain=eth      idle=  17mo tx90=0  
+  [476/500] ✓ $    358K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [477/500] ✓ $    356K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [478/500] ✓ $    354K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [479/500] ✓ $    354K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [480/500] ✓ $    350K | Gas Paralyzed          | chain=bsc      idle=  99mo tx90=0  
+  [481/500] ✓ $    350K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [482/500] ✓ $    347K | Active Trader          | chain=eth      idle=   1mo tx90=36 
+  [483/500] ✓ $    343K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [484/500] ✓ $    344K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [485/500] ✓ $    342K | Stablecoin Hoarder     | chain=eth      idle=   0mo tx90=8  
+  [486/500] ✓ $    337K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [487/500] ✓ $    342K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [488/500] ✓ $    336K | Active Trader          | chain=eth      idle=   0mo tx90=10 
+  [489/500] ✓ $    341K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [490/500] ✓ $    335K | Stablecoin Hoarder     | chain=eth      idle=   1mo tx90=4  
+  [491/500] ✓ $    336K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [492/500] ✓ $    334K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [493/500] ✓ $    334K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [494/500] ✓ $    331K | Single Token Max       | chain=polygon  idle=  99mo tx90=0  
+  [495/500] ✓ $    329K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [496/500] ✓ $    323K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [497/500] ✓ $    326K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [498/500] ✓ $    320K | Single Token Max       | chain=bsc      idle=  99mo tx90=0  
+  [499/500] ✓ $    321K | Gas Paralyzed          | chain=eth      idle=  99mo tx90=0  
+  [500/500] ✓ $    319K | Single Token Max       | chain=polygon  idle=  99mo tx90=0  
+
+======================================================================
+Category breakdown (refined):
+  Gas Paralyzed              239  ███████████████████████████████████████████████
+  Stablecoin Hoarder         137  ███████████████████████████
+  Bull FOMO Trader            47  █████████
+  Active Trader               43  ████████
+  Single Token Max            16  ███
+  Silent Accumulator          11  ██
+  Crypto Salary                4  
+  Recent Windfall              2  
+  Yield Seeker                 1  
+
+Total wallets refined : 500
+Total value           : $0.90B
+Avg missed yield/yr   : $15K per wallet
+
+Saved → outputs/targets_refined.json
+Chains covered: ETH + BSC + Polygon + Avalanche + Arbitrum + Base + Optimism
+Each wallet: real TX history from PRIMARY chain, accurate idle time, accurate category

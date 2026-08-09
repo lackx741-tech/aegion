@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exodus Instagram Posts</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap');
+    
+    body {
+      background: #1a1b1e;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      margin: 0;
+      padding: 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+      justify-content: center;
+    }
+    
+    .ig-post {
+      width: 1080px;
+      height: 1080px;
+      background: #05060A; /* Official Exodus dark theme */
+      position: relative;
+      overflow: hidden;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+      border: 1px solid #333;
+      transform-origin: top left;
+      /* Scale down for viewing on normal screens */
+      transform: scale(0.5);
+      margin-bottom: -540px; 
+      margin-right: -540px;
+    }
+
+    /* Common elements */
+    .bg-glow {
+      position: absolute;
+      width: 1080px;
+      height: 1080px;
+      background: radial-gradient(circle, rgba(100,50,255,0.15) 0%, rgba(5,6,10,0) 70%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+    }
+
+    /* POST 1 - Centered Layout */
+    .post1 {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 60px;
+      box-sizing: border-box;
+    }
+    .post1 .logo {
+      width: 280px;
+      margin-bottom: 60px;
+      z-index: 10;
+    }
+    .post1 .title {
+      font-size: 75px;
+      font-weight: 800;
+      line-height: 1.2;
+      z-index: 10;
+      background: linear-gradient(135deg, #ffffff, #aaaaaa);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      margin-bottom: 20px;
+    }
+    .post1 .subtitle {
+      font-size: 38px;
+      color: #9ba1a6;
+      font-weight: 400;
+      z-index: 10;
+      margin-bottom: 80px;
+    }
+    .post1 .card-img {
+      width: 650px; /* Reduced so it fully fits */
+      filter: drop-shadow(0 30px 40px rgba(0,0,0,0.8));
+      z-index: 5;
+      /* Gentle floating rotation */
+      transform: rotate(-3deg);
+    }
+
+    /* POST 3 - Left Aligned Text + Center Card */
+    .post3 {
+      display: flex;
+      flex-direction: column;
+      padding: 80px;
+      box-sizing: border-box;
+    }
+    .post3 .bg-glow {
+      background: radial-gradient(circle at 80% 80%, rgba(0, 153, 255, 0.15) 0%, rgba(5,6,10,0) 70%);
+    }
+    .post3 .logo {
+      width: 250px;
+      margin-bottom: 80px;
+      z-index: 10;
+    }
+    .post3 .title {
+      font-size: 75px;
+      font-weight: 800;
+      line-height: 1.1;
+      margin-bottom: 30px;
+      z-index: 10;
+    }
+    .post3 .subtitle {
+      font-size: 36px;
+      color: #9ba1a6;
+      line-height: 1.4;
+      max-width: 800px;
+      z-index: 10;
+    }
+    .post3 .card-container {
+      flex-grow: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 5;
+    }
+    .post3 .card-img {
+      width: 750px; /* Full card visible */
+      transform: rotate(5deg);
+      filter: drop-shadow(0 40px 50px rgba(0,0,0,0.7));
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Post 1 -->
+  <div class="ig-post post1">
+    <div class="bg-glow"></div>
+    <img src="../clones/exodus-card-site/logo-wordmark.svg" class="logo">
+    <div class="title">Spend Crypto<br>Anywhere. Instantly.</div>
+    <div class="subtitle">The Exodus Card is here.</div>
+    <img src="../clones/exodus-card-site/card.png" class="card-img">
+  </div>
+
+  <!-- Post 3 -->
+  <div class="ig-post post3">
+    <div class="bg-glow"></div>
+    <img src="../clones/exodus-card-site/logo-wordmark.svg" class="logo">
+    <div class="title">Zero bank accounts.<br>100% Crypto.</div>
+    <div class="subtitle">Use Apple Pay & Google Wallet directly with USDT and USDC.</div>
+    <div class="card-container">
+      <img src="../clones/exodus-card-site/card.png" class="card-img">
+    </div>
+  </div>
+
+</body>
+</html>

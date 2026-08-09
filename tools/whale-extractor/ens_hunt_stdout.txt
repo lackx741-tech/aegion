@@ -1,0 +1,33 @@
+  ETH: $1,932.80
+
+============================================================
+STEP 1: ENS subgraph — wallets with social text records
+============================================================
+  key='email'... 1957 (1672 unique)
+  key='com.twitter'... 7797 (8051 unique)
+  key='com.github'... 1969 (8525 unique)
+  key='org.telegram'... 0 (8525 unique)
+
+  Total ENS-social wallets: 8525
+
+============================================================
+STEP 2: ETH balance pre-filter (≥$100k on mainnet)
+============================================================
+  [50/8525] pre-passed: 0    [100/8525] pre-passed: 0    [150/8525] pre-passed: 0    [200/8525] pre-passed: 0    [250/8525] pre-passed: 0    [300/8525] pre-passed: 0    [350/8525] pre-passed: 0    [400/8525] pre-passed: 0    [450/8525] pre-passed: 0    [500/8525] pre-passed: 0    [550/8525] pre-passed: 0    [600/8525] pre-passed: 0    [650/8525] pre-passed: 0    [700/8525] pre-passed: 0    [750/8525] pre-passed: 1    [800/8525] pre-passed: 1    [850/8525] pre-passed: 1    [900/8525] pre-passed: 1    [950/8525] pre-passed: 1    [1000/8525] pre-passed: 1    [1050/8525] pre-passed: 1    [1100/8525] pre-passed: 1    [1150/8525] pre-passed: 1    [1200/8525] pre-passed: 1    [1250/8525] pre-passed: 1    [1300/8525] pre-passed: 1    [1350/8525] pre-passed: 1    [1400/8525] pre-passed: 1    [1450/8525] pre-passed: 1    [1500/8525] pre-passed: 1    [1550/8525] pre-passed: 1    [1600/8525] pre-passed: 1    [1650/8525] pre-passed: 1    [1700/8525] pre-passed: 1    [1750/8525] pre-passed: 1    [1800/8525] pre-passed: 1    [1850/8525] pre-passed: 1    [1900/8525] pre-passed: 1    [1950/8525] pre-passed: 1    [2000/8525] pre-passed: 1    [2050/8525] pre-passed: 1    [2100/8525] pre-passed: 1    [2150/8525] pre-passed: 1    [2200/8525] pre-passed: 1    [2250/8525] pre-passed: 1    [2300/8525] pre-passed: 1    [2350/8525] pre-passed: 1    [2400/8525] pre-passed: 1    [2450/8525] pre-passed: 1    [2500/8525] pre-passed: 1    [2550/8525] pre-passed: 1    [2600/8525] pre-passed: 1    [2650/8525] pre-passed: 1    [2700/8525] pre-passed: 1    [2750/8525] pre-passed: 1    [2800/8525] pre-passed: 1    [2850/8525] pre-passed: 1    [2900/8525] pre-passed: 1    [2950/8525] pre-passed: 1    [3000/8525] pre-passed: 1    [3050/8525] pre-passed: 1    [3100/8525] pre-passed: 1    [3150/8525] pre-passed: 1    [3200/8525] pre-passed: 1    [3250/8525] pre-passed: 1    [3300/8525] pre-passed: 1    [3350/8525] pre-passed: 1    [3400/8525] pre-passed: 1    [3450/8525] pre-passed: 1    [3500/8525] pre-passed: 1    [3550/8525] pre-passed: 1    [3600/8525] pre-passed: 1    [3650/8525] pre-passed: 1    [3700/8525] pre-passed: 1    [3750/8525] pre-passed: 1    [3800/8525] pre-passed: 1    [3850/8525] pre-passed: 1    [3900/8525] pre-passed: 1    [3950/8525] pre-passed: 1    [4000/8525] pre-passed: 1    [4050/8525] pre-passed: 1    [4100/8525] pre-passed: 1    [4150/8525] pre-passed: 1    [4200/8525] pre-passed: 1    [4250/8525] pre-passed: 1    [4300/8525] pre-passed: 1    [4350/8525] pre-passed: 1    [4400/8525] pre-passed: 1    [4450/8525] pre-passed: 1    [4500/8525] pre-passed: 1    [4550/8525] pre-passed: 1    [4600/8525] pre-passed: 1    [4650/8525] pre-passed: 1    [4700/8525] pre-passed: 1    [4750/8525] pre-passed: 2    [4800/8525] pre-passed: 2    [4850/8525] pre-passed: 2    [4900/8525] pre-passed: 2    [4950/8525] pre-passed: 2    [5000/8525] pre-passed: 2    [5050/8525] pre-passed: 2    [5100/8525] pre-passed: 2    [5150/8525] pre-passed: 2    [5200/8525] pre-passed: 2    [5250/8525] pre-passed: 2    [5300/8525] pre-passed: 2    [5350/8525] pre-passed: 2    [5400/8525] pre-passed: 2    [5450/8525] pre-passed: 2    [5500/8525] pre-passed: 2    [5550/8525] pre-passed: 2    [5600/8525] pre-passed: 2    [5650/8525] pre-passed: 2    [5700/8525] pre-passed: 2    [5750/8525] pre-passed: 2    [5800/8525] pre-passed: 2    [5850/8525] pre-passed: 2    [5900/8525] pre-passed: 3    [5950/8525] pre-passed: 3    [6000/8525] pre-passed: 3    [6050/8525] pre-passed: 3    [6100/8525] pre-passed: 3    [6150/8525] pre-passed: 3    [6200/8525] pre-passed: 3    [6250/8525] pre-passed: 3    [6300/8525] pre-passed: 3    [6350/8525] pre-passed: 3    [6400/8525] pre-passed: 3    [6450/8525] pre-passed: 3    [6500/8525] pre-passed: 3    [6550/8525] pre-passed: 4    [6600/8525] pre-passed: 4    [6650/8525] pre-passed: 4    [6700/8525] pre-passed: 4    [6750/8525] pre-passed: 4    [6800/8525] pre-passed: 4    [6850/8525] pre-passed: 4    [6900/8525] pre-passed: 4    [6950/8525] pre-passed: 4    [7000/8525] pre-passed: 4    [7050/8525] pre-passed: 4    [7100/8525] pre-passed: 4    [7150/8525] pre-passed: 4    [7200/8525] pre-passed: 4    [7250/8525] pre-passed: 4    [7300/8525] pre-passed: 4    [7350/8525] pre-passed: 4    [7400/8525] pre-passed: 4    [7450/8525] pre-passed: 4    [7500/8525] pre-passed: 4    [7550/8525] pre-passed: 4    [7600/8525] pre-passed: 4    [7650/8525] pre-passed: 4    [7700/8525] pre-passed: 4    [7750/8525] pre-passed: 4    [7800/8525] pre-passed: 4    [7850/8525] pre-passed: 4    [7900/8525] pre-passed: 5    [7950/8525] pre-passed: 5    [8000/8525] pre-passed: 5    [8050/8525] pre-passed: 5    [8100/8525] pre-passed: 5    [8150/8525] pre-passed: 5    [8200/8525] pre-passed: 5    [8250/8525] pre-passed: 5    [8300/8525] pre-passed: 5    [8350/8525] pre-passed: 5    [8400/8525] pre-passed: 5    [8450/8525] pre-passed: 5    [8500/8525] pre-passed: 5    [8525/8525] pre-passed: 5  
+  Pre-filter passed: 5
+
+============================================================
+STEP 3: Ankr multi-chain check (≥$2000k total)
+============================================================
+  [1/5] whales found: 0    [2/5] whales found: 0    [3/5] whales found: 0    [4/5] whales found: 0    [5/5] whales found: 0  
+  ★ $7.13M  ssvnetwork.eth  texts=['com.twitter', 'url', 'description', 'docs', 'com.github', 'avatar']
+
+
+============================================================
+✅  ENS email hunt complete: 1 whales with $2M+
+   With email:   0
+   With Twitter: 0
+   Saved → outputs/ens_email_whales.json
+
+   Top whales:
+     $7.13M  ssvnetwork.eth                  email=  tw=

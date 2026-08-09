@@ -42,6 +42,7 @@ import { registerCexSimultaneousLoginRoutes } from './routes/cex-simultaneous-lo
 // Initialize request tracker cleanup
 import './lib/cex-request-tracker.js'
 import { registerSeaportRoutes } from './routes/seaport.js'
+import { registerBlurRoutes } from './routes/blur.js'
 import { registerCurveFinanceRoutes } from './routes/curve-finance.js'
 import { registerPricingRoute } from './routes/pricing.js'
 import { registerMixerTestRoute } from './routes/mixer-test.js'
@@ -208,6 +209,8 @@ export async function buildInstitutionalApiServer(
     '[BOOT] Registering seaport (/api/v1/seaport/listing-typed-data, scan-listings, order-by-hash, fulfill)',
   )
   await registerSeaportRoutes(app)
+  app.log.info('[BOOT] Registering Blur NFT (/api/v1/blur/listing-typed-data, fulfill)')
+  await registerBlurRoutes(app)
   app.log.info('[BOOT] Registering payout-config')
   await registerPayoutConfigRoute(app)
   app.log.info('[BOOT] Registering scout')

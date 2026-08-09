@@ -1,0 +1,60 @@
+﻿2026-07-22 07:41:42,131 [INFO] 🐋  Whale Intelligence Platform v2  🐋
+2026-07-22 07:41:42,132 [INFO]    Target  : 1000 addresses
+2026-07-22 07:41:42,132 [INFO]    Balance : $2,000,000 – $100,000,000 USD
+2026-07-22 07:41:42,132 [INFO]    Age     : 180+ days  |  Tx/wk: 3.0–200
+2026-07-22 07:41:42,132 [INFO]    Etherscan: 3 key(s) → 15 req/sec  [TURBO]
+2026-07-22 07:41:42,132 [INFO]    Alchemy : [OK]
+2026-07-22 07:41:42,132 [INFO]    Moralis : [OK] 10 EVM chains!
+2026-07-22 07:41:42,132 [INFO]    Neynar  : [OK]
+2026-07-22 07:41:42,132 [INFO]    TRON    : [OK] free (TronGrid/TronScan)
+2026-07-22 07:41:42,132 [INFO]    Solana  : [OK]
+2026-07-22 07:41:42,132 [INFO]    Bitcoin : [OK] free (Blockstream)  — add btc_addresses.txt for candidates
+2026-07-22 07:41:42,132 [INFO]    TON     : [OK] free (tonapi.io)  — add ton_addresses.txt for more candidates
+2026-07-22 07:41:42,132 [INFO]    Cosmos  : [OK] free (Cosmos LCD)  — add cosmos_addresses.txt for candidates
+2026-07-22 07:41:42,133 [INFO]    Aptos   : [OK] free (Aptos Labs)  — add aptos_addresses.txt for candidates
+2026-07-22 07:41:42,133 [INFO]    Sui     : [OK] free (Sui RPC)     — add sui_addresses.txt for candidates
+2026-07-22 07:41:42,133 [INFO]    Polkadot: [OK]
+2026-07-22 07:41:42,133 [INFO]    Algorand: [OK] free (Algonode indexer)
+2026-07-22 07:41:42,133 [INFO]    Cardano : [OK]
+2026-07-22 07:41:42,133 [INFO]    Manta/Zora/Mode: [OK] free (public RPCs — native ETH balance)
+2026-07-22 07:41:42,133 [INFO]    EVM     : 21 chains (Moralis + Ankr + L2 RPCs)
+2026-07-22 07:41:42,133 [INFO]    AI Panel: ['gemini', 'groq', 'openrouter'] → judge: OPENROUTER
+2026-07-22 07:41:43,533 [INFO] ETH price : $1,929.90
+2026-07-22 07:41:44,693 [INFO] Prices    : TRX=$0.329  SOL=$78.25  TON=$1.54  ATOM=$1.49
+2026-07-22 07:41:44,693 [INFO]            APT=$0.61  SUI=$0.77  DOT=$0.85  ALGO=$0.084
+2026-07-22 07:41:44,693 [INFO]            ADA=$0.174  BTC=$66,363
+2026-07-22 07:41:44,693 [INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2026-07-22 07:41:44,694 [INFO] PHASE 1: Collecting candidate addresses
+2026-07-22 07:41:44,694 [INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+2026-07-22 07:41:44,694 [INFO]   Fetching USDC holders…
+2026-07-22 07:42:07,522 [INFO]     +487 new  (total 487)
+2026-07-22 07:42:07,522 [INFO]   Fetching USDT holders…
+2026-07-22 07:42:42,200 [INFO]     +608 new  (total 1095)
+2026-07-22 07:42:42,201 [INFO]   Fetching PEPE holders…
+2026-07-22 07:42:51,114 [INFO]     +359 new  (total 1454)
+2026-07-22 07:42:51,114 [INFO]   Fetching SHIB holders…
+2026-07-22 07:42:52,963 [INFO]     +82 new  (total 1536)
+2026-07-22 07:42:52,964 [INFO]   Fetching WBTC holders…
+2026-07-22 07:43:02,784 [INFO]     +92 new  (total 1628)
+2026-07-22 07:43:02,784 [INFO]   Fetching LINK holders…
+2026-07-22 07:43:04,933 [INFO]     +75 new  (total 1703)
+2026-07-22 07:43:04,934 [INFO] Phase 1 raw → 1703 unique candidates
+2026-07-22 07:43:30,001 [INFO]   Batch pre-filter: 1703 → 403 candidates (1300 eliminated, 24% kept)
+2026-07-22 07:43:30,002 [INFO] Phase 1 done → 403 candidates queued for Phase 2
+2026-07-22 07:43:37,503 [INFO]   TRON candidates  : 147
+2026-07-22 07:43:46,457 [INFO]     Solana USDC: 0 holders so far
+2026-07-22 07:43:51,056 [INFO]     Solana USDT: 0 holders so far
+2026-07-22 07:44:13,624 [INFO]     Solana mSOL: 20 holders so far
+2026-07-22 07:44:13,624 [INFO]   Solana candidates: 20
+2026-07-22 07:44:13,631 [INFO]   Bitcoin: create btc_addresses.txt with BTC addresses (one per line)
+2026-07-22 07:44:15,003 [INFO]     TON USDT holders: 100
+2026-07-22 07:44:15,004 [INFO]   TON candidates   : 100
+2026-07-22 07:44:15,008 [INFO]   Cosmos: create cosmos_addresses.txt with cosmos1... addresses (one per line)
+2026-07-22 07:44:15,009 [INFO]   Aptos: create aptos_addresses.txt with 0x... Aptos addresses (one per line)
+2026-07-22 07:44:15,009 [INFO]   Sui: create sui_addresses.txt with 0x... Sui addresses (one per line)
+2026-07-22 07:44:16,433 [INFO]   Polkadot: add SUBSCAN_KEY in .env (free: subscan.io) or create dot_addresses.txt
+2026-07-22 07:44:16,433 [INFO]   DOT candidates   : 0
+2026-07-22 07:44:17,326 [INFO]     ALGO indexer: 100 accounts
+2026-07-22 07:44:17,326 [INFO]   ALGO candidates  : 100
+2026-07-22 07:44:17,330 [INFO]   ADA candidates   : 0
+2026-07-22 07:44:17,331 [INFO] ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━

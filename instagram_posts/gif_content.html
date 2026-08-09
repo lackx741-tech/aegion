@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Exodus Premium GIF</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800;900&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: #05060A; /* Pure dark background */
+      color: white;
+      font-family: 'Inter', sans-serif;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Subtle brand glow behind */
+    .bg-glow-purple {
+      position: absolute;
+      width: 1600px;
+      height: 1600px;
+      background: radial-gradient(circle, rgba(138,43,226,0.3) 0%, rgba(5,6,10,0) 60%);
+      top: 30%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      animation: pulseBg 6s infinite alternate;
+    }
+
+    .bg-glow-cyan {
+      position: absolute;
+      width: 1400px;
+      height: 1400px;
+      background: radial-gradient(circle, rgba(0,229,255,0.2) 0%, rgba(5,6,10,0) 60%);
+      bottom: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 0;
+      animation: pulseBg 7s infinite alternate-reverse;
+    }
+
+    @keyframes pulseBg {
+      0% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    .logo {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 350px;
+      z-index: 10;
+    }
+
+    /* Floating Card */
+    .card-img {
+      position: absolute;
+      bottom: 250px;
+      left: 50%;
+      width: 900px;
+      margin-left: -450px;
+      z-index: 15;
+      filter: drop-shadow(0 50px 80px rgba(0,0,0,0.9));
+      animation: cardFloat 6s ease-in-out infinite;
+    }
+
+    @keyframes cardFloat {
+      0% { transform: translateY(0px) rotate(-1deg); filter: drop-shadow(0 50px 80px rgba(0,0,0,0.9)) drop-shadow(0 0 40px rgba(138,43,226,0.2)); }
+      50% { transform: translateY(-40px) rotate(2deg); filter: drop-shadow(0 70px 100px rgba(0,0,0,0.7)) drop-shadow(0 0 60px rgba(0,229,255,0.3)); }
+      100% { transform: translateY(0px) rotate(-1deg); filter: drop-shadow(0 50px 80px rgba(0,0,0,0.9)) drop-shadow(0 0 40px rgba(138,43,226,0.2)); }
+    }
+
+    /* Content Texts - 12 Second Loop, 3 Messages, 4 seconds each */
+    .text-box {
+      position: absolute;
+      top: 380px;
+      width: 950px;
+      left: 50%;
+      transform: translateX(-50%);
+      text-align: center;
+      z-index: 20;
+    }
+
+    .message {
+      position: absolute;
+      width: 100%;
+      font-size: 85px;
+      font-weight: 900;
+      line-height: 1.1;
+      opacity: 0;
+      text-transform: uppercase;
+      letter-spacing: -2px;
+    }
+
+    /* Text 1: The Problem (White and Light Grey) */
+    .msg1 {
+      color: #FFFFFF;
+      animation: showText 12s infinite;
+      animation-delay: 0s;
+    }
+    .msg1 span {
+      background: -webkit-linear-gradient(45deg, #ffffff, #888888);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    /* Text 2: The Solution (Cyan and Blue Brand Gradient) */
+    .msg2 {
+      background: -webkit-linear-gradient(45deg, #00E5FF, #2979FF);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px rgba(0,229,255,0.3));
+      animation: showText 12s infinite;
+      animation-delay: 4s;
+    }
+
+    /* Text 3: The Features / CTA (Purple and Pink Brand Gradient) */
+    .msg3 {
+      background: -webkit-linear-gradient(45deg, #E040FB, #8A2BE2);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      filter: drop-shadow(0 0 20px rgba(138,43,226,0.4));
+      animation: showText 12s infinite;
+      animation-delay: 8s;
+    }
+
+    /* 4 seconds per message (33.33% of 12s). 
+       Fade in over 0.6s (5%), stay for 2.6s, fade out over 0.6s (5%). Total visible 3.2s, invisible 0.8s */
+    @keyframes showText {
+      0% { opacity: 0; transform: translateY(40px) scale(0.95); }
+      4% { opacity: 1; transform: translateY(0) scale(1); }
+      25% { opacity: 1; transform: translateY(0) scale(1); }
+      29% { opacity: 0; transform: translateY(-40px) scale(1.05); }
+      100% { opacity: 0; }
+    }
+
+  </style>
+</head>
+<body>
+  <div class="bg-glow-purple"></div>
+  <div class="bg-glow-cyan"></div>
+  <img src="../clones/exodus-card-site/logo-wordmark.svg" class="logo">
+  
+  <div class="text-box">
+    <div class="message msg1">Tired of waiting<br><span>for withdrawals?</span></div>
+    <div class="message msg2">Spend Crypto<br>Instantly.</div>
+    <div class="message msg3">Apple & Google Pay<br>Ready.</div>
+  </div>
+
+  <img src="../clones/exodus-card-site/card.png" class="card-img">
+</body>
+</html>

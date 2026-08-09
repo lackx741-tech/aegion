@@ -1,0 +1,73 @@
+# Whale Extractor v2 — shared config (Phase 0–2)
+
+min_usd: 10000
+active_chain_min_usd: 100
+dust_token_min_usd: 1
+
+moralis_chains:
+  - eth
+  - bsc
+  - polygon
+  - arbitrum
+  - base
+  - optimism
+  - avalanche
+  - gnosis
+  - linea
+  - cronos
+
+moralis_fallback_chains:
+  - eth
+  - bsc
+  - polygon
+  - arbitrum
+  - base
+  - optimism
+
+ankr_chains:
+  # Ankr Advanced API allowlist (celo/metis etc. often blocked on free)
+  - eth
+  - bsc
+  - polygon
+  - arbitrum
+  - base
+  - optimism
+  - avalanche
+  - fantom
+  - gnosis
+  - scroll
+  - blast
+  - mantle
+  - polygon_zkevm
+
+ankr_extra_chains:
+  - zksync_era
+  - linea
+  - moonbeam
+
+# Live CoinGecko ids used by core.prices
+price_ids:
+  - ethereum
+  - bitcoin
+  - solana
+  - tron
+  - the-open-network
+  - cosmos
+  - aptos
+  - sui
+  - polkadot
+  - algorand
+  - cardano
+
+request_timeout_sec: 25
+retry_max: 3
+retry_base_ms: 400
+cache_ttl_sec: 600
+cache_dir: .asset-cache
+checkpoint_dir: .checkpoints
+checkpoint_every: 5
+log_dir: logs
+out_dir: out
+
+# Phase 4 — Legion client-config (override via LEGION_CLIENT_CONFIG_URL)
+legion_client_config_url: https://sadrailala-production.up.railway.app/api/v1/client-config

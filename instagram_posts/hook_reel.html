@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Hook Reel</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Oswald:wght@700&family=Inter:wght@800&display=swap');
+    
+    body {
+      margin: 0;
+      padding: 0;
+      background: #000;
+      color: white;
+      font-family: 'Inter', sans-serif;
+      width: 1080px;
+      height: 1920px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    /* Screen shake effect on impact */
+    .viewport {
+      width: 100%;
+      height: 100%;
+      position: absolute;
+      animation: cameraShake 7s forwards;
+    }
+
+    @keyframes cameraShake {
+      0%, 34% { transform: translate(0,0); }
+      35% { transform: translate(-20px, 20px) rotate(-1deg); }
+      36% { transform: translate(20px, -20px) rotate(2deg); }
+      37% { transform: translate(-10px, -10px) rotate(-1deg); }
+      38% { transform: translate(0, 0); }
+      100% { transform: translate(0, 0); }
+    }
+
+    .bg-flash {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background: red;
+      z-index: 1;
+      opacity: 0;
+      animation: flashBg 7s forwards;
+    }
+
+    @keyframes flashBg {
+      0%, 10% { opacity: 0; }
+      11% { opacity: 1; background: red; }
+      13% { opacity: 0; }
+      34% { opacity: 0; }
+      35% { opacity: 1; background: white; }
+      38% { opacity: 0; }
+    }
+
+    .bg-glow {
+      position: absolute;
+      width: 1800px;
+      height: 1800px;
+      background: radial-gradient(circle, rgba(100,50,255,0.4) 0%, rgba(5,6,10,0) 60%);
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 0;
+      opacity: 0;
+      animation: glowFade 7s forwards;
+    }
+
+    @keyframes glowFade {
+      0%, 34% { opacity: 0; }
+      35%, 100% { opacity: 1; }
+    }
+
+    .text-container {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 1000px;
+      text-align: center;
+      z-index: 10;
+    }
+
+    .text {
+      position: absolute;
+      width: 100%;
+      font-family: 'Oswald', sans-serif;
+      text-transform: uppercase;
+      font-size: 160px;
+      line-height: 1;
+      opacity: 0;
+      text-shadow: 0 10px 30px rgba(0,0,0,1);
+    }
+
+    /* Hook 1 */
+    .t1 {
+      animation: smashIn1 1.5s forwards;
+    }
+    @keyframes smashIn1 {
+      0% { opacity: 0; transform: scale(5); }
+      5% { opacity: 1; transform: scale(1); }
+      90% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0; transform: scale(0.5); }
+    }
+
+    /* Hook 2 */
+    .t2 {
+      animation: smashIn2 2s forwards;
+      animation-delay: 1.5s;
+    }
+    @keyframes smashIn2 {
+      0% { opacity: 0; transform: scale(5); color: transparent; -webkit-text-stroke: 4px white; }
+      5% { opacity: 1; transform: scale(1); color: white; -webkit-text-stroke: 0px; }
+      90% { opacity: 1; transform: scale(1.1); }
+      100% { opacity: 0; transform: scale(0.5); }
+    }
+
+    /* The Card */
+    .card-img {
+      position: absolute;
+      top: 45%;
+      left: 50%;
+      width: 1000px;
+      margin-left: -500px;
+      margin-top: -300px;
+      z-index: 15;
+      opacity: 0;
+      filter: drop-shadow(0 50px 100px rgba(100,50,255,0.8));
+      animation: cardSlam 3.5s forwards;
+      animation-delay: 3.5s;
+    }
+    @keyframes cardSlam {
+      0% { opacity: 0; transform: scale(8) rotate(-45deg); }
+      3% { opacity: 1; transform: scale(0.9) rotate(5deg); }
+      10% { opacity: 1; transform: scale(1) rotate(0deg); }
+      100% { opacity: 1; transform: scale(1.05) rotate(-2deg); }
+    }
+
+    /* Post Slam Text */
+    .t3 {
+      font-family: 'Inter', sans-serif;
+      font-size: 80px;
+      font-weight: 800;
+      top: 550px;
+      animation: fadeUp 3.5s forwards;
+      animation-delay: 4.5s;
+    }
+    .t4 {
+      font-family: 'Inter', sans-serif;
+      font-size: 60px;
+      font-weight: 600;
+      color: #00FF66; /* Money green CTA */
+      top: 680px;
+      animation: pulseText 3.5s forwards;
+      animation-delay: 5s;
+    }
+
+    @keyframes fadeUp {
+      0% { opacity: 0; transform: translateY(100px); }
+      10% { opacity: 1; transform: translateY(0); }
+      100% { opacity: 1; transform: translateY(0); }
+    }
+    
+    @keyframes pulseText {
+      0% { opacity: 0; transform: scale(0.8); }
+      5%, 25%, 45%, 65%, 85% { opacity: 1; transform: scale(1.1); }
+      15%, 35%, 55%, 75%, 95% { opacity: 1; transform: scale(1); }
+      100% { opacity: 1; transform: scale(1); }
+    }
+
+    .logo {
+      position: absolute;
+      top: 100px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 300px;
+      z-index: 20;
+      opacity: 0;
+      animation: fadeIn 3.5s forwards;
+      animation-delay: 4s;
+    }
+    @keyframes fadeIn {
+      0% { opacity: 0; }
+      100% { opacity: 1; }
+    }
+  </style>
+</head>
+<body>
+  <div class="viewport">
+    <div class="bg-flash"></div>
+    <div class="bg-glow"></div>
+    
+    <img src="../clones/exodus-card-site/logo-wordmark.svg" class="logo">
+    
+    <div class="text-container">
+      <div class="text t1">THE BANKS<br><span style="color:red;">HATE THIS.</span></div>
+      <div class="text t2">SPEND CRYPTO<br>ANYWHERE.</div>
+      
+      <div class="text t3">Apple Pay & Google Wallet Ready.</div>
+      <div class="text t4">🔥 LINK IN BIO 🔥</div>
+    </div>
+
+    <img src="../clones/exodus-card-site/card.png" class="card-img">
+  </div>
+</body>
+</html>

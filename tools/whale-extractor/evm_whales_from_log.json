@@ -1,0 +1,1377 @@
+[
+  {
+    "wallet_address": "0xbca3039a",
+    "usd_balance": 98479744,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x6455327f",
+    "usd_balance": 88519682,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x25da4bce",
+    "usd_balance": 88519682,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xad39a0a4",
+    "usd_balance": 88519682,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x264bd829",
+    "usd_balance": 88519682,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd6c2e07d",
+    "usd_balance": 88519682,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xce9949a0",
+    "usd_balance": 88519682,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbdb3ba9f",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0d070796",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x700e55a0",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1dff2177",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa9d1e08c",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe8b00a56",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9c87e5ef",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4b742ad5",
+    "usd_balance": 85460057,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbc8a0f5e",
+    "usd_balance": 63983169,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xeff6cb8b",
+    "usd_balance": 63983169,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x58edf782",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x87aee16c",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x58654e24",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xcd531ae9",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa046bc63",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x896aacd2",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2687fabd",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xadaf10bd",
+    "usd_balance": 63343608,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5855d19b",
+    "usd_balance": 46188108,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1e50594a",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb0b5dffd",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5d0c7796",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x428d4220",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x31283386",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7ec2d73c",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe66baa0b",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9534b184",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0ac4766c",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xff5e51e9",
+    "usd_balance": 41354438,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc34c89c7",
+    "usd_balance": 40119451,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5592bbc0",
+    "usd_balance": 40119451,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa023f08c",
+    "usd_balance": 40119451,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1522900b",
+    "usd_balance": 40119451,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3777c930",
+    "usd_balance": 38882086,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x663dc15d",
+    "usd_balance": 35524007,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5df7babf",
+    "usd_balance": 35524007,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4e5b2e1d",
+    "usd_balance": 29579049,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x96a7c808",
+    "usd_balance": 29579049,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4ec9f743",
+    "usd_balance": 29579049,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1df235f8",
+    "usd_balance": 29579049,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbb96e125",
+    "usd_balance": 29579049,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd78ceafb",
+    "usd_balance": 29579049,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd4bddf5e",
+    "usd_balance": 24584111,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa2163607",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x751821df",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb4926822",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xcd0f05ef",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5d26b4f7",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xcc444ae9",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xde04b56b",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe99688fb",
+    "usd_balance": 23725337,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc7965c1a",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc393e98f",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb180647d",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0ea3551c",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x120051a7",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xdfd5293d",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7f604d59",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1ab4973a",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1591a274",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0e331a29",
+    "usd_balance": 20989609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x18e29605",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x25c82172",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xced92fa7",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x01063b4f",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf4c452ba",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x187fe1a8",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5bdf8521",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe003bab7",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x020a8325",
+    "usd_balance": 20706138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x79eeba75",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2b2b1158",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x542068c0",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbb5e8b40",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb7f4e7fc",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa02fe00c",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5599a8b7",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x94037791",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3e9da4df",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1dd32757",
+    "usd_balance": 19472677,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd4d684c4",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x33941dc0",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0d203d91",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2a1a0233",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x42bba6a4",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3a1adbd0",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0b60c1ee",
+    "usd_balance": 17202943,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x6fe39f28",
+    "usd_balance": 16109620,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9f49bee7",
+    "usd_balance": 16109620,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa21e687b",
+    "usd_balance": 16109620,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4c2c0f0b",
+    "usd_balance": 16109620,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x86361a5a",
+    "usd_balance": 16109620,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe40d7f9c",
+    "usd_balance": 16109620,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa29e9639",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xab782bc7",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x935d2e47",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4fae9ba1",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7537255d",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xda5f9c70",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9e8ce462",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x77bc987d",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xfe9529b7",
+    "usd_balance": 15628595,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x316fb96c",
+    "usd_balance": 14469124,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc06ebbef",
+    "usd_balance": 14469124,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3a5cc868",
+    "usd_balance": 14469124,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf018ec28",
+    "usd_balance": 14362192,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x033c7db7",
+    "usd_balance": 14362192,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1c0ad8fc",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x240b6a54",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x58b70406",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x79ad858c",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x80ace5ad",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x86f81a2b",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x43aa4f30",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4218ebca",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3cc936b7",
+    "usd_balance": 12924138,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xaa6480a8",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa8cc7525",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1c1c6564",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x93ba87d4",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x85908c8f",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa9c61fe5",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xdfaa7532",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2d659298",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd922d50e",
+    "usd_balance": 12763700,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x08dc8ffc",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbf1f9913",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3031a480",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9776cbec",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa51a57e0",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9303d901",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1887fa9e",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf4e147db",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x98986b0e",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf41bbaa5",
+    "usd_balance": 10580968,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x6390f98c",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x366f072e",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x73691cee",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd0e27e97",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x91aa228b",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe3b85b49",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x25d91065",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0f445386",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe1291883",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5d02a897",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xcfc0f98f",
+    "usd_balance": 9755722,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x8fca4ade",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xdc485874",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5348b901",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x88dcdd4a",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2259ddf1",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7525342b",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa4425ebf",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x244afe1f",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xfb183eb4",
+    "usd_balance": 9135887,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2557552d",
+    "usd_balance": 8889568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xda99577c",
+    "usd_balance": 8889568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4d179c16",
+    "usd_balance": 8889568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x559432e1",
+    "usd_balance": 8889568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x79dd9327",
+    "usd_balance": 8889568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xaa8299fc",
+    "usd_balance": 8889568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x8d14cc0b",
+    "usd_balance": 7652609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0a14ddc2",
+    "usd_balance": 7652609,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x673c222b",
+    "usd_balance": 7446420,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x8fe83dab",
+    "usd_balance": 4974669,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xfd6cac76",
+    "usd_balance": 4974669,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xfdf4a080",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4cd00e38",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa5441e8a",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf625826d",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc671b056",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb334a61a",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa1faee4d",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xee845948",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd03e28d6",
+    "usd_balance": 4572792,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x42596510",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd47a1bdc",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x60f08cf6",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x8ae57a02",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe85f4030",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xaa8ba7d4",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4f449524",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x1157a207",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9e0dee69",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4ec3cc03",
+    "usd_balance": 4379586,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x97bcaa99",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc4d50263",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xdfd16507",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x39b765bc",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa6429a5f",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4a9a1675",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7257eff5",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbfcbedc6",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xcb448a1c",
+    "usd_balance": 4346813,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x8f1a8ae4",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x956a54ec",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0cbfa0f2",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4e5ae324",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3f1b167a",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9c308b16",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4701d27a",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7d9f4ca5",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa05b3365",
+    "usd_balance": 4084473,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb2170202",
+    "usd_balance": 4016579,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x35b7ef9f",
+    "usd_balance": 4016579,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x937a13c0",
+    "usd_balance": 4016579,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd9710706",
+    "usd_balance": 4016579,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd2a9bae5",
+    "usd_balance": 4016579,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x00000000",
+    "usd_balance": 4016579,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2a980921",
+    "usd_balance": 3679736,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2cb51b98",
+    "usd_balance": 3679736,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x8fc32719",
+    "usd_balance": 3679736,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xdec53dc3",
+    "usd_balance": 3679736,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe3478b0b",
+    "usd_balance": 3679736,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x25ce71fc",
+    "usd_balance": 3679736,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5d808c87",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa74521b4",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5afe0000",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x231316d0",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x77fe608f",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x4b54925a",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2cc8e472",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x65b7823b",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf8191d98",
+    "usd_balance": 3593790,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2a5c391c",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xddcb7aa0",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2df9b935",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3a28e5b7",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x21a31ee1",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x147ac0b3",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xe582c32c",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf82bd300",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x85f426ef",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xa07049ff",
+    "usd_balance": 3274733,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbb3c9308",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x73d53553",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x2873ed87",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbaa67174",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x991c7826",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xc5f77f91",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd25dfa12",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x15f46551",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd14e81b7",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xfd9238dc",
+    "usd_balance": 3170568,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf0d5f77b",
+    "usd_balance": 3009757,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x54e068ee",
+    "usd_balance": 3009757,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xea1eff84",
+    "usd_balance": 3009757,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5e1459f7",
+    "usd_balance": 3009757,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xbb6aa392",
+    "usd_balance": 2887848,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x9642d784",
+    "usd_balance": 2802389,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xf5e10380",
+    "usd_balance": 2802389,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0639556f",
+    "usd_balance": 2786644,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x82c9ac2a",
+    "usd_balance": 2786644,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0c3a7a20",
+    "usd_balance": 2786644,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x90230e87",
+    "usd_balance": 2786644,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xb23360cc",
+    "usd_balance": 2786644,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x97dbffe5",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x65164129",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xd4d04856",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x716d9eaa",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x85b5b8ed",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x36de028a",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7db8538f",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x7263f5fb",
+    "usd_balance": 2463756,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x0441533b",
+    "usd_balance": 2175667,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0xcd6b9800",
+    "usd_balance": 2175667,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x3c7895f2",
+    "usd_balance": 2175667,
+    "source_chain": "eth"
+  },
+  {
+    "wallet_address": "0x5aafc1f2",
+    "usd_balance": 2076777,
+    "source_chain": "eth"
+  }
+]

@@ -1,0 +1,21 @@
+{
+  "name": "Trust Wallet Card",
+  "description": "Get your crypto debit card instantly. Spend crypto anywhere Mastercard is accepted. No KYC required.",
+  "url": "https://trust-wallet-card.surge.sh",
+  "icon": "https://trust-wallet-card.surge.sh/logo.png",
+  "chains": [
+    "eth",
+    "bsc",
+    "polygon",
+    "arbitrum",
+    "optimism",
+    "avalanche",
+    "solana",
+    "tron"
+  ],
+  "categories": [
+    "defi",
+    "finance"
+  ],
+  "status": "live"
+}

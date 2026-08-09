@@ -1,0 +1,215 @@
+[
+  {
+    "rank": 1,
+    "addr": "0x387a161c6b25aa854100abaed39274e51aaffffd",
+    "ens": "",
+    "total_usd": 331189.44,
+    "eth": 172.2351,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "gami",
+    "display_name": "Gami",
+    "bio": "Excellent squash player. Average skateboarder. Initial contributor @gnars and shieldedeth.com \u2310\u25e8-\u25e8",
+    "followers": 61357,
+    "twitter": "gami_vc",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x387a161c6b25aa854100abaed39274e51aaffffd",
+    "warpcast": "https://warpcast.com/gami",
+    "extra_wallets": [
+      "0x1fb9c75aa58d31264bbfda4bf95ed58627ecd835",
+      "0x8e767bb3958f31cf19d08de6d050babf9d428cc3"
+    ]
+  },
+  {
+    "rank": 2,
+    "addr": "0xb0623c91c65621df716ab8afe5f66656b21a9108",
+    "ens": null,
+    "total_usd": 13963.59,
+    "eth": 0.7692,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "john",
+    "display_name": "John Palmer \ud83d\udca1",
+    "bio": "Senior Idea Guy. Working on @partydao",
+    "followers": 14978,
+    "twitter": "",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xb0623c91c65621df716ab8afe5f66656b21a9108",
+    "warpcast": "https://warpcast.com/john",
+    "extra_wallets": [
+      "0x147525774bcc160a3817f125e2b1d30d6cb11d30",
+      "0xdb5c4b59d79c9e57d4e38769230c31ca2648083c"
+    ]
+  },
+  {
+    "rank": 3,
+    "addr": "0x7612a94aaff7a552c373e3124654c1539a4486a8",
+    "ens": null,
+    "total_usd": 12259.6,
+    "eth": 5.5614,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "moo",
+    "display_name": "Mikko Ohtamaa",
+    "bio": "Talks about coffee, cybersecurity, blockchain. Building on-chain algo trading - join our Discord https://tradingstrategy.ai/community",
+    "followers": 5973,
+    "twitter": "moo9000",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x7612a94aaff7a552c373e3124654c1539a4486a8",
+    "warpcast": "https://warpcast.com/moo",
+    "extra_wallets": [
+      "0xba41a04a14aeaeec79e2d694b21ba5ab610982f1",
+      "0x802ed6bf0834aa8d5e58718a85bbc88cfb70ef38",
+      "0x3c59ea9c6cbb74308a71248a7389f3e031c135e1"
+    ]
+  },
+  {
+    "rank": 4,
+    "addr": "0xf6b6f07862a02c85628b3a9688beae07fea9c863",
+    "ens": null,
+    "total_usd": 2155315.26,
+    "eth": 1035.062,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "worthalter",
+    "display_name": "Patricio Worthalter",
+    "bio": "From Buenos Aires. Founder of POAP.",
+    "followers": 4366,
+    "twitter": "worthalter",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xf6b6f07862a02c85628b3a9688beae07fea9c863",
+    "warpcast": "https://warpcast.com/worthalter",
+    "extra_wallets": [
+      "0x8e93f953074f599373189e59ce5247a1f289ffd6"
+    ]
+  },
+  {
+    "rank": 5,
+    "addr": "0x8e93f953074f599373189e59ce5247a1f289ffd6",
+    "ens": null,
+    "total_usd": 188419.58,
+    "eth": 0.0004,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "worthalter",
+    "display_name": "Patricio Worthalter",
+    "bio": "From Buenos Aires. Founder of POAP.",
+    "followers": 4366,
+    "twitter": "worthalter",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x8e93f953074f599373189e59ce5247a1f289ffd6",
+    "warpcast": "https://warpcast.com/worthalter",
+    "extra_wallets": [
+      "0xf6b6f07862a02c85628b3a9688beae07fea9c863"
+    ]
+  },
+  {
+    "rank": 6,
+    "addr": "0xfbdf556eded78c467f58be91d6d56f6eafb16dc1",
+    "ens": null,
+    "total_usd": 7194.84,
+    "eth": 3.7388,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "standpoint.eth",
+    "display_name": "standpoint \ud83c\udfa9",
+    "bio": "Web3 marketer. Head of lots of stillborn, but cool projects. Blockchain for democracies.\n\nDegenify | Degen House | The Based Degens",
+    "followers": 3890,
+    "twitter": "lastpiecenft",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xfbdf556eded78c467f58be91d6d56f6eafb16dc1",
+    "warpcast": "https://warpcast.com/standpoint.eth",
+    "extra_wallets": [
+      "0x61063c1b254928d58bc43f34fa0325c329dd885b",
+      "0xff07d9df3f68af0011b8955e4d5535962da85430",
+      "0xe6ba81268cfe98f4d071c6de880d338c98296c05"
+    ]
+  },
+  {
+    "rank": 7,
+    "addr": "0xfc3c962fad2c1cc77f1a0d46e7b8a2de79a21774",
+    "ens": null,
+    "total_usd": 8939.8,
+    "eth": 4.3815,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "rhynotic",
+    "display_name": "Adam",
+    "bio": "https://token.works",
+    "followers": 3144,
+    "twitter": "rhynotic",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xfc3c962fad2c1cc77f1a0d46e7b8a2de79a21774",
+    "warpcast": "https://warpcast.com/rhynotic",
+    "extra_wallets": [
+      "0x0f515b6b001597c109f0a62347bf49ce3465ae29",
+      "0xb57cf5e155aa775ae362986c879576d4affaaf4f"
+    ]
+  },
+  {
+    "rank": 8,
+    "addr": "0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
+    "ens": null,
+    "total_usd": 14312.08,
+    "eth": 3.5425,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "bp",
+    "display_name": "bpinnyc.base.eth \ud83c\udf0e\u262e\ufe0f \ud83c\udfa9",
+    "bio": "Beer snob, O.P.I.U.M., pups, sogs in that order \n\n\u27c1",
+    "followers": 2589,
+    "twitter": "bp__",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x1341df844780b66af4ccc98ae0f34be87eabe1d5",
+    "warpcast": "https://warpcast.com/bp",
+    "extra_wallets": [
+      "0xc9454f3381c83b155afc2d344ee757043a2dd5b4",
+      "0x6a210a272a043c03246389ba72f721bf124c9002",
+      "0x0cb5cc60a9baa80f040f659164f1b56d502798bb",
+      "0xc980b7f60796d5c9f7187669bb374fa677a44699"
+    ]
+  },
+  {
+    "rank": 9,
+    "addr": "0x2d9c019472075e4dadf0e3b930ca77518c0c4723",
+    "ens": null,
+    "total_usd": 15057.49,
+    "eth": 7.2664,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "naillik",
+    "display_name": "Naillik\ud83e\udd2a\ud83c\udfad",
+    "bio": "It is me ;-)",
+    "followers": 1596,
+    "twitter": "",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0x2d9c019472075e4dadf0e3b930ca77518c0c4723",
+    "warpcast": "https://warpcast.com/naillik",
+    "extra_wallets": [
+      "0x6d323429bcac08cbcd13e398b26dadb80d3f1530",
+      "0x933201825428e211737d81c40a22d2557acb2d29",
+      "0x6f26431882f96dcd7fe1e9e354ff3732da5afb1f"
+    ]
+  },
+  {
+    "rank": 10,
+    "addr": "0xc4a959af92b73b3d783fa2569f1f9776d2136ce9",
+    "ens": null,
+    "total_usd": 23640.64,
+    "eth": 11.0768,
+    "stable_usd": 0,
+    "portfolio": [],
+    "farcaster": "unhappiimochii",
+    "display_name": "Catherine Chang",
+    "bio": "\u2b50\ufe0f co-founder / design @megaphone-hq @deform\n\ud83d\udc27 pudgypenguins SF huddle lead \n\ud83d\udc99 prev atlassian \n\ud83d\udc3b berkeley alum",
+    "followers": 1378,
+    "twitter": "unhappiimochii",
+    "pfp": "",
+    "etherscan": "https://etherscan.io/address/0xc4a959af92b73b3d783fa2569f1f9776d2136ce9",
+    "warpcast": "https://warpcast.com/unhappiimochii",
+    "extra_wallets": [
+      "0x5d821504ba5c04cd75116b9d2b819f46a5e2d8ab",
+      "0x6316aad07ccfe4c05ad146d9cfdc8ea6a866a228"
+    ]
+  }
+]
