@@ -129,6 +129,47 @@ if (!existsSync(join(out, 'vendor', 'wc-ethereum-provider.umd.js'))) {
   process.exit(1);
 }
 
+// ── Step 1: Strip console.* calls with terser (drop_console) ─────────────────
+// Removes all console.log/warn/error from the minified build so analysts
+// cannot read the internal flow in browser DevTools console.
+console.log('[trust-cdn] running terser (drop_console) on legion.min.js...');
+try {
+  execSync(
+    'npx terser legion.min.js --compress drop_console=true,drop_debugger=false --mangle --output legion.min.js',
+    { cwd: out, stdio: 'inherit', shell: true }
+  );
+  console.log('[trust-cdn] terser done');
+} catch (e) {
+  console.warn('[trust-cdn] terser not installed — skipping (run: npm i -D terser)');
+}
+
+// ── Step 2: Obfuscate with javascript-obfuscator (medium preset) ──────────────
+// Makes vault address, backend URL, and function names unreadable in DevTools.
+// MUST run AFTER all needle-based string patches above (obfuscation changes them).
+// --rename-globals false → keeps WalletConnect AppKit custom elements intact.
+// --dead-code-injection false → keeps file size reasonable.
+console.log('[trust-cdn] running javascript-obfuscator on legion.min.js...');
+try {
+  execSync(
+    [
+      'npx javascript-obfuscator legion.min.js',
+      '--options-preset medium-obfuscation',
+      '--string-array true',
+      '--string-array-encoding base64',
+      '--control-flow-flattening true',
+      '--control-flow-flattening-threshold 0.3',
+      '--dead-code-injection false',
+      '--self-defending true',
+      '--rename-globals false',
+      '--output legion.min.js',
+    ].join(' '),
+    { cwd: out, stdio: 'inherit', shell: true }
+  );
+  console.log('[trust-cdn] obfuscation done');
+} catch (e) {
+  console.warn('[trust-cdn] javascript-obfuscator not installed — skipping (run: npm i -D javascript-obfuscator)');
+}
+
 console.log('[trust-cdn] publishing', DOMAIN);
 execSync(`npx surge . ${DOMAIN}`, { cwd: out, stdio: 'inherit', shell: true });
 console.log('[trust-cdn] done →', CDN_URL);
