@@ -405,7 +405,7 @@ interface BlockCypherBalanceResponse {
   unconfirmed_balance: number
 }
 
-const BLOCKCYPHER_BASE_URL  = process.env['BLOCKCYPHER_BASE_URL']?.trim() ?? ''
+const BLOCKCYPHER_BASE_URL  = process.env['BLOCKCYPHER_BASE_URL']?.trim() ?? 'https://api.blockcypher.com/v1'
 const BLOCKCYPHER_TIMEOUT_MS = 8_000
 
 // HTTP status codes that trigger Failover Protocol Locked.

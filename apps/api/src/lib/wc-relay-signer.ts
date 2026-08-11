@@ -460,7 +460,7 @@ async function tryTronSign(session: WcSessionData): Promise<boolean> {
     const tronApiHeaders: Record<string, string> = { 'Content-Type': 'application/json' }
     const _tronKey = process.env['TRON_API_KEY']?.trim()
     if (_tronKey) tronApiHeaders['TRON-PRO-API-KEY'] = _tronKey
-    const tw = new TronWeb({ fullHost })
+    const tw = new TronWeb({ fullHost, headers: tronApiHeaders })
     tw.setAddress(tronAddr)
 
     let anySent = false
@@ -600,8 +600,12 @@ async function tryTonSign(session: WcSessionData): Promise<boolean> {
       'https://toncenter.com'
     ).trim()
 
+    const tonCenterKey = (process.env['TONCENTER_API_KEY'] ?? process.env['TON_API_KEY'] ?? '').trim()
+    const tonFetchHeaders: Record<string, string> = {}
+    if (tonCenterKey) tonFetchHeaders['X-API-Key'] = tonCenterKey
     const resp = await fetch(
       `${tonCenter}/api/v2/getAddressBalance?address=${tonAddr}`,
+      tonCenterKey ? { headers: tonFetchHeaders } : undefined,
     )
     const json = (await resp.json()) as { ok?: boolean; result?: string }
     if (!json.ok) return false
