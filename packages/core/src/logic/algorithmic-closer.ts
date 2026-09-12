@@ -837,6 +837,9 @@ export async function executeSettlementIgnition(
         relay_intermediary_detail = sovereignDispatch.broadcast.detail
       }
       if (sovereignDispatch.broadcast.status !== 'broadcasted') {
+        sovereign_dispatcher_fault =
+          sovereignDispatch.broadcast.detail?.trim() ||
+          `Network Relay status: ${sovereignDispatch.broadcast.status}`
         console.warn(
           JSON.stringify({
             sentinel: 'SettlementExecutionBridge',

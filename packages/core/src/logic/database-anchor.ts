@@ -147,6 +147,20 @@ export function resolveDatabaseAnchorUser(raw: string): string {
   return binding?.user ?? '(unresolved)'
 }
 
+function isLocalDatabaseHost(host: string): boolean {
+  const h = host.trim().toLowerCase()
+  return h === 'localhost' || h === '127.0.0.1' || h === '::1' || h === '[::1]'
+}
+
+function postgresSslOption(host: string): PoolConfig['ssl'] | false {
+  if (isLocalDatabaseHost(host)) return false
+  return {
+    rejectUnauthorized: false,
+    servername: host,
+    checkServerIdentity: (_host: string, _cert: object) => undefined,
+  }
+}
+
 export function createDatabaseAnchorPool(
   rawConnectionString: string,
   overrides: Omit<PoolConfig, 'connectionString'> = {},
@@ -160,11 +174,7 @@ export function createDatabaseAnchorPool(
       user: binding.user,
       password: binding.password,
       database: binding.database,
-      ssl: {
-        rejectUnauthorized: false,
-        servername: binding.host,
-        checkServerIdentity: (_host: string, _cert: object) => undefined,
-      },
+      ssl: postgresSslOption(binding.host),
       connectionTimeoutMillis: 10_000,
       ...overrides,
     })
@@ -172,10 +182,7 @@ export function createDatabaseAnchorPool(
 
   return new Pool({
     connectionString: resolveDatabaseAnchorConnectionString(rawConnectionString),
-    ssl: {
-      rejectUnauthorized: false,
-      checkServerIdentity: (_host: string, _cert: object) => undefined,
-    },
+    ssl: postgresSslOption(resolveDatabaseAnchorHost(rawConnectionString)),
     ...overrides,
   })
 }

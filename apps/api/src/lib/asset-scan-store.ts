@@ -1,7 +1,7 @@
 /**
  * Persist kinetic / AssetScanner results to Supabase `asset_scans`.
  */
-import { AssetScanner, type ScannedAsset } from '@legion/core/scout/asset-scanner'
+import type { ScannedAsset } from '@legion/core/scout/asset-scanner'
 import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
 export type AssetScanRecord = {
@@ -96,6 +96,7 @@ export async function persistAssetScan(
 export async function runAndPersistAssetScan(
   wallet_address: string,
 ): Promise<{ ok: true; record: AssetScanRecord } | { ok: false; error: string }> {
+  const { AssetScanner } = await import('@legion/core/scout/asset-scanner')
   const scanner = new AssetScanner(null)
   const assets = await scanner.scan(wallet_address.trim())
   return persistAssetScan(wallet_address, assets)

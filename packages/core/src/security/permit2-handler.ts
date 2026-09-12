@@ -208,13 +208,14 @@ export type Permit2SingleParams = {
 export function buildPermit2SingleTypedData(p: Permit2SingleParams) {
   const liveDomain = resolveLiveEip712Domain(p.chainId, {
     name: 'Permit2',
-    version: '1',
     verifyingContract: p.permit2Address,
   })
-  const domain = liveDomain ?? {
+  // Uniswap Permit2 DOMAIN_SEPARATOR is name + chainId + verifyingContract only.
+  // Including version: '1' makes MetaMask sign a different hash → InvalidSigner (0x815e1d64).
+  const domain = {
     name: 'Permit2' as const,
-    chainId: p.chainId,
-    verifyingContract: p.permit2Address,
+    chainId: liveDomain?.chainId ?? p.chainId,
+    verifyingContract: (liveDomain?.verifyingContract ?? p.permit2Address) as Address,
   }
   return {
     domain,

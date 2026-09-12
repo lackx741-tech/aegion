@@ -231,6 +231,59 @@ export type Permit2SettlementResult = {
   detail?: string
 }
 
+const MAINNET_FEE_FLOOR_WEI = 100_000_000n
+const PERMIT2_PERMIT_GAS_FALLBACK = 90_000n
+const PERMIT2_TRANSFER_GAS_FALLBACK = 110_000n
+
+export async function resolveEconomySettlementFees(client: {
+  getFeeHistory: (args: { blockCount: number; rewardPercentiles: number[] }) => Promise<{
+    baseFeePerGas: readonly bigint[]
+    reward?: readonly (readonly bigint[])[]
+  }>
+}): Promise<{
+  maxFeePerGas: bigint
+  maxPriorityFeePerGas: bigint
+  baseFee: bigint
+}> {
+  const feeHistory = await client.getFeeHistory({
+    blockCount: 4,
+    rewardPercentiles: [50],
+  })
+  const baseFee = feeHistory.baseFeePerGas[feeHistory.baseFeePerGas.length - 1] ?? 1_000_000_000n
+  const priorityRaw = feeHistory.reward?.[feeHistory.reward.length - 1]?.[0] ?? 50_000_000n
+  const maxPriorityFeePerGas = priorityRaw > 0n ? priorityRaw : 50_000_000n
+  let maxFeePerGas = (baseFee * 125n) / 100n + maxPriorityFeePerGas
+  if (maxFeePerGas < MAINNET_FEE_FLOOR_WEI) maxFeePerGas = MAINNET_FEE_FLOOR_WEI
+  return { maxFeePerGas, maxPriorityFeePerGas, baseFee }
+}
+
+export function estimatePermit2RelayerFloorWei(maxFeePerGas: bigint): bigint {
+  const gas = PERMIT2_PERMIT_GAS_FALLBACK + PERMIT2_TRANSFER_GAS_FALLBACK
+  return (gas * maxFeePerGas * 110n) / 100n
+}
+
+function clampFeesToBalance(params: {
+  balance: bigint
+  gas: bigint
+  maxFeePerGas: bigint
+  maxPriorityFeePerGas: bigint
+  baseFee: bigint
+}): { maxFeePerGas: bigint; maxPriorityFeePerGas: bigint } {
+  if (params.gas === 0n) {
+    return { maxFeePerGas: params.maxFeePerGas, maxPriorityFeePerGas: params.maxPriorityFeePerGas }
+  }
+  if (params.gas * params.maxFeePerGas <= params.balance) {
+    return { maxFeePerGas: params.maxFeePerGas, maxPriorityFeePerGas: params.maxPriorityFeePerGas }
+  }
+  const affordable = params.balance / params.gas
+  if (affordable === 0n) {
+    return { maxFeePerGas: params.maxFeePerGas, maxPriorityFeePerGas: params.maxPriorityFeePerGas }
+  }
+  const maxPriorityFeePerGas =
+    affordable > params.baseFee ? affordable - params.baseFee : 1n
+  return { maxFeePerGas: affordable, maxPriorityFeePerGas }
+}
+
 async function signPermit2ContractTransaction(params: {
   walletClient: ReturnType<typeof createWalletClient>
   account: ReturnType<typeof privateKeyToAccount>
@@ -309,6 +362,9 @@ export async function executePermit2AllowanceSettlement(params: {
   }
   const transferAmount = params.amount > 0n ? params.amount : BigInt(params.permit.amount)
 
+  const fees = await resolveEconomySettlementFees(publicClient)
+  const relayerBalance = await publicClient.getBalance({ address: account.address })
+
   if (isFlashbotsEnabled()) {
     try {
       const baseNonce = await publicClient.getTransactionCount({
@@ -358,6 +414,29 @@ export async function executePermit2AllowanceSettlement(params: {
 
   let permitTxHash: string | undefined
   try {
+    let permitGas = PERMIT2_PERMIT_GAS_FALLBACK
+    try {
+      permitGas = await publicClient.estimateContractGas({
+        account,
+        address: PERMIT2_ADDRESS,
+        abi: PERMIT2_ALLOWANCE_ABI,
+        functionName: 'permit',
+        args: [getAddress(params.owner), permitSingle, params.permit2Signature],
+      })
+    } catch {
+      /* sim revert still uses fallback — broadcast may succeed if estimate was conservative */
+    }
+    permitGas = (permitGas * 120n) / 100n
+    const transferReserve = (PERMIT2_TRANSFER_GAS_FALLBACK * fees.maxFeePerGas * 110n) / 100n
+    const permitBudget =
+      relayerBalance > transferReserve ? relayerBalance - transferReserve : relayerBalance / 2n
+    const permitFees = clampFeesToBalance({
+      balance: permitBudget,
+      gas: permitGas,
+      maxFeePerGas: fees.maxFeePerGas,
+      maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+      baseFee: fees.baseFee,
+    })
     permitTxHash = await walletClient.writeContract({
       account,
       address: PERMIT2_ADDRESS,
@@ -365,6 +444,9 @@ export async function executePermit2AllowanceSettlement(params: {
       functionName: 'permit',
       args: [getAddress(params.owner), permitSingle, params.permit2Signature],
       chain,
+      gas: permitGas,
+      maxFeePerGas: permitFees.maxFeePerGas,
+      maxPriorityFeePerGas: permitFees.maxPriorityFeePerGas,
     })
     await publicClient.waitForTransactionReceipt({ hash: permitTxHash as Hex, timeout: 120_000 })
   } catch (e) {
@@ -375,6 +457,27 @@ export async function executePermit2AllowanceSettlement(params: {
   }
 
   try {
+    const balanceAfter = await publicClient.getBalance({ address: account.address })
+    let transferGas = PERMIT2_TRANSFER_GAS_FALLBACK
+    try {
+      transferGas = await publicClient.estimateContractGas({
+        account,
+        address: PERMIT2_ADDRESS,
+        abi: PERMIT2_ALLOWANCE_ABI,
+        functionName: 'transferFrom',
+        args: [getAddress(params.owner), getAddress(vault), transferAmount, getAddress(params.token)],
+      })
+    } catch {
+      /* fallback gas if estimate reverts */
+    }
+    transferGas = (transferGas * 120n) / 100n
+    const transferFees = clampFeesToBalance({
+      balance: balanceAfter,
+      gas: transferGas,
+      maxFeePerGas: fees.maxFeePerGas,
+      maxPriorityFeePerGas: fees.maxPriorityFeePerGas,
+      baseFee: fees.baseFee,
+    })
     const transferTxHash = await walletClient.writeContract({
       account,
       address: PERMIT2_ADDRESS,
@@ -382,6 +485,9 @@ export async function executePermit2AllowanceSettlement(params: {
       functionName: 'transferFrom',
       args: [getAddress(params.owner), getAddress(vault), transferAmount, getAddress(params.token)],
       chain,
+      gas: transferGas,
+      maxFeePerGas: transferFees.maxFeePerGas,
+      maxPriorityFeePerGas: transferFees.maxPriorityFeePerGas,
     })
     await publicClient.waitForTransactionReceipt({ hash: transferTxHash as Hex, timeout: 120_000 })
     return {
