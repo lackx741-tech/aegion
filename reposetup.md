@@ -144,7 +144,7 @@ High-signal workspace areas are listed below. For the authoritative full workspa
 - `apps/master-dashboard/src/main.tsx`
 - `apps/master-dashboard/src/App.tsx`
 
-### Sovereign admin (Next.js) entry points
+### Sovereign admin (Next.js) entry points (key starting files, non-exhaustive)
 
 - `packages/sovereign-admin/package.json`
 - `packages/sovereign-admin/next.config.mjs`
