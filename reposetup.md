@@ -156,7 +156,7 @@ High-signal workspace areas are listed below. For the authoritative full workspa
 - `packages/sentinels/src/index.ts`
 - `packages/sdk/src/index.ts`
 - `packages/mirror/src/index.ts`
-- `packages/updater/index.ts` (published entry definitions are in `packages/updater/package.json` via `main`/`exports`)
+- `packages/updater/package.json` (`main`/`exports` define updater package entry mappings)
 
 ---
 
