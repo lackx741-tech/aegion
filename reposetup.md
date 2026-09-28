@@ -158,7 +158,7 @@ The lists below highlight the primary workspace members used most often during d
 - `packages/sentinels/src/index.ts`
 - `packages/sdk/src/index.ts`
 - `packages/mirror/src/index.ts`
-- `packages/updater/index.ts` (source entry is package-root `index.ts`, not `src/index.ts`)
+- `packages/updater/index.ts` (published entry definitions are in `packages/updater/package.json` via `main`/`exports`)
 
 ---
 
