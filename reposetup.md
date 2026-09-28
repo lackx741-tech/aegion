@@ -28,7 +28,7 @@ Workspace definition: `pnpm-workspace.yaml`
 - Node.js `>=20.0.0`
 - pnpm `>=9.0.0`
 
-Source: `package.json`
+Source: `package.json` (`engines.node`, `engines.pnpm`, and `packageManager`)
 
 ---
 
@@ -89,17 +89,15 @@ All commands in this section are workspace commands and should be run from the r
 
 ## Repository Organization
 
-The lists below highlight the primary workspace members used most often during development. For the authoritative current list, check `pnpm-workspace.yaml`.
+High-signal workspace areas are listed below. For the authoritative full workspace membership, check `pnpm-workspace.yaml`.
 
-### Applications (`apps/`)
+### Applications (`apps/`, selected)
 
-- `apps/api` — Fastify backend API
+- `apps/api` — Fastify backend API (primary backend runtime)
 - `apps/dashboard` — React/Vite campaign dashboard
 - `apps/master-dashboard` — React/Vite dashboard shell
-- `apps/pancakeswap-clone` — Vite app surface
-- `apps/phantom-wallet` — wallet-focused React/Vite app
 
-### Packages (`packages/`)
+### Packages (`packages/`, selected)
 
 - `packages/core` — shared core logic, chains, security, routing, state
 - `packages/sentinels` — sentinel module exports
@@ -164,13 +162,10 @@ The lists below highlight the primary workspace members used most often during d
 
 ## Recommended Reading Path
 
+Start with these stable files, then continue through the **Key Entry Points** section above:
+
 1. `README.md`
 2. `package.json`
 3. `apps/api/src/index.ts`
 4. `apps/api/src/server.ts`
-5. `apps/api/src/routes/health.ts`
-6. `apps/dashboard/src/App.tsx`
-7. `packages/core/src/index.ts`
-8. `docs/API-SPEC.md`
-9. `docs/STATE-MACHINE.md`
-10. `docs/DB-SCHEMA.md`
+5. `packages/core/src/index.ts`
