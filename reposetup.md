@@ -1,15 +1,17 @@
-# Aegion Repository Setup and Entry Points
+# Aegion (Legion Engine) Repository Setup and Entry Points
 
 ## Overview
 
-This repository is a `pnpm` monorepo for the Legion Engine platform. It is organized into:
+This repository is a `pnpm` monorepo for the Legion Engine platform. In this repo, **Aegion** is the repository name and **Legion Engine** is the platform/runtime name for the same codebase.
+
+It is organized into:
 
 - `apps/*` for runnable application surfaces (API and dashboards)
 - `packages/*` for shared logic and platform modules
 - `scripts/` for root-level operational tooling
 - `docs/` for architecture, API, state-machine, and schema specifications
 
-Note on naming: the GitHub repository is `aegion`, while many workspace packages and runtime modules use the `@legion/*` naming convention.
+Package naming follows the `@legion/*` convention across the workspace.
 
 Workspace definition: `pnpm-workspace.yaml`
 
@@ -31,8 +33,11 @@ From repository root:
 1. Install dependencies
    - `pnpm install`
 2. Create env files as needed
-   - copy `.env.example` to `.env`
-   - add runtime values (database, redis, auth, telegram, api keys, etc.)
+   - root API/runtime config: copy `.env.example` to `.env`
+   - dashboard config (if running dashboard app): copy `apps/dashboard/.env.example` to `apps/dashboard/.env`
+   - sovereign admin config (if running vault app): copy `packages/sovereign-admin/.env.example` to `packages/sovereign-admin/.env.local`
+   - optional package-local templates also exist (for example `packages/core/.env.example`)
+   - fill required values (database, redis, auth, telegram, API keys, etc.)
 3. Optional database steps
    - `pnpm db:generate`
    - `pnpm db:migrate`
