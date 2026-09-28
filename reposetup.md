@@ -4,6 +4,12 @@
 
 This repository is a `pnpm` monorepo for the Legion Engine platform. In this repo, **Aegion** is the repository name and **Legion Engine** is the platform/runtime name for the same codebase.
 
+Canonical naming convention for contributors:
+
+- Use **Aegion** when referring to the GitHub repository, clone path, and branch/PR context.
+- Use **Legion Engine** when referring to the runtime system and architecture.
+- Use `@legion/*` when referring to workspace package names in commands/imports.
+
 It is organized into:
 
 - `apps/*` for runnable application surfaces (API and dashboards)
