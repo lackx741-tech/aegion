@@ -52,6 +52,7 @@ Env file convention:
 3. Optional database steps
    - `pnpm db:generate`
    - `pnpm db:migrate`
+   - these root commands proxy to `@legion/core` Drizzle tasks and are only needed for DB-backed API workflows
 
 ---
 
@@ -76,8 +77,8 @@ All commands in this section are workspace commands and should be run from the r
 ### Build
 
 - `pnpm build` (core + API)
-- `pnpm build:all` (workspace-wide ordered build)
-- `pnpm build:workspace` (workspace package build pass)
+- `pnpm build:all` (clean lock artifacts, then full ordered build across packages and apps)
+- `pnpm build:workspace` (ordered build pass only, without the clean pre-step)
 
 ### Quality and tests
 
@@ -124,7 +125,7 @@ High-signal workspace areas are listed below. For the authoritative full workspa
 - `apps/api/src/app.ts`
   - CORS ingress/origin policy registration
 
-### High-signal API route entry points
+### High-signal API route entry points (good first reads for health, telemetry, jobs, and auth flows)
 
 - `apps/api/src/routes/health.ts`
 - `apps/api/src/routes/stats.ts`
