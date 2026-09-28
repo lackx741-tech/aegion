@@ -41,7 +41,7 @@ From repository root:
 2. Create env files as needed
    - root API/runtime config: copy `.env.example` to `.env`
    - dashboard config (if running dashboard app): copy `apps/dashboard/.env.example` to `apps/dashboard/.env`
-   - sovereign admin config (if running vault app): copy `packages/sovereign-admin/.env.example` to `packages/sovereign-admin/.env.local`
+   - sovereign admin config (if running `@legion/sovereign-admin`): copy `packages/sovereign-admin/.env.example` to `packages/sovereign-admin/.env.local`
    - optional package-local templates also exist (for example `packages/core/.env.example`)
    - fill required values (database, redis, auth, telegram, API keys, etc.)
 
