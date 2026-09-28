@@ -44,6 +44,11 @@ From repository root:
    - sovereign admin config (if running vault app): copy `packages/sovereign-admin/.env.example` to `packages/sovereign-admin/.env.local`
    - optional package-local templates also exist (for example `packages/core/.env.example`)
    - fill required values (database, redis, auth, telegram, API keys, etc.)
+
+Env file convention:
+
+- `.env` / `apps/dashboard/.env` are standard runtime env files for Node/Vite flows.
+- `.env.local` is used for the Next.js app (`packages/sovereign-admin`) local overrides.
 3. Optional database steps
    - `pnpm db:generate`
    - `pnpm db:migrate`
@@ -53,6 +58,7 @@ From repository root:
 ## Development and Build Commands
 
 Root command entry points are in `package.json`.
+All commands in this section are workspace commands and should be run from the repository root.
 
 ### Core runtime
 
@@ -80,6 +86,8 @@ Root command entry points are in `package.json`.
 ---
 
 ## Repository Organization
+
+The lists below cover the workspace members under `apps/*` and `packages/*` (complete for this workspace scope).
 
 ### Applications (`apps/`)
 
@@ -148,7 +156,7 @@ Root command entry points are in `package.json`.
 - `packages/sentinels/src/index.ts`
 - `packages/sdk/src/index.ts`
 - `packages/mirror/src/index.ts`
-- `packages/updater/index.ts`
+- `packages/updater/index.ts` (this package exports from a package-root entry file)
 
 ---
 
