@@ -9,7 +9,9 @@ This repository is a `pnpm` monorepo for the Legion Engine platform. It is organ
 - `scripts/` for root-level operational tooling
 - `docs/` for architecture, API, state-machine, and schema specifications
 
-Workspace definition: `/home/runner/work/aegion/aegion/pnpm-workspace.yaml`
+Note on naming: the GitHub repository is `aegion`, while many workspace packages and runtime modules use the `@legion/*` naming convention.
+
+Workspace definition: `pnpm-workspace.yaml`
 
 ---
 
@@ -18,7 +20,7 @@ Workspace definition: `/home/runner/work/aegion/aegion/pnpm-workspace.yaml`
 - Node.js `>=20.0.0`
 - pnpm `>=9.0.0`
 
-Source: `/home/runner/work/aegion/aegion/package.json`
+Source: `package.json`
 
 ---
 
@@ -29,7 +31,7 @@ From repository root:
 1. Install dependencies
    - `pnpm install`
 2. Create env files as needed
-   - copy `/home/runner/work/aegion/aegion/.env.example` to `.env`
+   - copy `.env.example` to `.env`
    - add runtime values (database, redis, auth, telegram, api keys, etc.)
 3. Optional database steps
    - `pnpm db:generate`
@@ -39,12 +41,12 @@ From repository root:
 
 ## Development and Build Commands
 
-Root command entry points are in `/home/runner/work/aegion/aegion/package.json`.
+Root command entry points are in `package.json`.
 
 ### Core runtime
 
 - `pnpm dev`
-  - Runs `/home/runner/work/aegion/aegion/scripts/dev.js`
+  - Runs `scripts/dev.js`
   - Builds `@legion/core`, then starts `@legion/api` in watch mode
 
 ### Frontend/admin
@@ -70,20 +72,20 @@ Root command entry points are in `/home/runner/work/aegion/aegion/package.json`.
 
 ### Applications (`apps/`)
 
-- `/home/runner/work/aegion/aegion/apps/api` — Fastify backend API
-- `/home/runner/work/aegion/aegion/apps/dashboard` — React/Vite campaign dashboard
-- `/home/runner/work/aegion/aegion/apps/master-dashboard` — React/Vite dashboard shell
-- `/home/runner/work/aegion/aegion/apps/pancakeswap-clone` — Vite app surface
-- `/home/runner/work/aegion/aegion/apps/phantom-wallet` — wallet-focused React/Vite app
+- `apps/api` — Fastify backend API
+- `apps/dashboard` — React/Vite campaign dashboard
+- `apps/master-dashboard` — React/Vite dashboard shell
+- `apps/pancakeswap-clone` — Vite app surface
+- `apps/phantom-wallet` — wallet-focused React/Vite app
 
 ### Packages (`packages/`)
 
-- `/home/runner/work/aegion/aegion/packages/core` — shared core logic, chains, security, routing, state
-- `/home/runner/work/aegion/aegion/packages/sentinels` — sentinel module exports
-- `/home/runner/work/aegion/aegion/packages/sdk` — public SDK surface
-- `/home/runner/work/aegion/aegion/packages/mirror` — mirror health/rotation module
-- `/home/runner/work/aegion/aegion/packages/updater` — live config updater module
-- `/home/runner/work/aegion/aegion/packages/sovereign-admin` — Next.js admin app package
+- `packages/core` — shared core logic, chains, security, routing, state
+- `packages/sentinels` — sentinel module exports
+- `packages/sdk` — public SDK surface
+- `packages/mirror` — mirror health/rotation module
+- `packages/updater` — live config updater module
+- `packages/sovereign-admin` — Next.js admin app package
 
 ---
 
@@ -91,63 +93,63 @@ Root command entry points are in `/home/runner/work/aegion/aegion/package.json`.
 
 ### Root-level entry points
 
-- `/home/runner/work/aegion/aegion/package.json` (all root scripts)
-- `/home/runner/work/aegion/aegion/scripts/dev.js` (main local dev bootstrap)
+- `package.json` (all root scripts)
+- `scripts/dev.js` (main local dev bootstrap)
 
 ### API runtime entry points
 
-- `/home/runner/work/aegion/aegion/apps/api/src/index.ts`
+- `apps/api/src/index.ts`
   - boot orchestration, startup/shutdown, background cron start
-- `/home/runner/work/aegion/aegion/apps/api/src/server.ts`
+- `apps/api/src/server.ts`
   - Fastify creation, middleware registration, route registration
-- `/home/runner/work/aegion/aegion/apps/api/src/app.ts`
+- `apps/api/src/app.ts`
   - CORS ingress/origin policy registration
 
 ### High-signal API route entry points
 
-- `/home/runner/work/aegion/aegion/apps/api/src/routes/health.ts`
-- `/home/runner/work/aegion/aegion/apps/api/src/routes/stats.ts`
-- `/home/runner/work/aegion/aegion/apps/api/src/routes/scout.ts`
-- `/home/runner/work/aegion/aegion/apps/api/src/routes/jobs.ts`
-- `/home/runner/work/aegion/aegion/apps/api/src/routes/auth.ts`
+- `apps/api/src/routes/health.ts`
+- `apps/api/src/routes/stats.ts`
+- `apps/api/src/routes/scout.ts`
+- `apps/api/src/routes/jobs.ts`
+- `apps/api/src/routes/auth.ts`
 
 ### Dashboard entry points
 
-- `/home/runner/work/aegion/aegion/apps/dashboard/src/main.tsx`
-- `/home/runner/work/aegion/aegion/apps/dashboard/src/App.tsx`
-- `/home/runner/work/aegion/aegion/apps/dashboard/src/api.ts`
+- `apps/dashboard/src/main.tsx`
+- `apps/dashboard/src/App.tsx`
+- `apps/dashboard/src/api.ts`
 
 ### Master dashboard entry points
 
-- `/home/runner/work/aegion/aegion/apps/master-dashboard/src/main.tsx`
-- `/home/runner/work/aegion/aegion/apps/master-dashboard/src/App.tsx`
+- `apps/master-dashboard/src/main.tsx`
+- `apps/master-dashboard/src/App.tsx`
 
 ### Sovereign admin (Next.js) entry points
 
-- `/home/runner/work/aegion/aegion/packages/sovereign-admin/package.json`
-- `/home/runner/work/aegion/aegion/packages/sovereign-admin/src/app/layout.tsx`
-- `/home/runner/work/aegion/aegion/packages/sovereign-admin/src/app/page.tsx`
-- `/home/runner/work/aegion/aegion/packages/sovereign-admin/src/app/dashboard/page.tsx`
+- `packages/sovereign-admin/package.json`
+- `packages/sovereign-admin/src/app/layout.tsx`
+- `packages/sovereign-admin/src/app/page.tsx`
+- `packages/sovereign-admin/src/app/dashboard/page.tsx`
 
 ### Package module entry points
 
-- `/home/runner/work/aegion/aegion/packages/core/src/index.ts`
-- `/home/runner/work/aegion/aegion/packages/sentinels/src/index.ts`
-- `/home/runner/work/aegion/aegion/packages/sdk/src/index.ts`
-- `/home/runner/work/aegion/aegion/packages/mirror/src/index.ts`
-- `/home/runner/work/aegion/aegion/packages/updater/index.ts`
+- `packages/core/src/index.ts`
+- `packages/sentinels/src/index.ts`
+- `packages/sdk/src/index.ts`
+- `packages/mirror/src/index.ts`
+- `packages/updater/index.ts`
 
 ---
 
 ## Recommended Reading Path
 
-1. `/home/runner/work/aegion/aegion/README.md`
-2. `/home/runner/work/aegion/aegion/package.json`
-3. `/home/runner/work/aegion/aegion/apps/api/src/index.ts`
-4. `/home/runner/work/aegion/aegion/apps/api/src/server.ts`
-5. `/home/runner/work/aegion/aegion/apps/api/src/routes/health.ts`
-6. `/home/runner/work/aegion/aegion/apps/dashboard/src/App.tsx`
-7. `/home/runner/work/aegion/aegion/packages/core/src/index.ts`
-8. `/home/runner/work/aegion/aegion/docs/API-SPEC.md`
-9. `/home/runner/work/aegion/aegion/docs/STATE-MACHINE.md`
-10. `/home/runner/work/aegion/aegion/docs/DB-SCHEMA.md`
+1. `README.md`
+2. `package.json`
+3. `apps/api/src/index.ts`
+4. `apps/api/src/server.ts`
+5. `apps/api/src/routes/health.ts`
+6. `apps/dashboard/src/App.tsx`
+7. `packages/core/src/index.ts`
+8. `docs/API-SPEC.md`
+9. `docs/STATE-MACHINE.md`
+10. `docs/DB-SCHEMA.md`
