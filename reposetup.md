@@ -87,7 +87,7 @@ All commands in this section are workspace commands and should be run from the r
 
 ## Repository Organization
 
-The lists below cover the workspace members under `apps/*` and `packages/*` (complete for this workspace scope).
+The lists below cover the current workspace members under `apps/*` and `packages/*`; verify current membership in `pnpm-workspace.yaml`.
 
 ### Applications (`apps/`)
 
@@ -108,7 +108,7 @@ The lists below cover the workspace members under `apps/*` and `packages/*` (com
 
 ---
 
-## Full Entry-Point Map (Most Important)
+## Key Entry Points
 
 ### Root-level entry points
 
