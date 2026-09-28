@@ -69,7 +69,9 @@ All commands in this section are workspace commands and should be run from the r
 ### Frontend/admin
 
 - `pnpm dev:dashboard` → runs `@legion/dashboard`
+  - Target app: `apps/dashboard` (Vite dev server)
 - `pnpm dev:vault` → runs `@legion/sovereign-admin`
+  - Target package/app: `packages/sovereign-admin` (Next.js dev server)
 
 ### Build
 
@@ -156,7 +158,7 @@ The lists below cover the current workspace members under `apps/*` and `packages
 - `packages/sentinels/src/index.ts`
 - `packages/sdk/src/index.ts`
 - `packages/mirror/src/index.ts`
-- `packages/updater/index.ts` (this package exports from a package-root entry file)
+- `packages/updater/index.ts` (source entry is package-root `index.ts`, not `src/index.ts`)
 
 ---
 
