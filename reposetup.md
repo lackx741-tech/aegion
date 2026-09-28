@@ -89,7 +89,7 @@ All commands in this section are workspace commands and should be run from the r
 
 ## Repository Organization
 
-The lists below cover the current workspace members under `apps/*` and `packages/*`; verify current membership in `pnpm-workspace.yaml`.
+The lists below highlight the primary workspace members used most often during development. For the authoritative current list, check `pnpm-workspace.yaml`.
 
 ### Applications (`apps/`)
 
